@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+langchain
+langchain-openai
+langchain-core
+httpx
+pydantic
+python-dotenv
+pinecone
+supabase

@@ -1,13 +1,12 @@
-"""Verifier -- audits the synthesized trip package(s) and decides
-APPROVE or REJECT.
+"""Verifier -- strict auditor of synthesized trip packages.
 
 Uses a hybrid approach:
   1. Deterministic rule-based checks (dates, budget, completeness) -- free.
   2. LLM qualitative check (coherence, grounding, rationale quality) -- one call.
 
-Budget-aware: if a budget_warning exists (meaning the deterministic pre-check
-already proved the budget is tight), the budget rule is relaxed. We don't
-want to reject forever for something the data already proves is impossible.
+Policy: the Verifier NEVER auto-approves.  If JSON parsing fails, it defaults
+to REJECT (fail-closed).  The Supervisor / main loop decides how to handle
+rejections -- the Verifier's only job is honest auditing.
 """
 
 from __future__ import annotations
@@ -17,12 +16,14 @@ import json
 from app.llm.client import call_llm
 from app.models.shared_state import SharedState
 
-_REQUIRED_KEYS = {"destination", "flights", "hotel", "weather_summary", "itinerary", "cost_breakdown", "rationale"}
+_REQUIRED_KEYS = {
+    "destination", "flights", "hotel", "weather_summary",
+    "itinerary", "cost_breakdown", "rationale",
+}
 
 
 def run_verifier(state: SharedState) -> dict:
-    """Verify the draft plans. Budget-aware: won't reject endlessly for
-    a budget gap that the real data proves is unavoidable."""
+    """Strictly verify the draft plans. Returns a verdict dict."""
     if not state.draft_plans:
         verdict = {
             "decision": "REJECT",
@@ -33,9 +34,8 @@ def run_verifier(state: SharedState) -> dict:
         return verdict
 
     issues: list[str] = []
-    already_rejected_count = len(state.verifier_verdicts)
 
-    # ── Rule-based checks (deterministic, free) ───────────────────────────
+    # ── Deterministic rule-based checks (free) ─────────────────────────────
     for i, plan in enumerate(state.draft_plans):
         prefix = f"Package {i + 1}"
         missing = _REQUIRED_KEYS - set(plan.keys())
@@ -47,22 +47,32 @@ def run_verifier(state: SharedState) -> dict:
         budget = state.constraints.get("budget_total")
 
         if budget and total:
-            if state.budget_warning:
+            try:
+                budget_num = float(budget)
+                total_num = float(total)
+                if total_num > budget_num * 1.15:
+                    issues.append(
+                        f"{prefix}: total ${total_num:.0f} exceeds budget ${budget_num:.0f} by "
+                        f">{((total_num - budget_num) / budget_num * 100):.0f}%"
+                    )
+            except (ValueError, TypeError):
                 pass
-            elif total > budget * 1.15:
-                issues.append(f"{prefix}: total ${total} exceeds budget ${budget} by >15%")
 
         if not plan.get("itinerary"):
             issues.append(f"{prefix}: itinerary is empty")
 
-    # ── LLM qualitative check ─────────────────────────────────────────────
-    llm_verdict = _llm_quality_check(state, issues, already_rejected_count)
+        flights = plan.get("flights", {})
+        if isinstance(flights, dict):
+            if not flights.get("outbound"):
+                issues.append(f"{prefix}: missing outbound flight details")
+        elif not flights:
+            issues.append(f"{prefix}: flights data is empty")
+
+    # ── LLM qualitative check ──────────────────────────────────────────────
+    llm_verdict = _llm_quality_check(state, issues)
 
     all_issues = issues + llm_verdict.get("issues", [])
-    decision = llm_verdict.get("decision", "APPROVE" if not all_issues else "REJECT")
-
-    if already_rejected_count >= 1:
-        decision = "APPROVE"
+    decision = llm_verdict.get("decision", "REJECT" if all_issues else "APPROVE")
 
     verdict = {
         "decision": decision,
@@ -73,23 +83,18 @@ def run_verifier(state: SharedState) -> dict:
     return verdict
 
 
-VERIFIER_SYSTEM = """\
-You are the Verifier of a travel-planning agent. You receive a draft trip
-package and must judge its quality.
+_VERIFIER_SYSTEM = """\
+You are a strict auditor of a travel-planning agent. You receive a draft trip
+package and must judge its quality honestly.
 
 Check:
 - Are the dates, flights, and hotel check-in/out internally consistent?
 - Does the itinerary make sense for the destination and duration?
 - Is the rationale grounded in actual data (not hallucinated)?
 - Are there any logical contradictions?
+- Does the cost breakdown add up correctly?
 
-IMPORTANT rules:
-- If a "budget_warning" is present, it means the system already proved the
-  user's budget is tight. Do NOT reject solely because of budget.
-  Instead, APPROVE with a note about the budget gap.
-- If this is a RE-VERIFICATION (the plan was already rejected and revised),
-  be more lenient. APPROVE unless there are critical logical errors.
-- Minor rounding errors ($0.01-$0.10) are acceptable.
+If rule-based issues were already found, factor them in.
 
 Respond with a JSON object:
 {
@@ -102,18 +107,9 @@ Return ONLY valid JSON.
 """
 
 
-def _llm_quality_check(state: SharedState, rule_issues: list[str], prior_rejections: int) -> dict:
+def _llm_quality_check(state: SharedState, rule_issues: list[str]) -> dict:
     """Run one LLM call to qualitatively judge the draft plan."""
     user_parts = []
-
-    if prior_rejections > 0:
-        user_parts.append(
-            f"NOTE: This plan has been revised {prior_rejections} time(s) already. "
-            f"Be more lenient -- APPROVE unless there are critical errors."
-        )
-
-    if state.budget_warning:
-        user_parts.append(f"BUDGET CONTEXT: {state.budget_warning}")
 
     if rule_issues:
         user_parts.append(f"Rule-based issues already found: {rule_issues}")
@@ -125,9 +121,14 @@ def _llm_quality_check(state: SharedState, rule_issues: list[str], prior_rejecti
 
     user_prompt = "\n\n".join(user_parts)
 
-    raw = call_llm(state, module="Verifier", system_prompt=VERIFIER_SYSTEM, user_prompt=user_prompt)
+    raw = call_llm(state, module="Verifier", system_prompt=_VERIFIER_SYSTEM, user_prompt=user_prompt)
 
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        return {"decision": "APPROVE", "issues": [], "quality_notes": "Could not parse verifier output; approving to avoid wasting calls."}
+        # Fail-closed: if we can't parse the LLM output, REJECT
+        return {
+            "decision": "REJECT",
+            "issues": ["Verifier LLM output was not valid JSON -- fail-closed."],
+            "quality_notes": "Parse failure.",
+        }

@@ -1,6 +1,7 @@
 """POI / Activities tool -- fetch points of interest from OpenTripMap.
 
 Handles both plain-list and GeoJSON FeatureCollection response formats.
+Auto-geocodes city names when lat/lon are missing or zero.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import httpx
 
 from app.config import OPENTRIPMAP_API_KEY
 from app.models.shared_state import SharedState
+from app.tools.geocode import geocode
 from app.utils.cache import cache_get, cache_set, make_cache_key
 from app.utils.step_logger import log_tool_call
 
@@ -19,14 +21,27 @@ _BASE = "https://api.opentripmap.com/0.1/en/places"
 
 def search_pois(
     state: SharedState,
-    latitude: float,
-    longitude: float,
+    latitude: float = 0.0,
+    longitude: float = 0.0,
     radius_m: int = 5000,
     kinds: str = "interesting_places",
     limit: int = 15,
     destination_name: str = "",
 ) -> list[dict[str, Any]]:
-    """Search for POIs near a coordinate and store results in Shared State."""
+    """Search for POIs near a coordinate and store results in Shared State.
+
+    If latitude/longitude are 0 or missing, auto-geocodes from destination_name.
+    """
+    if (not latitude or not longitude) and destination_name:
+        coords = geocode(destination_name)
+        if coords:
+            latitude, longitude = coords
+
+    if not latitude or not longitude:
+        log_tool_call(state, "Executor", "poi_search",
+                      {"destination": destination_name}, {"error": "Could not resolve coordinates"})
+        return []
+
     params = {
         "lat": latitude,
         "lon": longitude,

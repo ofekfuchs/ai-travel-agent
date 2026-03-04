@@ -1,13 +1,14 @@
-"""Executor -- runs the Planner's task list by calling tools and writing
-structured outputs into Shared State.
+"""Executor -- pure task runner.
 
-The Executor is *non-authoritative*: it gathers data but does not judge
-whether the results are good enough.
+Runs the Planner's task list sequentially, stores results in SharedState.
+Makes NO decisions, asks NO questions, has NO routing logic.
+All city/coordinate resolution is handled dynamically inside the tools themselves.
 """
 
 from __future__ import annotations
 
 import json
+import time
 
 from app.llm.client import call_llm
 from app.models.shared_state import SharedState
@@ -43,8 +44,7 @@ Return ONLY valid JSON, no markdown.
 
 
 def run_executor(state: SharedState) -> None:
-    """Iterate over ``state.task_list`` and execute each task."""
-    import time
+    """Execute every task in the Planner's task list."""
     for i, task in enumerate(state.task_list):
         task_type = task.get("task", "")
         params = task.get("params", {})
@@ -92,27 +92,14 @@ def run_executor(state: SharedState) -> None:
 
 
 def _extract_constraints(state: SharedState) -> None:
-    """Use the LLM to parse the raw prompt into structured constraints."""
+    """Use 1 LLM call to parse the raw prompt into structured constraints."""
     raw = call_llm(
         state,
         module="Executor",
         system_prompt=_EXTRACT_CONSTRAINTS_SYSTEM,
         user_prompt=state.raw_prompt,
     )
-
     try:
-        constraints = json.loads(raw)
+        state.constraints = json.loads(raw)
     except json.JSONDecodeError:
-        constraints = {"raw_intent": state.raw_prompt}
-
-    state.constraints = constraints
-
-    missing = []
-    if not constraints.get("origin"):
-        missing.append("origin")
-    if not constraints.get("destinations"):
-        missing.append("destinations")
-    if not constraints.get("start_date") and not constraints.get("season"):
-        missing.append("dates_or_season")
-
-    state.missing_fields = missing
+        state.constraints = {"raw_intent": state.raw_prompt}

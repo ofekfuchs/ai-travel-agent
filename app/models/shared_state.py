@@ -1,17 +1,21 @@
-"""Central Shared State that every agent component reads and writes."""
+"""Central Shared State that every agent component reads and writes.
+
+SharedState is the single source of truth. It persists tool results across
+iterations -- results are NEVER discarded or re-fetched for identical params.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Optional
 
+LLM_CALL_CAP = 5
+
 
 @dataclass
 class SharedState:
     """Single source of truth passed between Supervisor, Planner, Executor,
-    Trip Synthesizer, and Verifier.  Every field has a safe default so a fresh
-    state can be created with just ``SharedState(raw_prompt=...)``.
-    """
+    Trip Synthesizer, and Verifier."""
 
     # -- User input ----------------------------------------------------------
     raw_prompt: str = ""
@@ -26,7 +30,6 @@ class SharedState:
 
     # -- RAG evidence ---------------------------------------------------------
     destination_chunks: list[dict] = field(default_factory=list)
-    candidate_destinations: list[dict] = field(default_factory=list)
 
     # -- Tool outputs ---------------------------------------------------------
     flight_options: list[dict] = field(default_factory=list)
@@ -40,14 +43,21 @@ class SharedState:
     # -- Verifier output ------------------------------------------------------
     verifier_verdicts: list[dict] = field(default_factory=list)
 
-    # -- Budget warning (set by deterministic pre-check, no LLM cost) --------
-    budget_warning: Optional[str] = None
-
     # -- Final result ---------------------------------------------------------
     final_response: Optional[str] = None
+
+    # -- LLM call budget (hard cap per run) -----------------------------------
+    llm_call_count: int = 0
+    llm_call_cap: int = LLM_CALL_CAP
 
     # -- Execution trace (course requirement: LLM calls ONLY) -----------------
     steps: list[dict] = field(default_factory=list)
 
     # -- Tool invocation trace (NOT sent in API steps; for internal debug) ----
     tool_trace: list[dict] = field(default_factory=list)
+
+    def can_call_llm(self) -> bool:
+        return self.llm_call_count < self.llm_call_cap
+
+    def remaining_llm_calls(self) -> int:
+        return max(0, self.llm_call_cap - self.llm_call_count)

@@ -1,14 +1,15 @@
 """Thin wrapper around LangChain ChatOpenAI pointing at LLMod.ai.
 
 Every call goes through ``call_llm`` which:
-1. Invokes the model.
-2. Automatically appends a step to the shared state's ``steps`` list so the
-   course-required execution trace is always up-to-date.
+1. Checks the per-run LLM call cap (hard enforcement).
+2. Invokes the model.
+3. Increments the call counter.
+4. Appends a step to the shared state's ``steps`` list.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -17,12 +18,13 @@ from app.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
 from app.models.shared_state import SharedState
 
 
-def get_llm() -> ChatOpenAI:
-    """Return a ChatOpenAI instance configured for LLMod.ai.
+class LLMCapReached(Exception):
+    """Raised when the per-run LLM call cap is exhausted."""
+    pass
 
-    Note: RPRTHPB-gpt-5-mini only supports temperature=1, so we
-    do not pass a temperature parameter and let the server default.
-    """
+
+def get_llm() -> ChatOpenAI:
+    """Return a ChatOpenAI instance configured for LLMod.ai."""
     return ChatOpenAI(
         api_key=LLM_API_KEY,
         base_url=LLM_BASE_URL,
@@ -38,29 +40,21 @@ def call_llm(
     user_prompt: str,
     **kwargs: Any,
 ) -> str:
-    """Call the LLM, log the step, and return the response text.
+    """Call the LLM, enforce the cap, log the step, return the response text.
 
-    Parameters
-    ----------
-    state : SharedState
-        The central shared state; a step dict will be appended to
-        ``state.steps``.
-    module : str
-        Component name that **must** match the architecture diagram
-        (e.g. ``"Supervisor"``, ``"Planner"``, ``"Trip Synthesizer"``,
-        ``"Verifier"``).
-    system_prompt : str
-        The system-level instruction for the LLM.
-    user_prompt : str
-        The user-level content for this particular call.
-
-    Returns
-    -------
-    str
-        The text content of the LLM response.
+    Raises ``LLMCapReached`` if the per-run cap has been exhausted.
+    The main loop should check ``state.can_call_llm()`` before calling
+    modules, but this is a hard safety net.
     """
-    llm = get_llm()
+    if not state.can_call_llm():
+        raise LLMCapReached(
+            f"LLM call cap ({state.llm_call_cap}) reached. "
+            f"Used {state.llm_call_count} calls. Module '{module}' blocked."
+        )
 
+    state.llm_call_count += 1
+
+    llm = get_llm()
     messages: List[BaseMessage] = [
         SystemMessage(content=system_prompt),
         HumanMessage(content=user_prompt),

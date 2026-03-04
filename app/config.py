@@ -33,4 +33,4 @@ OPENTRIPMAP_API_KEY: str = os.getenv("OPENTRIPMAP_API_KEY", "")
 # ---------------------------------------------------------------------------
 # Agent behaviour constants
 # ---------------------------------------------------------------------------
-MAX_SUPERVISOR_ITERATIONS: int = 2
+MAX_SUPERVISOR_ITERATIONS: int = 2  # kept for backward compat; main.py uses its own constant

@@ -3,6 +3,8 @@
 For near-term trips (within 16 days): returns a real forecast.
 For far-term trips: returns historical climate averages for the same calendar
 period in recent years so the agent can say "May in Lisbon is typically 18-24 C".
+
+Auto-geocodes city names when lat/lon are missing or zero.
 """
 
 from __future__ import annotations
@@ -13,23 +15,35 @@ from typing import Any
 import httpx
 
 from app.models.shared_state import SharedState
+from app.tools.geocode import geocode
 from app.utils.cache import cache_get, cache_set, make_cache_key
 from app.utils.step_logger import log_tool_call
 
 
 def get_weather(
     state: SharedState,
-    latitude: float,
-    longitude: float,
-    start_date: str,
-    end_date: str,
+    latitude: float = 0.0,
+    longitude: float = 0.0,
+    start_date: str = "",
+    end_date: str = "",
     destination_name: str = "",
 ) -> dict[str, Any]:
     """Fetch weather context for a location and date range.
 
+    If latitude/longitude are 0 or missing, auto-geocodes from destination_name.
     Automatically picks between the forecast API (near-term) and the
     historical-weather API (far-term climate normals).
     """
+    if (not latitude or not longitude) and destination_name:
+        coords = geocode(destination_name)
+        if coords:
+            latitude, longitude = coords
+
+    if not latitude or not longitude:
+        log_tool_call(state, "Executor", "weather_lookup",
+                      {"destination": destination_name}, {"error": "Could not resolve coordinates"})
+        return {"error": "Could not resolve coordinates", "destination": destination_name}
+
     params = {
         "lat": latitude,
         "lon": longitude,

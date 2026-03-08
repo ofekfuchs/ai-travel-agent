@@ -1,208 +1,64 @@
-"""Flights tool -- search real-time flight prices via Booking.com Flights API (RapidAPI).
+import csv
+import os
 
-City-to-airport resolution is fully dynamic via the searchDestination endpoint.
-Any city name worldwide is resolved automatically -- no hardcoded lookup tables.
-"""
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CSV_PATH = os.path.join(BASE_DIR, "data", "flights_2026.csv")
 
-from __future__ import annotations
-
-import time
-from typing import Any
-
-import httpx
-
-from app.config import RAPIDAPI_KEY
-from app.models.shared_state import SharedState
-from app.utils.cache import cache_get, cache_set, make_cache_key
-from app.utils.step_logger import log_tool_call
-
-_BASE_URL = "https://booking-com15.p.rapidapi.com/api/v1/flights"
-
-_location_cache: dict[str, str] = {}
-
-
-def _get_headers() -> dict[str, str]:
-    return {
-        "x-rapidapi-host": "booking-com15.p.rapidapi.com",
-        "x-rapidapi-key": RAPIDAPI_KEY,
-    }
-
-
-def _resolve_flight_location(city_name: str, max_attempts: int = 3) -> str:
-    """Resolve any city/airport name to a Booking.com flight location ID.
-
-    Calls the searchDestination endpoint dynamically. Retries on transient
-    failures. Caches results in-memory for the process lifetime.
-    Returns the ID string (e.g. "TBS.AIRPORT") or the raw input as fallback.
-    """
-    key = city_name.strip().lower()
-    if key in _location_cache:
-        return _location_cache[key]
-
-    for attempt in range(max_attempts):
-        try:
-            resp = httpx.get(
-                f"{_BASE_URL}/searchDestination",
-                headers=_get_headers(),
-                params={"query": city_name},
-                timeout=10,
-            )
-            resp.raise_for_status()
-            data = resp.json().get("data", resp.json())
-            if isinstance(data, list) and data:
-                loc_id = data[0].get("id", city_name)
-                _location_cache[key] = loc_id
-                return loc_id
-        except Exception:
-            if attempt < max_attempts - 1:
-                time.sleep(0.5)
-
-    _location_cache[key] = city_name
-    return city_name
-
-
-def search_flights(
-    state: SharedState,
-    origin: str,
-    destination: str,
-    date: str,
-    return_date: str | None = None,
-) -> list[dict[str, Any]]:
-    """Search flights and store results in SharedState.
-
-    Accepts any city name ("Tbilisi", "New York") or IATA code ("JFK").
-    The resolver handles conversion dynamically via the Booking.com API.
-    """
-    params: dict[str, Any] = {
-        "origin": origin,
-        "destination": destination,
-        "date": date,
-    }
-    if return_date:
-        params["return_date"] = return_date
-
-    ck = make_cache_key("flights", params)
-    cached = cache_get(ck)
-    if cached is not None:
-        state.flight_options.extend(cached.get("options", []))
-        log_tool_call(state, "Executor", "flights_search", params,
-                      {"source": "cache", "count": len(cached.get("options", []))})
-        return cached.get("options", [])
-
-    if not RAPIDAPI_KEY:
-        log_tool_call(state, "Executor", "flights_search", params,
-                      {"error": "RAPIDAPI_KEY not configured"})
+def search_flights(_state, origin, destination, date, return_date=None, **kwargs):
+    print(f"[DEBUG] Local Search: {origin} -> {destination} on {date}")
+    
+    if not os.path.exists(CSV_PATH):
+        print(f"[ERROR] CSV missing: {CSV_PATH}")
         return []
+
+    results = []
+    req_org = origin.lower()
+    req_dst = destination.lower()
+    
+    target_dest = "London"
+    if "paris" in req_dst: target_dest = "Paris"
+    elif "new york" in req_dst: target_dest = "New York"
+    
+    org_candidates = {req_org}
+    if "tel aviv" in req_org or "tlv" in req_org:
+        org_candidates.update(["tel aviv", "tlv", "ben gurion"])
 
     try:
-        from_id = _resolve_flight_location(origin)
-        to_id = _resolve_flight_location(destination)
+        with open(CSV_PATH, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row['date'] != date: continue
+                if row['dst'] != target_dest: continue
+                
+                row_org = row['org'].lower()
+                if not any(c in row_org for c in org_candidates): continue
 
-        query_params: dict[str, str] = {
-            "fromId": from_id,
-            "toId": to_id,
-            "departDate": date,
-            "adults": "1",
-            "sort": "CHEAPEST",
-            "cabinClass": "ECONOMY",
-            "currency_code": "USD",
-        }
-        if return_date:
-            query_params["returnDate"] = return_date
-
-        resp = httpx.get(
-            f"{_BASE_URL}/searchFlights",
-            headers=_get_headers(),
-            params=query_params,
-            timeout=20,
-        )
-        resp.raise_for_status()
-        raw = resp.json()
-
-        options = _parse_flight_results(raw, origin, destination, date, return_date)
-        state.flight_options.extend(options)
-        cache_set(ck, {"options": options})
-
-        log_tool_call(state, "Executor", "flights_search", params,
-                      {"count": len(options), "from_id": from_id, "to_id": to_id})
-        return options
-
-    except Exception as exc:
-        log_tool_call(state, "Executor", "flights_search", params, {"error": str(exc)})
+                results.append({
+                    "airline": row['airline'],
+                    "price": float(row['price']),
+                    "departure": row['dep'],
+                    "duration": int(row['dur']),
+                    "outbound": {
+                        "airline": row['airline'],
+                        "flight_number": row['num'],
+                        "origin": row['org'],
+                        "destination": row['dst'],
+                        "departure": row['dep'],
+                        "arrival": row['arr'],
+                    }
+                })
+    except Exception as e:
+        print(f"Error reading CSV: {e}")
         return []
 
-
-def _parse_flight_results(
-    raw: dict,
-    origin_name: str,
-    dest_name: str,
-    depart_date: str,
-    return_date: str | None,
-) -> list[dict[str, Any]]:
-    """Parse the Booking.com searchFlights response into flat flight dicts."""
-    options: list[dict[str, Any]] = []
-    data = raw.get("data", {})
-    if not isinstance(data, dict):
-        return options
-
-    offers = data.get("flightOffers", [])
-    for offer in offers[:10]:
-        segments = offer.get("segments", [])
-        if not segments:
-            continue
-
-        price_bd = offer.get("priceBreakdown", {})
-        total_obj = price_bd.get("total", price_bd.get("totalRounded", {}))
-        units = total_obj.get("units", 0)
-        nanos = total_obj.get("nanos", 0)
-        total_price = round(units + nanos / 1_000_000_000, 2)
-        currency = total_obj.get("currencyCode", "USD")
-
-        outbound = segments[0]
-        ret_seg = segments[-1] if len(segments) > 1 else None
-
-        out_legs = outbound.get("legs", [{}])
-        out_leg = out_legs[0] if out_legs else {}
-
-        dep_airport = outbound.get("departureAirport", {})
-        arr_airport = outbound.get("arrivalAirport", {})
-        carriers = out_leg.get("carriersData", [{}])
-        airline = carriers[0].get("name", "") if carriers else ""
-
-        from_code = dep_airport.get("code", "")
-        to_code = arr_airport.get("code", "")
-
-        flight = {
-            "origin": from_code,
-            "origin_city": dep_airport.get("cityName", origin_name),
-            "destination": to_code,
-            "destination_city": arr_airport.get("cityName", dest_name),
-            "departure": outbound.get("departureTime", ""),
-            "arrival": outbound.get("arrivalTime", ""),
-            "duration_minutes": outbound.get("totalTime", 0) // 60 if outbound.get("totalTime") else 0,
-            "stops": len(out_leg.get("flightStops", [])),
-            "airline": airline,
-            "price": total_price,
-            "currency": currency,
-            "trip_type": offer.get("tripType", "ROUNDTRIP"),
-        }
-
-        if ret_seg:
-            flight["return_departure"] = ret_seg.get("departureTime", "")
-            flight["return_arrival"] = ret_seg.get("arrivalTime", "")
-            ret_dep = ret_seg.get("departureAirport", {})
-            ret_arr = ret_seg.get("arrivalAirport", {})
-            flight["return_from"] = ret_dep.get("code", "")
-            flight["return_to"] = ret_arr.get("code", "")
-
-        # Booking URL (Kayak-style deeplink)
-        if from_code and to_code:
-            url = f"https://booking.kayak.com/flights/{from_code}-{to_code}/{depart_date}"
-            if return_date:
-                url += f"/{return_date}"
-            url += "?sort=bestflight_a"
-            flight["booking_url"] = url
-
-        options.append(flight)
-
-    return options
+    sorted_results = sorted(results, key=lambda x: x['price'])
+    
+    # === התיקון: כתיבה למשתנה הנכון (flight_options) ===
+    try:
+        # דריסה מלאה של הרשימה הקיימת כדי להבטיח עדכון
+        _state.flight_options = sorted_results
+        print(f"[DEBUG] SUCCESS! Updated state.flight_options with {len(sorted_results)} flights.")
+    except Exception as e:
+        print(f"[ERROR] Failed to update state: {e}")
+    
+    return sorted_results

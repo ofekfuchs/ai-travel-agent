@@ -1,0 +1,2269 @@
+date,name,city,rating,price,amenities
+2026-01-01,The Ritz London,London,5.0,783,Luxury|Spa
+2026-01-01,Strand Palace,London,4.0,234,Central|Gym
+2026-01-01,Generator London,London,3.0,64,Hostel|Bar
+2026-01-01,Ritz Paris,Paris,5.0,1118,Luxury|History
+2026-01-01,Ibis Bastille,Paris,3.0,125,Basic|WiFi
+2026-01-01,The Plaza,New York,5.0,1073,Iconic|Luxury
+2026-01-01,Pod 51,New York,3.0,98,Budget|Rooftop
+2026-01-02,The Ritz London,London,5.0,1031,Luxury|Spa
+2026-01-02,Strand Palace,London,4.0,285,Central|Gym
+2026-01-02,Generator London,London,3.0,45,Hostel|Bar
+2026-01-02,Ritz Paris,Paris,5.0,1493,Luxury|History
+2026-01-02,Ibis Bastille,Paris,3.0,152,Basic|WiFi
+2026-01-02,The Plaza,New York,5.0,1374,Iconic|Luxury
+2026-01-02,Pod 51,New York,3.0,120,Budget|Rooftop
+2026-01-03,The Ritz London,London,5.0,1010,Luxury|Spa
+2026-01-03,Generator London,London,3.0,93,Hostel|Bar
+2026-01-03,Ritz Paris,Paris,5.0,1501,Luxury|History
+2026-01-03,Ibis Bastille,Paris,3.0,105,Basic|WiFi
+2026-01-03,The Plaza,New York,5.0,1371,Iconic|Luxury
+2026-01-03,Pod 51,New York,3.0,119,Budget|Rooftop
+2026-01-04,The Ritz London,London,5.0,1011,Luxury|Spa
+2026-01-04,Strand Palace,London,4.0,236,Central|Gym
+2026-01-04,Generator London,London,3.0,62,Hostel|Bar
+2026-01-04,Ibis Bastille,Paris,3.0,148,Basic|WiFi
+2026-01-04,The Plaza,New York,5.0,1375,Iconic|Luxury
+2026-01-04,Pod 51,New York,3.0,136,Budget|Rooftop
+2026-01-05,The Ritz London,London,5.0,800,Luxury|Spa
+2026-01-05,Strand Palace,London,4.0,216,Central|Gym
+2026-01-05,Generator London,London,3.0,34,Hostel|Bar
+2026-01-05,Ritz Paris,Paris,5.0,1144,Luxury|History
+2026-01-05,Ibis Bastille,Paris,3.0,101,Basic|WiFi
+2026-01-05,The Plaza,New York,5.0,1070,Iconic|Luxury
+2026-01-05,Pod 51,New York,3.0,140,Budget|Rooftop
+2026-01-06,The Ritz London,London,5.0,806,Luxury|Spa
+2026-01-06,Strand Palace,London,4.0,212,Central|Gym
+2026-01-06,Generator London,London,3.0,81,Hostel|Bar
+2026-01-06,Ritz Paris,Paris,5.0,1119,Luxury|History
+2026-01-06,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-01-06,The Plaza,New York,5.0,1074,Iconic|Luxury
+2026-01-06,Pod 51,New York,3.0,89,Budget|Rooftop
+2026-01-07,The Ritz London,London,5.0,800,Luxury|Spa
+2026-01-07,Strand Palace,London,4.0,180,Central|Gym
+2026-01-07,Generator London,London,3.0,58,Hostel|Bar
+2026-01-07,Ritz Paris,Paris,5.0,1153,Luxury|History
+2026-01-07,Ibis Bastille,Paris,3.0,110,Basic|WiFi
+2026-01-07,The Plaza,New York,5.0,1045,Iconic|Luxury
+2026-01-07,Pod 51,New York,3.0,123,Budget|Rooftop
+2026-01-08,The Ritz London,London,5.0,750,Luxury|Spa
+2026-01-08,Strand Palace,London,4.0,210,Central|Gym
+2026-01-08,Generator London,London,3.0,80,Hostel|Bar
+2026-01-08,Ritz Paris,Paris,5.0,1155,Luxury|History
+2026-01-08,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-01-08,The Plaza,New York,5.0,1051,Iconic|Luxury
+2026-01-08,Pod 51,New York,3.0,121,Budget|Rooftop
+2026-01-09,The Ritz London,London,5.0,1044,Luxury|Spa
+2026-01-09,Strand Palace,London,4.0,260,Central|Gym
+2026-01-09,Generator London,London,3.0,93,Hostel|Bar
+2026-01-09,Ritz Paris,Paris,5.0,1494,Luxury|History
+2026-01-09,Ibis Bastille,Paris,3.0,108,Basic|WiFi
+2026-01-09,The Plaza,New York,5.0,1385,Iconic|Luxury
+2026-01-09,Pod 51,New York,3.0,122,Budget|Rooftop
+2026-01-10,The Ritz London,London,5.0,1016,Luxury|Spa
+2026-01-10,Strand Palace,London,4.0,265,Central|Gym
+2026-01-10,Generator London,London,3.0,87,Hostel|Bar
+2026-01-10,Ritz Paris,Paris,5.0,1484,Luxury|History
+2026-01-10,Ibis Bastille,Paris,3.0,119,Basic|WiFi
+2026-01-10,The Plaza,New York,5.0,1386,Iconic|Luxury
+2026-01-10,Pod 51,New York,3.0,120,Budget|Rooftop
+2026-01-11,The Ritz London,London,5.0,1010,Luxury|Spa
+2026-01-11,Strand Palace,London,4.0,231,Central|Gym
+2026-01-11,Generator London,London,3.0,74,Hostel|Bar
+2026-01-11,Ritz Paris,Paris,5.0,1496,Luxury|History
+2026-01-11,Ibis Bastille,Paris,3.0,153,Basic|WiFi
+2026-01-11,The Plaza,New York,5.0,1386,Iconic|Luxury
+2026-01-11,Pod 51,New York,3.0,131,Budget|Rooftop
+2026-01-12,The Ritz London,London,5.0,789,Luxury|Spa
+2026-01-12,Strand Palace,London,4.0,204,Central|Gym
+2026-01-12,Generator London,London,3.0,46,Hostel|Bar
+2026-01-12,Ritz Paris,Paris,5.0,1140,Luxury|History
+2026-01-12,Ibis Bastille,Paris,3.0,98,Basic|WiFi
+2026-01-12,The Plaza,New York,5.0,1046,Iconic|Luxury
+2026-01-12,Pod 51,New York,3.0,130,Budget|Rooftop
+2026-01-13,The Ritz London,London,5.0,762,Luxury|Spa
+2026-01-13,Strand Palace,London,4.0,191,Central|Gym
+2026-01-13,Generator London,London,3.0,66,Hostel|Bar
+2026-01-13,Ritz Paris,Paris,5.0,1139,Luxury|History
+2026-01-13,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-01-13,The Plaza,New York,5.0,1090,Iconic|Luxury
+2026-01-13,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-01-14,The Ritz London,London,5.0,794,Luxury|Spa
+2026-01-14,Strand Palace,London,4.0,227,Central|Gym
+2026-01-14,Generator London,London,3.0,49,Hostel|Bar
+2026-01-14,Ritz Paris,Paris,5.0,1162,Luxury|History
+2026-01-14,Ibis Bastille,Paris,3.0,90,Basic|WiFi
+2026-01-14,The Plaza,New York,5.0,1065,Iconic|Luxury
+2026-01-14,Pod 51,New York,3.0,93,Budget|Rooftop
+2026-01-15,The Ritz London,London,5.0,765,Luxury|Spa
+2026-01-15,Strand Palace,London,4.0,231,Central|Gym
+2026-01-15,Generator London,London,3.0,61,Hostel|Bar
+2026-01-15,Ritz Paris,Paris,5.0,1144,Luxury|History
+2026-01-15,Ibis Bastille,Paris,3.0,70,Basic|WiFi
+2026-01-15,The Plaza,New York,5.0,1033,Iconic|Luxury
+2026-01-15,Pod 51,New York,3.0,91,Budget|Rooftop
+2026-01-16,The Ritz London,London,5.0,1030,Luxury|Spa
+2026-01-16,Strand Palace,London,4.0,270,Central|Gym
+2026-01-16,Ritz Paris,Paris,5.0,1465,Luxury|History
+2026-01-16,Ibis Bastille,Paris,3.0,109,Basic|WiFi
+2026-01-16,The Plaza,New York,5.0,1385,Iconic|Luxury
+2026-01-16,Pod 51,New York,3.0,142,Budget|Rooftop
+2026-01-17,The Ritz London,London,5.0,999,Luxury|Spa
+2026-01-17,Strand Palace,London,4.0,262,Central|Gym
+2026-01-17,Ritz Paris,Paris,5.0,1460,Luxury|History
+2026-01-17,Ibis Bastille,Paris,3.0,104,Basic|WiFi
+2026-01-17,The Plaza,New York,5.0,1375,Iconic|Luxury
+2026-01-17,Pod 51,New York,3.0,132,Budget|Rooftop
+2026-01-18,The Ritz London,London,5.0,1017,Luxury|Spa
+2026-01-18,Strand Palace,London,4.0,289,Central|Gym
+2026-01-18,Ritz Paris,Paris,5.0,1472,Luxury|History
+2026-01-18,Ibis Bastille,Paris,3.0,102,Basic|WiFi
+2026-01-18,The Plaza,New York,5.0,1393,Iconic|Luxury
+2026-01-18,Pod 51,New York,3.0,132,Budget|Rooftop
+2026-01-19,The Ritz London,London,5.0,759,Luxury|Spa
+2026-01-19,Strand Palace,London,4.0,185,Central|Gym
+2026-01-19,Generator London,London,3.0,76,Hostel|Bar
+2026-01-19,Ritz Paris,Paris,5.0,1125,Luxury|History
+2026-01-19,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-01-19,The Plaza,New York,5.0,1034,Iconic|Luxury
+2026-01-19,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-01-20,The Ritz London,London,5.0,804,Luxury|Spa
+2026-01-20,Strand Palace,London,4.0,188,Central|Gym
+2026-01-20,Generator London,London,3.0,90,Hostel|Bar
+2026-01-20,Ritz Paris,Paris,5.0,1128,Luxury|History
+2026-01-20,Ibis Bastille,Paris,3.0,92,Basic|WiFi
+2026-01-20,The Plaza,New York,5.0,1060,Iconic|Luxury
+2026-01-20,Pod 51,New York,3.0,95,Budget|Rooftop
+2026-01-21,The Ritz London,London,5.0,805,Luxury|Spa
+2026-01-21,Strand Palace,London,4.0,220,Central|Gym
+2026-01-21,Generator London,London,3.0,74,Hostel|Bar
+2026-01-21,Ritz Paris,Paris,5.0,1150,Luxury|History
+2026-01-21,Ibis Bastille,Paris,3.0,76,Basic|WiFi
+2026-01-21,The Plaza,New York,5.0,1053,Iconic|Luxury
+2026-01-21,Pod 51,New York,3.0,129,Budget|Rooftop
+2026-01-22,The Ritz London,London,5.0,803,Luxury|Spa
+2026-01-22,Strand Palace,London,4.0,184,Central|Gym
+2026-01-22,Generator London,London,3.0,65,Hostel|Bar
+2026-01-22,Ritz Paris,Paris,5.0,1170,Luxury|History
+2026-01-22,Ibis Bastille,Paris,3.0,118,Basic|WiFi
+2026-01-22,The Plaza,New York,5.0,1089,Iconic|Luxury
+2026-01-22,Pod 51,New York,3.0,107,Budget|Rooftop
+2026-01-23,The Ritz London,London,5.0,993,Luxury|Spa
+2026-01-23,Strand Palace,London,4.0,282,Central|Gym
+2026-01-23,Generator London,London,3.0,49,Hostel|Bar
+2026-01-23,Ritz Paris,Paris,5.0,1492,Luxury|History
+2026-01-23,Ibis Bastille,Paris,3.0,126,Basic|WiFi
+2026-01-23,The Plaza,New York,5.0,1389,Iconic|Luxury
+2026-01-23,Pod 51,New York,3.0,171,Budget|Rooftop
+2026-01-24,The Ritz London,London,5.0,1038,Luxury|Spa
+2026-01-24,Strand Palace,London,4.0,248,Central|Gym
+2026-01-24,Generator London,London,3.0,90,Hostel|Bar
+2026-01-24,Ritz Paris,Paris,5.0,1507,Luxury|History
+2026-01-24,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-01-24,The Plaza,New York,5.0,1397,Iconic|Luxury
+2026-01-24,Pod 51,New York,3.0,146,Budget|Rooftop
+2026-01-25,The Ritz London,London,5.0,1014,Luxury|Spa
+2026-01-25,Strand Palace,London,4.0,270,Central|Gym
+2026-01-25,Generator London,London,3.0,54,Hostel|Bar
+2026-01-25,Ritz Paris,Paris,5.0,1461,Luxury|History
+2026-01-25,Ibis Bastille,Paris,3.0,115,Basic|WiFi
+2026-01-25,The Plaza,New York,5.0,1360,Iconic|Luxury
+2026-01-25,Pod 51,New York,3.0,173,Budget|Rooftop
+2026-01-26,The Ritz London,London,5.0,802,Luxury|Spa
+2026-01-26,Strand Palace,London,4.0,194,Central|Gym
+2026-01-26,Generator London,London,3.0,34,Hostel|Bar
+2026-01-26,Ritz Paris,Paris,5.0,1160,Luxury|History
+2026-01-26,Ibis Bastille,Paris,3.0,123,Basic|WiFi
+2026-01-26,The Plaza,New York,5.0,1067,Iconic|Luxury
+2026-01-26,Pod 51,New York,3.0,88,Budget|Rooftop
+2026-01-27,The Ritz London,London,5.0,790,Luxury|Spa
+2026-01-27,Strand Palace,London,4.0,208,Central|Gym
+2026-01-27,Generator London,London,3.0,51,Hostel|Bar
+2026-01-27,Ritz Paris,Paris,5.0,1147,Luxury|History
+2026-01-27,Ibis Bastille,Paris,3.0,89,Basic|WiFi
+2026-01-27,The Plaza,New York,5.0,1059,Iconic|Luxury
+2026-01-27,Pod 51,New York,3.0,107,Budget|Rooftop
+2026-01-28,The Ritz London,London,5.0,805,Luxury|Spa
+2026-01-28,Strand Palace,London,4.0,216,Central|Gym
+2026-01-28,Generator London,London,3.0,69,Hostel|Bar
+2026-01-28,Ritz Paris,Paris,5.0,1129,Luxury|History
+2026-01-28,Ibis Bastille,Paris,3.0,113,Basic|WiFi
+2026-01-28,The Plaza,New York,5.0,1037,Iconic|Luxury
+2026-01-28,Pod 51,New York,3.0,108,Budget|Rooftop
+2026-01-29,The Ritz London,London,5.0,757,Luxury|Spa
+2026-01-29,Strand Palace,London,4.0,174,Central|Gym
+2026-01-29,Generator London,London,3.0,74,Hostel|Bar
+2026-01-29,Ritz Paris,Paris,5.0,1120,Luxury|History
+2026-01-29,Ibis Bastille,Paris,3.0,105,Basic|WiFi
+2026-01-29,The Plaza,New York,5.0,1080,Iconic|Luxury
+2026-01-29,Pod 51,New York,3.0,94,Budget|Rooftop
+2026-01-30,The Ritz London,London,5.0,1023,Luxury|Spa
+2026-01-30,Strand Palace,London,4.0,237,Central|Gym
+2026-01-30,Generator London,London,3.0,95,Hostel|Bar
+2026-01-30,Ritz Paris,Paris,5.0,1495,Luxury|History
+2026-01-30,Ibis Bastille,Paris,3.0,102,Basic|WiFi
+2026-01-30,Pod 51,New York,3.0,132,Budget|Rooftop
+2026-01-31,The Ritz London,London,5.0,1041,Luxury|Spa
+2026-01-31,Strand Palace,London,4.0,258,Central|Gym
+2026-01-31,Generator London,London,3.0,59,Hostel|Bar
+2026-01-31,Ritz Paris,Paris,5.0,1505,Luxury|History
+2026-01-31,Ibis Bastille,Paris,3.0,103,Basic|WiFi
+2026-01-31,The Plaza,New York,5.0,1391,Iconic|Luxury
+2026-01-31,Pod 51,New York,3.0,172,Budget|Rooftop
+2026-02-01,The Ritz London,London,5.0,1029,Luxury|Spa
+2026-02-01,Strand Palace,London,4.0,256,Central|Gym
+2026-02-01,Generator London,London,3.0,81,Hostel|Bar
+2026-02-01,Ritz Paris,Paris,5.0,1517,Luxury|History
+2026-02-01,Ibis Bastille,Paris,3.0,141,Basic|WiFi
+2026-02-01,The Plaza,New York,5.0,1403,Iconic|Luxury
+2026-02-01,Pod 51,New York,3.0,171,Budget|Rooftop
+2026-02-02,The Ritz London,London,5.0,794,Luxury|Spa
+2026-02-02,Strand Palace,London,4.0,208,Central|Gym
+2026-02-02,Generator London,London,3.0,75,Hostel|Bar
+2026-02-02,Ritz Paris,Paris,5.0,1128,Luxury|History
+2026-02-02,Ibis Bastille,Paris,3.0,122,Basic|WiFi
+2026-02-02,The Plaza,New York,5.0,1080,Iconic|Luxury
+2026-02-02,Pod 51,New York,3.0,95,Budget|Rooftop
+2026-02-03,The Ritz London,London,5.0,785,Luxury|Spa
+2026-02-03,Strand Palace,London,4.0,193,Central|Gym
+2026-02-03,Generator London,London,3.0,43,Hostel|Bar
+2026-02-03,Ritz Paris,Paris,5.0,1136,Luxury|History
+2026-02-03,Ibis Bastille,Paris,3.0,76,Basic|WiFi
+2026-02-03,The Plaza,New York,5.0,1042,Iconic|Luxury
+2026-02-03,Pod 51,New York,3.0,146,Budget|Rooftop
+2026-02-04,The Ritz London,London,5.0,768,Luxury|Spa
+2026-02-04,Strand Palace,London,4.0,196,Central|Gym
+2026-02-04,Generator London,London,3.0,55,Hostel|Bar
+2026-02-04,Ritz Paris,Paris,5.0,1110,Luxury|History
+2026-02-04,Ibis Bastille,Paris,3.0,70,Basic|WiFi
+2026-02-04,The Plaza,New York,5.0,1075,Iconic|Luxury
+2026-02-04,Pod 51,New York,3.0,90,Budget|Rooftop
+2026-02-05,The Ritz London,London,5.0,767,Luxury|Spa
+2026-02-05,Strand Palace,London,4.0,185,Central|Gym
+2026-02-05,Generator London,London,3.0,90,Hostel|Bar
+2026-02-05,Ritz Paris,Paris,5.0,1159,Luxury|History
+2026-02-05,Ibis Bastille,Paris,3.0,70,Basic|WiFi
+2026-02-05,The Plaza,New York,5.0,1064,Iconic|Luxury
+2026-02-05,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-02-06,The Ritz London,London,5.0,1019,Luxury|Spa
+2026-02-06,Strand Palace,London,4.0,251,Central|Gym
+2026-02-06,Generator London,London,3.0,71,Hostel|Bar
+2026-02-06,Ritz Paris,Paris,5.0,1480,Luxury|History
+2026-02-06,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-02-06,The Plaza,New York,5.0,1377,Iconic|Luxury
+2026-02-06,Pod 51,New York,3.0,150,Budget|Rooftop
+2026-02-07,The Ritz London,London,5.0,1039,Luxury|Spa
+2026-02-07,Strand Palace,London,4.0,232,Central|Gym
+2026-02-07,Generator London,London,3.0,87,Hostel|Bar
+2026-02-07,Ritz Paris,Paris,5.0,1511,Luxury|History
+2026-02-07,Ibis Bastille,Paris,3.0,141,Basic|WiFi
+2026-02-07,The Plaza,New York,5.0,1393,Iconic|Luxury
+2026-02-07,Pod 51,New York,3.0,126,Budget|Rooftop
+2026-02-08,The Ritz London,London,5.0,1010,Luxury|Spa
+2026-02-08,Strand Palace,London,4.0,282,Central|Gym
+2026-02-08,Generator London,London,3.0,66,Hostel|Bar
+2026-02-08,Ibis Bastille,Paris,3.0,130,Basic|WiFi
+2026-02-08,The Plaza,New York,5.0,1367,Iconic|Luxury
+2026-02-08,Pod 51,New York,3.0,131,Budget|Rooftop
+2026-02-09,The Ritz London,London,5.0,769,Luxury|Spa
+2026-02-09,Strand Palace,London,4.0,227,Central|Gym
+2026-02-09,Generator London,London,3.0,88,Hostel|Bar
+2026-02-09,Ritz Paris,Paris,5.0,1167,Luxury|History
+2026-02-09,Ibis Bastille,Paris,3.0,81,Basic|WiFi
+2026-02-09,The Plaza,New York,5.0,1041,Iconic|Luxury
+2026-02-09,Pod 51,New York,3.0,139,Budget|Rooftop
+2026-02-10,The Ritz London,London,5.0,759,Luxury|Spa
+2026-02-10,Strand Palace,London,4.0,181,Central|Gym
+2026-02-10,Generator London,London,3.0,78,Hostel|Bar
+2026-02-10,Ritz Paris,Paris,5.0,1124,Luxury|History
+2026-02-10,Ibis Bastille,Paris,3.0,113,Basic|WiFi
+2026-02-10,The Plaza,New York,5.0,1052,Iconic|Luxury
+2026-02-10,Pod 51,New York,3.0,132,Budget|Rooftop
+2026-02-11,The Ritz London,London,5.0,797,Luxury|Spa
+2026-02-11,Strand Palace,London,4.0,210,Central|Gym
+2026-02-11,Generator London,London,3.0,78,Hostel|Bar
+2026-02-11,Ritz Paris,Paris,5.0,1140,Luxury|History
+2026-02-11,Ibis Bastille,Paris,3.0,126,Basic|WiFi
+2026-02-11,The Plaza,New York,5.0,1072,Iconic|Luxury
+2026-02-11,Pod 51,New York,3.0,120,Budget|Rooftop
+2026-02-12,The Ritz London,London,5.0,769,Luxury|Spa
+2026-02-12,Strand Palace,London,4.0,207,Central|Gym
+2026-02-12,Generator London,London,3.0,47,Hostel|Bar
+2026-02-12,Ritz Paris,Paris,5.0,1126,Luxury|History
+2026-02-12,Ibis Bastille,Paris,3.0,79,Basic|WiFi
+2026-02-12,The Plaza,New York,5.0,1087,Iconic|Luxury
+2026-02-12,Pod 51,New York,3.0,115,Budget|Rooftop
+2026-02-13,The Ritz London,London,5.0,1020,Luxury|Spa
+2026-02-13,Strand Palace,London,4.0,240,Central|Gym
+2026-02-13,Generator London,London,3.0,86,Hostel|Bar
+2026-02-13,Ritz Paris,Paris,5.0,1468,Luxury|History
+2026-02-13,Ibis Bastille,Paris,3.0,152,Basic|WiFi
+2026-02-13,The Plaza,New York,5.0,1410,Iconic|Luxury
+2026-02-14,The Ritz London,London,5.0,1012,Luxury|Spa
+2026-02-14,Strand Palace,London,4.0,266,Central|Gym
+2026-02-14,Generator London,London,3.0,48,Hostel|Bar
+2026-02-14,Ritz Paris,Paris,5.0,1511,Luxury|History
+2026-02-14,Ibis Bastille,Paris,3.0,111,Basic|WiFi
+2026-02-14,The Plaza,New York,5.0,1389,Iconic|Luxury
+2026-02-14,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-02-15,The Ritz London,London,5.0,987,Luxury|Spa
+2026-02-15,Generator London,London,3.0,59,Hostel|Bar
+2026-02-15,Ritz Paris,Paris,5.0,1481,Luxury|History
+2026-02-15,Ibis Bastille,Paris,3.0,135,Basic|WiFi
+2026-02-15,The Plaza,New York,5.0,1381,Iconic|Luxury
+2026-02-15,Pod 51,New York,3.0,148,Budget|Rooftop
+2026-02-16,The Ritz London,London,5.0,772,Luxury|Spa
+2026-02-16,Strand Palace,London,4.0,211,Central|Gym
+2026-02-16,Generator London,London,3.0,41,Hostel|Bar
+2026-02-16,Ritz Paris,Paris,5.0,1111,Luxury|History
+2026-02-16,Ibis Bastille,Paris,3.0,117,Basic|WiFi
+2026-02-16,The Plaza,New York,5.0,1055,Iconic|Luxury
+2026-02-16,Pod 51,New York,3.0,113,Budget|Rooftop
+2026-02-17,The Ritz London,London,5.0,794,Luxury|Spa
+2026-02-17,Strand Palace,London,4.0,209,Central|Gym
+2026-02-17,Generator London,London,3.0,68,Hostel|Bar
+2026-02-17,Ritz Paris,Paris,5.0,1136,Luxury|History
+2026-02-17,Ibis Bastille,Paris,3.0,80,Basic|WiFi
+2026-02-17,The Plaza,New York,5.0,1031,Iconic|Luxury
+2026-02-17,Pod 51,New York,3.0,128,Budget|Rooftop
+2026-02-18,The Ritz London,London,5.0,793,Luxury|Spa
+2026-02-18,Strand Palace,London,4.0,217,Central|Gym
+2026-02-18,Generator London,London,3.0,53,Hostel|Bar
+2026-02-18,Ritz Paris,Paris,5.0,1117,Luxury|History
+2026-02-18,Ibis Bastille,Paris,3.0,127,Basic|WiFi
+2026-02-18,The Plaza,New York,5.0,1041,Iconic|Luxury
+2026-02-18,Pod 51,New York,3.0,139,Budget|Rooftop
+2026-02-19,The Ritz London,London,5.0,763,Luxury|Spa
+2026-02-19,Strand Palace,London,4.0,210,Central|Gym
+2026-02-19,Generator London,London,3.0,57,Hostel|Bar
+2026-02-19,Ritz Paris,Paris,5.0,1170,Luxury|History
+2026-02-19,Ibis Bastille,Paris,3.0,127,Basic|WiFi
+2026-02-19,The Plaza,New York,5.0,1083,Iconic|Luxury
+2026-02-19,Pod 51,New York,3.0,89,Budget|Rooftop
+2026-02-20,The Ritz London,London,5.0,1040,Luxury|Spa
+2026-02-20,Strand Palace,London,4.0,256,Central|Gym
+2026-02-20,Generator London,London,3.0,96,Hostel|Bar
+2026-02-20,Ritz Paris,Paris,5.0,1512,Luxury|History
+2026-02-20,Ibis Bastille,Paris,3.0,137,Basic|WiFi
+2026-02-20,The Plaza,New York,5.0,1386,Iconic|Luxury
+2026-02-20,Pod 51,New York,3.0,140,Budget|Rooftop
+2026-02-21,The Ritz London,London,5.0,1021,Luxury|Spa
+2026-02-21,Strand Palace,London,4.0,252,Central|Gym
+2026-02-21,Generator London,London,3.0,52,Hostel|Bar
+2026-02-21,Ritz Paris,Paris,5.0,1463,Luxury|History
+2026-02-21,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-02-21,The Plaza,New York,5.0,1415,Iconic|Luxury
+2026-02-21,Pod 51,New York,3.0,169,Budget|Rooftop
+2026-02-22,The Ritz London,London,5.0,1022,Luxury|Spa
+2026-02-22,Strand Palace,London,4.0,282,Central|Gym
+2026-02-22,Generator London,London,3.0,71,Hostel|Bar
+2026-02-22,Ritz Paris,Paris,5.0,1507,Luxury|History
+2026-02-22,The Plaza,New York,5.0,1412,Iconic|Luxury
+2026-02-22,Pod 51,New York,3.0,162,Budget|Rooftop
+2026-02-23,The Ritz London,London,5.0,795,Luxury|Spa
+2026-02-23,Strand Palace,London,4.0,204,Central|Gym
+2026-02-23,Generator London,London,3.0,47,Hostel|Bar
+2026-02-23,Ritz Paris,Paris,5.0,1141,Luxury|History
+2026-02-23,Ibis Bastille,Paris,3.0,117,Basic|WiFi
+2026-02-23,The Plaza,New York,5.0,1039,Iconic|Luxury
+2026-02-23,Pod 51,New York,3.0,86,Budget|Rooftop
+2026-02-24,The Ritz London,London,5.0,763,Luxury|Spa
+2026-02-24,Strand Palace,London,4.0,226,Central|Gym
+2026-02-24,Generator London,London,3.0,56,Hostel|Bar
+2026-02-24,Ritz Paris,Paris,5.0,1134,Luxury|History
+2026-02-24,Ibis Bastille,Paris,3.0,80,Basic|WiFi
+2026-02-24,The Plaza,New York,5.0,1070,Iconic|Luxury
+2026-02-24,Pod 51,New York,3.0,95,Budget|Rooftop
+2026-02-25,The Ritz London,London,5.0,792,Luxury|Spa
+2026-02-25,Strand Palace,London,4.0,215,Central|Gym
+2026-02-25,Generator London,London,3.0,68,Hostel|Bar
+2026-02-25,Ritz Paris,Paris,5.0,1159,Luxury|History
+2026-02-25,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-02-25,The Plaza,New York,5.0,1042,Iconic|Luxury
+2026-02-25,Pod 51,New York,3.0,98,Budget|Rooftop
+2026-02-26,The Ritz London,London,5.0,806,Luxury|Spa
+2026-02-26,Strand Palace,London,4.0,205,Central|Gym
+2026-02-26,Generator London,London,3.0,36,Hostel|Bar
+2026-02-26,Ritz Paris,Paris,5.0,1148,Luxury|History
+2026-02-26,Ibis Bastille,Paris,3.0,70,Basic|WiFi
+2026-02-26,The Plaza,New York,5.0,1061,Iconic|Luxury
+2026-02-26,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-02-27,The Ritz London,London,5.0,1003,Luxury|Spa
+2026-02-27,Strand Palace,London,4.0,249,Central|Gym
+2026-02-27,Ritz Paris,Paris,5.0,1519,Luxury|History
+2026-02-27,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-02-27,The Plaza,New York,5.0,1405,Iconic|Luxury
+2026-02-27,Pod 51,New York,3.0,135,Budget|Rooftop
+2026-02-28,The Ritz London,London,5.0,1001,Luxury|Spa
+2026-02-28,Strand Palace,London,4.0,234,Central|Gym
+2026-02-28,Generator London,London,3.0,96,Hostel|Bar
+2026-02-28,Ritz Paris,Paris,5.0,1489,Luxury|History
+2026-02-28,Ibis Bastille,Paris,3.0,123,Basic|WiFi
+2026-02-28,The Plaza,New York,5.0,1390,Iconic|Luxury
+2026-02-28,Pod 51,New York,3.0,137,Budget|Rooftop
+2026-03-01,The Ritz London,London,5.0,1206,Luxury|Spa
+2026-03-01,Generator London,London,3.0,60,Hostel|Bar
+2026-03-01,Ritz Paris,Paris,5.0,1769,Luxury|History
+2026-03-01,Ibis Bastille,Paris,3.0,165,Basic|WiFi
+2026-03-01,The Plaza,New York,5.0,1650,Iconic|Luxury
+2026-03-01,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-03-02,The Ritz London,London,5.0,966,Luxury|Spa
+2026-03-02,Strand Palace,London,4.0,271,Central|Gym
+2026-03-02,Generator London,London,3.0,58,Hostel|Bar
+2026-03-02,Ritz Paris,Paris,5.0,1406,Luxury|History
+2026-03-02,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-03-02,The Plaza,New York,5.0,1336,Iconic|Luxury
+2026-03-02,Pod 51,New York,3.0,167,Budget|Rooftop
+2026-03-03,The Ritz London,London,5.0,996,Luxury|Spa
+2026-03-03,Strand Palace,London,4.0,256,Central|Gym
+2026-03-03,Generator London,London,3.0,45,Hostel|Bar
+2026-03-03,Ritz Paris,Paris,5.0,1407,Luxury|History
+2026-03-03,Ibis Bastille,Paris,3.0,147,Basic|WiFi
+2026-03-03,The Plaza,New York,5.0,1317,Iconic|Luxury
+2026-03-03,Pod 51,New York,3.0,136,Budget|Rooftop
+2026-03-04,The Ritz London,London,5.0,996,Luxury|Spa
+2026-03-04,Strand Palace,London,4.0,272,Central|Gym
+2026-03-04,Generator London,London,3.0,85,Hostel|Bar
+2026-03-04,Ritz Paris,Paris,5.0,1432,Luxury|History
+2026-03-04,Ibis Bastille,Paris,3.0,140,Basic|WiFi
+2026-03-04,The Plaza,New York,5.0,1309,Iconic|Luxury
+2026-03-04,Pod 51,New York,3.0,118,Budget|Rooftop
+2026-03-05,The Ritz London,London,5.0,991,Luxury|Spa
+2026-03-05,Strand Palace,London,4.0,264,Central|Gym
+2026-03-05,Generator London,London,3.0,79,Hostel|Bar
+2026-03-05,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-03-05,Ibis Bastille,Paris,3.0,113,Basic|WiFi
+2026-03-05,The Plaza,New York,5.0,1323,Iconic|Luxury
+2026-03-05,Pod 51,New York,3.0,164,Budget|Rooftop
+2026-03-06,The Ritz London,London,5.0,1196,Luxury|Spa
+2026-03-06,Strand Palace,London,4.0,292,Central|Gym
+2026-03-06,Generator London,London,3.0,82,Hostel|Bar
+2026-03-06,Ritz Paris,Paris,5.0,1784,Luxury|History
+2026-03-06,Ibis Bastille,Paris,3.0,160,Basic|WiFi
+2026-03-06,The Plaza,New York,5.0,1659,Iconic|Luxury
+2026-03-06,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-03-07,The Ritz London,London,5.0,1188,Luxury|Spa
+2026-03-07,Strand Palace,London,4.0,330,Central|Gym
+2026-03-07,Generator London,London,3.0,108,Hostel|Bar
+2026-03-07,Ritz Paris,Paris,5.0,1789,Luxury|History
+2026-03-07,Ibis Bastille,Paris,3.0,164,Basic|WiFi
+2026-03-07,The Plaza,New York,5.0,1620,Iconic|Luxury
+2026-03-07,Pod 51,New York,3.0,162,Budget|Rooftop
+2026-03-08,The Ritz London,London,5.0,1231,Luxury|Spa
+2026-03-08,Strand Palace,London,4.0,288,Central|Gym
+2026-03-08,Generator London,London,3.0,95,Hostel|Bar
+2026-03-08,Ritz Paris,Paris,5.0,1778,Luxury|History
+2026-03-08,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-03-08,The Plaza,New York,5.0,1650,Iconic|Luxury
+2026-03-08,Pod 51,New York,3.0,165,Budget|Rooftop
+2026-03-09,The Ritz London,London,5.0,978,Luxury|Spa
+2026-03-09,Strand Palace,London,4.0,229,Central|Gym
+2026-03-09,Generator London,London,3.0,92,Hostel|Bar
+2026-03-09,Ritz Paris,Paris,5.0,1437,Luxury|History
+2026-03-09,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-03-09,The Plaza,New York,5.0,1315,Iconic|Luxury
+2026-03-09,Pod 51,New York,3.0,150,Budget|Rooftop
+2026-03-10,The Ritz London,London,5.0,983,Luxury|Spa
+2026-03-10,Strand Palace,London,4.0,263,Central|Gym
+2026-03-10,Generator London,London,3.0,91,Hostel|Bar
+2026-03-10,Ritz Paris,Paris,5.0,1411,Luxury|History
+2026-03-10,Ibis Bastille,Paris,3.0,94,Basic|WiFi
+2026-03-10,The Plaza,New York,5.0,1333,Iconic|Luxury
+2026-03-10,Pod 51,New York,3.0,154,Budget|Rooftop
+2026-03-11,The Ritz London,London,5.0,954,Luxury|Spa
+2026-03-11,Strand Palace,London,4.0,267,Central|Gym
+2026-03-11,Generator London,London,3.0,49,Hostel|Bar
+2026-03-11,Ritz Paris,Paris,5.0,1397,Luxury|History
+2026-03-11,Ibis Bastille,Paris,3.0,130,Basic|WiFi
+2026-03-11,The Plaza,New York,5.0,1313,Iconic|Luxury
+2026-03-11,Pod 51,New York,3.0,134,Budget|Rooftop
+2026-03-12,The Ritz London,London,5.0,992,Luxury|Spa
+2026-03-12,Strand Palace,London,4.0,276,Central|Gym
+2026-03-12,Generator London,London,3.0,47,Hostel|Bar
+2026-03-12,Ritz Paris,Paris,5.0,1414,Luxury|History
+2026-03-12,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-03-12,The Plaza,New York,5.0,1322,Iconic|Luxury
+2026-03-12,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-03-13,The Ritz London,London,5.0,1197,Luxury|Spa
+2026-03-13,Strand Palace,London,4.0,333,Central|Gym
+2026-03-13,Generator London,London,3.0,75,Hostel|Bar
+2026-03-13,Ritz Paris,Paris,5.0,1763,Luxury|History
+2026-03-13,Ibis Bastille,Paris,3.0,156,Basic|WiFi
+2026-03-13,Pod 51,New York,3.0,182,Budget|Rooftop
+2026-03-14,The Ritz London,London,5.0,1232,Luxury|Spa
+2026-03-14,Strand Palace,London,4.0,280,Central|Gym
+2026-03-14,Generator London,London,3.0,87,Hostel|Bar
+2026-03-14,Ritz Paris,Paris,5.0,1786,Luxury|History
+2026-03-14,Ibis Bastille,Paris,3.0,127,Basic|WiFi
+2026-03-14,The Plaza,New York,5.0,1671,Iconic|Luxury
+2026-03-14,Pod 51,New York,3.0,188,Budget|Rooftop
+2026-03-15,The Ritz London,London,5.0,1203,Luxury|Spa
+2026-03-15,Strand Palace,London,4.0,289,Central|Gym
+2026-03-15,Generator London,London,3.0,77,Hostel|Bar
+2026-03-15,Ritz Paris,Paris,5.0,1744,Luxury|History
+2026-03-15,The Plaza,New York,5.0,1626,Iconic|Luxury
+2026-03-15,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-03-16,The Ritz London,London,5.0,940,Luxury|Spa
+2026-03-16,Strand Palace,London,4.0,243,Central|Gym
+2026-03-16,Generator London,London,3.0,48,Hostel|Bar
+2026-03-16,Ritz Paris,Paris,5.0,1419,Luxury|History
+2026-03-16,Ibis Bastille,Paris,3.0,100,Basic|WiFi
+2026-03-16,The Plaza,New York,5.0,1298,Iconic|Luxury
+2026-03-16,Pod 51,New York,3.0,125,Budget|Rooftop
+2026-03-17,The Ritz London,London,5.0,966,Luxury|Spa
+2026-03-17,Strand Palace,London,4.0,237,Central|Gym
+2026-03-17,Generator London,London,3.0,69,Hostel|Bar
+2026-03-17,Ritz Paris,Paris,5.0,1427,Luxury|History
+2026-03-17,Ibis Bastille,Paris,3.0,128,Basic|WiFi
+2026-03-17,The Plaza,New York,5.0,1312,Iconic|Luxury
+2026-03-17,Pod 51,New York,3.0,127,Budget|Rooftop
+2026-03-18,The Ritz London,London,5.0,950,Luxury|Spa
+2026-03-18,Strand Palace,London,4.0,276,Central|Gym
+2026-03-18,Generator London,London,3.0,85,Hostel|Bar
+2026-03-18,Ritz Paris,Paris,5.0,1390,Luxury|History
+2026-03-18,Ibis Bastille,Paris,3.0,146,Basic|WiFi
+2026-03-18,The Plaza,New York,5.0,1307,Iconic|Luxury
+2026-03-18,Pod 51,New York,3.0,165,Budget|Rooftop
+2026-03-19,The Ritz London,London,5.0,993,Luxury|Spa
+2026-03-19,Strand Palace,London,4.0,231,Central|Gym
+2026-03-19,Generator London,London,3.0,56,Hostel|Bar
+2026-03-19,Ritz Paris,Paris,5.0,1450,Luxury|History
+2026-03-19,Ibis Bastille,Paris,3.0,128,Basic|WiFi
+2026-03-19,The Plaza,New York,5.0,1320,Iconic|Luxury
+2026-03-19,Pod 51,New York,3.0,129,Budget|Rooftop
+2026-03-20,The Ritz London,London,5.0,1237,Luxury|Spa
+2026-03-20,Strand Palace,London,4.0,298,Central|Gym
+2026-03-20,Generator London,London,3.0,65,Hostel|Bar
+2026-03-20,Ritz Paris,Paris,5.0,1758,Luxury|History
+2026-03-20,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-03-20,The Plaza,New York,5.0,1624,Iconic|Luxury
+2026-03-20,Pod 51,New York,3.0,171,Budget|Rooftop
+2026-03-21,The Ritz London,London,5.0,1214,Luxury|Spa
+2026-03-21,Strand Palace,London,4.0,298,Central|Gym
+2026-03-21,Generator London,London,3.0,86,Hostel|Bar
+2026-03-21,The Plaza,New York,5.0,1651,Iconic|Luxury
+2026-03-21,Pod 51,New York,3.0,199,Budget|Rooftop
+2026-03-22,The Ritz London,London,5.0,1216,Luxury|Spa
+2026-03-22,Strand Palace,London,4.0,278,Central|Gym
+2026-03-22,Generator London,London,3.0,85,Hostel|Bar
+2026-03-22,Ritz Paris,Paris,5.0,1756,Luxury|History
+2026-03-22,Ibis Bastille,Paris,3.0,150,Basic|WiFi
+2026-03-22,Pod 51,New York,3.0,187,Budget|Rooftop
+2026-03-23,The Ritz London,London,5.0,967,Luxury|Spa
+2026-03-23,Strand Palace,London,4.0,259,Central|Gym
+2026-03-23,Generator London,London,3.0,84,Hostel|Bar
+2026-03-23,Ritz Paris,Paris,5.0,1390,Luxury|History
+2026-03-23,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-03-23,The Plaza,New York,5.0,1318,Iconic|Luxury
+2026-03-23,Pod 51,New York,3.0,113,Budget|Rooftop
+2026-03-24,The Ritz London,London,5.0,961,Luxury|Spa
+2026-03-24,Strand Palace,London,4.0,252,Central|Gym
+2026-03-24,Generator London,London,3.0,78,Hostel|Bar
+2026-03-24,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-03-24,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-03-24,The Plaza,New York,5.0,1303,Iconic|Luxury
+2026-03-24,Pod 51,New York,3.0,115,Budget|Rooftop
+2026-03-25,The Ritz London,London,5.0,996,Luxury|Spa
+2026-03-25,Strand Palace,London,4.0,275,Central|Gym
+2026-03-25,Generator London,London,3.0,67,Hostel|Bar
+2026-03-25,Ritz Paris,Paris,5.0,1395,Luxury|History
+2026-03-25,Ibis Bastille,Paris,3.0,131,Basic|WiFi
+2026-03-25,The Plaza,New York,5.0,1348,Iconic|Luxury
+2026-03-25,Pod 51,New York,3.0,110,Budget|Rooftop
+2026-03-26,The Ritz London,London,5.0,998,Luxury|Spa
+2026-03-26,Strand Palace,London,4.0,272,Central|Gym
+2026-03-26,Generator London,London,3.0,90,Hostel|Bar
+2026-03-26,Ritz Paris,Paris,5.0,1431,Luxury|History
+2026-03-26,Ibis Bastille,Paris,3.0,135,Basic|WiFi
+2026-03-26,The Plaza,New York,5.0,1300,Iconic|Luxury
+2026-03-26,Pod 51,New York,3.0,169,Budget|Rooftop
+2026-03-27,The Ritz London,London,5.0,1214,Luxury|Spa
+2026-03-27,Strand Palace,London,4.0,326,Central|Gym
+2026-03-27,Generator London,London,3.0,96,Hostel|Bar
+2026-03-27,Ritz Paris,Paris,5.0,1749,Luxury|History
+2026-03-27,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-03-27,The Plaza,New York,5.0,1639,Iconic|Luxury
+2026-03-27,Pod 51,New York,3.0,154,Budget|Rooftop
+2026-03-28,The Ritz London,London,5.0,1190,Luxury|Spa
+2026-03-28,Strand Palace,London,4.0,300,Central|Gym
+2026-03-28,Generator London,London,3.0,79,Hostel|Bar
+2026-03-28,Ritz Paris,Paris,5.0,1781,Luxury|History
+2026-03-28,Ibis Bastille,Paris,3.0,130,Basic|WiFi
+2026-03-28,The Plaza,New York,5.0,1618,Iconic|Luxury
+2026-03-28,Pod 51,New York,3.0,170,Budget|Rooftop
+2026-03-29,The Ritz London,London,5.0,1230,Luxury|Spa
+2026-03-29,Strand Palace,London,4.0,301,Central|Gym
+2026-03-29,Generator London,London,3.0,111,Hostel|Bar
+2026-03-29,Ritz Paris,Paris,5.0,1741,Luxury|History
+2026-03-29,The Plaza,New York,5.0,1663,Iconic|Luxury
+2026-03-29,Pod 51,New York,3.0,200,Budget|Rooftop
+2026-03-30,The Ritz London,London,5.0,942,Luxury|Spa
+2026-03-30,Strand Palace,London,4.0,276,Central|Gym
+2026-03-30,Generator London,London,3.0,86,Hostel|Bar
+2026-03-30,Ritz Paris,Paris,5.0,1449,Luxury|History
+2026-03-30,Ibis Bastille,Paris,3.0,100,Basic|WiFi
+2026-03-30,The Plaza,New York,5.0,1348,Iconic|Luxury
+2026-03-30,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-03-31,The Ritz London,London,5.0,968,Luxury|Spa
+2026-03-31,Strand Palace,London,4.0,247,Central|Gym
+2026-03-31,Generator London,London,3.0,42,Hostel|Bar
+2026-03-31,Ritz Paris,Paris,5.0,1396,Luxury|History
+2026-03-31,Ibis Bastille,Paris,3.0,98,Basic|WiFi
+2026-03-31,The Plaza,New York,5.0,1317,Iconic|Luxury
+2026-03-31,Pod 51,New York,3.0,143,Budget|Rooftop
+2026-04-01,The Ritz London,London,5.0,947,Luxury|Spa
+2026-04-01,Strand Palace,London,4.0,263,Central|Gym
+2026-04-01,Generator London,London,3.0,86,Hostel|Bar
+2026-04-01,Ritz Paris,Paris,5.0,1427,Luxury|History
+2026-04-01,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-04-01,The Plaza,New York,5.0,1317,Iconic|Luxury
+2026-04-01,Pod 51,New York,3.0,132,Budget|Rooftop
+2026-04-02,The Ritz London,London,5.0,941,Luxury|Spa
+2026-04-02,Strand Palace,London,4.0,230,Central|Gym
+2026-04-02,Generator London,London,3.0,61,Hostel|Bar
+2026-04-02,Ritz Paris,Paris,5.0,1445,Luxury|History
+2026-04-02,Ibis Bastille,Paris,3.0,144,Basic|WiFi
+2026-04-02,The Plaza,New York,5.0,1319,Iconic|Luxury
+2026-04-02,Pod 51,New York,3.0,148,Budget|Rooftop
+2026-04-03,The Ritz London,London,5.0,1192,Luxury|Spa
+2026-04-03,Strand Palace,London,4.0,286,Central|Gym
+2026-04-03,Generator London,London,3.0,72,Hostel|Bar
+2026-04-03,Ritz Paris,Paris,5.0,1794,Luxury|History
+2026-04-03,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-04-03,The Plaza,New York,5.0,1628,Iconic|Luxury
+2026-04-03,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-04-04,The Ritz London,London,5.0,1181,Luxury|Spa
+2026-04-04,Strand Palace,London,4.0,299,Central|Gym
+2026-04-04,Generator London,London,3.0,80,Hostel|Bar
+2026-04-04,Ritz Paris,Paris,5.0,1790,Luxury|History
+2026-04-04,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-04-04,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-04-05,The Ritz London,London,5.0,1221,Luxury|Spa
+2026-04-05,Strand Palace,London,4.0,277,Central|Gym
+2026-04-05,Generator London,London,3.0,71,Hostel|Bar
+2026-04-05,Ritz Paris,Paris,5.0,1756,Luxury|History
+2026-04-05,Ibis Bastille,Paris,3.0,142,Basic|WiFi
+2026-04-05,The Plaza,New York,5.0,1629,Iconic|Luxury
+2026-04-05,Pod 51,New York,3.0,172,Budget|Rooftop
+2026-04-06,The Ritz London,London,5.0,985,Luxury|Spa
+2026-04-06,Strand Palace,London,4.0,233,Central|Gym
+2026-04-06,Generator London,London,3.0,72,Hostel|Bar
+2026-04-06,Ritz Paris,Paris,5.0,1423,Luxury|History
+2026-04-06,Ibis Bastille,Paris,3.0,147,Basic|WiFi
+2026-04-06,The Plaza,New York,5.0,1324,Iconic|Luxury
+2026-04-06,Pod 51,New York,3.0,152,Budget|Rooftop
+2026-04-07,The Ritz London,London,5.0,971,Luxury|Spa
+2026-04-07,Strand Palace,London,4.0,224,Central|Gym
+2026-04-07,Generator London,London,3.0,49,Hostel|Bar
+2026-04-07,Ritz Paris,Paris,5.0,1429,Luxury|History
+2026-04-07,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-04-07,The Plaza,New York,5.0,1296,Iconic|Luxury
+2026-04-07,Pod 51,New York,3.0,119,Budget|Rooftop
+2026-04-08,The Ritz London,London,5.0,987,Luxury|Spa
+2026-04-08,Strand Palace,London,4.0,232,Central|Gym
+2026-04-08,Generator London,London,3.0,75,Hostel|Bar
+2026-04-08,Ritz Paris,Paris,5.0,1420,Luxury|History
+2026-04-08,Ibis Bastille,Paris,3.0,92,Basic|WiFi
+2026-04-08,The Plaza,New York,5.0,1318,Iconic|Luxury
+2026-04-08,Pod 51,New York,3.0,154,Budget|Rooftop
+2026-04-09,The Ritz London,London,5.0,956,Luxury|Spa
+2026-04-09,Strand Palace,London,4.0,246,Central|Gym
+2026-04-09,Generator London,London,3.0,97,Hostel|Bar
+2026-04-09,Ritz Paris,Paris,5.0,1412,Luxury|History
+2026-04-09,Ibis Bastille,Paris,3.0,91,Basic|WiFi
+2026-04-09,The Plaza,New York,5.0,1317,Iconic|Luxury
+2026-04-09,Pod 51,New York,3.0,157,Budget|Rooftop
+2026-04-10,The Ritz London,London,5.0,1231,Luxury|Spa
+2026-04-10,Strand Palace,London,4.0,284,Central|Gym
+2026-04-10,Generator London,London,3.0,71,Hostel|Bar
+2026-04-10,Ritz Paris,Paris,5.0,1752,Luxury|History
+2026-04-10,Ibis Bastille,Paris,3.0,125,Basic|WiFi
+2026-04-10,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-04-11,The Ritz London,London,5.0,1210,Luxury|Spa
+2026-04-11,Strand Palace,London,4.0,279,Central|Gym
+2026-04-11,Ritz Paris,Paris,5.0,1749,Luxury|History
+2026-04-11,Ibis Bastille,Paris,3.0,148,Basic|WiFi
+2026-04-11,The Plaza,New York,5.0,1653,Iconic|Luxury
+2026-04-11,Pod 51,New York,3.0,187,Budget|Rooftop
+2026-04-12,The Ritz London,London,5.0,1178,Luxury|Spa
+2026-04-12,Strand Palace,London,4.0,334,Central|Gym
+2026-04-12,Generator London,London,3.0,67,Hostel|Bar
+2026-04-12,Ritz Paris,Paris,5.0,1779,Luxury|History
+2026-04-12,The Plaza,New York,5.0,1669,Iconic|Luxury
+2026-04-12,Pod 51,New York,3.0,156,Budget|Rooftop
+2026-04-13,The Ritz London,London,5.0,992,Luxury|Spa
+2026-04-13,Strand Palace,London,4.0,255,Central|Gym
+2026-04-13,Generator London,London,3.0,91,Hostel|Bar
+2026-04-13,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-04-13,Ibis Bastille,Paris,3.0,98,Basic|WiFi
+2026-04-13,The Plaza,New York,5.0,1303,Iconic|Luxury
+2026-04-13,Pod 51,New York,3.0,158,Budget|Rooftop
+2026-04-14,The Ritz London,London,5.0,997,Luxury|Spa
+2026-04-14,Strand Palace,London,4.0,236,Central|Gym
+2026-04-14,Generator London,London,3.0,43,Hostel|Bar
+2026-04-14,Ritz Paris,Paris,5.0,1435,Luxury|History
+2026-04-14,Ibis Bastille,Paris,3.0,134,Basic|WiFi
+2026-04-14,The Plaza,New York,5.0,1313,Iconic|Luxury
+2026-04-14,Pod 51,New York,3.0,128,Budget|Rooftop
+2026-04-15,The Ritz London,London,5.0,984,Luxury|Spa
+2026-04-15,Strand Palace,London,4.0,221,Central|Gym
+2026-04-15,Generator London,London,3.0,67,Hostel|Bar
+2026-04-15,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-04-15,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-04-15,The Plaza,New York,5.0,1349,Iconic|Luxury
+2026-04-15,Pod 51,New York,3.0,118,Budget|Rooftop
+2026-04-16,The Ritz London,London,5.0,965,Luxury|Spa
+2026-04-16,Strand Palace,London,4.0,270,Central|Gym
+2026-04-16,Generator London,London,3.0,89,Hostel|Bar
+2026-04-16,Ritz Paris,Paris,5.0,1422,Luxury|History
+2026-04-16,Ibis Bastille,Paris,3.0,110,Basic|WiFi
+2026-04-16,The Plaza,New York,5.0,1339,Iconic|Luxury
+2026-04-16,Pod 51,New York,3.0,119,Budget|Rooftop
+2026-04-17,The Ritz London,London,5.0,1226,Luxury|Spa
+2026-04-17,Strand Palace,London,4.0,307,Central|Gym
+2026-04-17,Generator London,London,3.0,111,Hostel|Bar
+2026-04-17,Ibis Bastille,Paris,3.0,175,Basic|WiFi
+2026-04-17,Pod 51,New York,3.0,179,Budget|Rooftop
+2026-04-18,Strand Palace,London,4.0,327,Central|Gym
+2026-04-18,Generator London,London,3.0,77,Hostel|Bar
+2026-04-18,Ritz Paris,Paris,5.0,1771,Luxury|History
+2026-04-18,Ibis Bastille,Paris,3.0,148,Basic|WiFi
+2026-04-18,The Plaza,New York,5.0,1636,Iconic|Luxury
+2026-04-18,Pod 51,New York,3.0,150,Budget|Rooftop
+2026-04-19,The Ritz London,London,5.0,1178,Luxury|Spa
+2026-04-19,Strand Palace,London,4.0,315,Central|Gym
+2026-04-19,Generator London,London,3.0,74,Hostel|Bar
+2026-04-19,Ritz Paris,Paris,5.0,1752,Luxury|History
+2026-04-19,Ibis Bastille,Paris,3.0,150,Basic|WiFi
+2026-04-19,The Plaza,New York,5.0,1655,Iconic|Luxury
+2026-04-19,Pod 51,New York,3.0,164,Budget|Rooftop
+2026-04-20,The Ritz London,London,5.0,996,Luxury|Spa
+2026-04-20,Strand Palace,London,4.0,233,Central|Gym
+2026-04-20,Generator London,London,3.0,86,Hostel|Bar
+2026-04-20,Ritz Paris,Paris,5.0,1432,Luxury|History
+2026-04-20,Ibis Bastille,Paris,3.0,123,Basic|WiFi
+2026-04-20,The Plaza,New York,5.0,1336,Iconic|Luxury
+2026-04-20,Pod 51,New York,3.0,141,Budget|Rooftop
+2026-04-21,The Ritz London,London,5.0,982,Luxury|Spa
+2026-04-21,Strand Palace,London,4.0,235,Central|Gym
+2026-04-21,Generator London,London,3.0,55,Hostel|Bar
+2026-04-21,Ritz Paris,Paris,5.0,1444,Luxury|History
+2026-04-21,Ibis Bastille,Paris,3.0,144,Basic|WiFi
+2026-04-21,The Plaza,New York,5.0,1308,Iconic|Luxury
+2026-04-21,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-04-22,The Ritz London,London,5.0,995,Luxury|Spa
+2026-04-22,Strand Palace,London,4.0,227,Central|Gym
+2026-04-22,Generator London,London,3.0,68,Hostel|Bar
+2026-04-22,Ritz Paris,Paris,5.0,1398,Luxury|History
+2026-04-22,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-04-22,The Plaza,New York,5.0,1324,Iconic|Luxury
+2026-04-22,Pod 51,New York,3.0,140,Budget|Rooftop
+2026-04-23,The Ritz London,London,5.0,959,Luxury|Spa
+2026-04-23,Strand Palace,London,4.0,226,Central|Gym
+2026-04-23,Generator London,London,3.0,56,Hostel|Bar
+2026-04-23,Ritz Paris,Paris,5.0,1397,Luxury|History
+2026-04-23,Ibis Bastille,Paris,3.0,143,Basic|WiFi
+2026-04-23,The Plaza,New York,5.0,1350,Iconic|Luxury
+2026-04-23,Pod 51,New York,3.0,159,Budget|Rooftop
+2026-04-24,The Ritz London,London,5.0,1228,Luxury|Spa
+2026-04-24,Strand Palace,London,4.0,321,Central|Gym
+2026-04-24,Generator London,London,3.0,93,Hostel|Bar
+2026-04-24,Ritz Paris,Paris,5.0,1756,Luxury|History
+2026-04-24,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-04-24,The Plaza,New York,5.0,1621,Iconic|Luxury
+2026-04-24,Pod 51,New York,3.0,181,Budget|Rooftop
+2026-04-25,The Ritz London,London,5.0,1221,Luxury|Spa
+2026-04-25,Strand Palace,London,4.0,333,Central|Gym
+2026-04-25,Generator London,London,3.0,98,Hostel|Bar
+2026-04-25,Ritz Paris,Paris,5.0,1763,Luxury|History
+2026-04-25,Ibis Bastille,Paris,3.0,164,Basic|WiFi
+2026-04-25,Pod 51,New York,3.0,159,Budget|Rooftop
+2026-04-26,The Ritz London,London,5.0,1207,Luxury|Spa
+2026-04-26,Strand Palace,London,4.0,291,Central|Gym
+2026-04-26,Generator London,London,3.0,92,Hostel|Bar
+2026-04-26,Ritz Paris,Paris,5.0,1782,Luxury|History
+2026-04-26,Ibis Bastille,Paris,3.0,142,Basic|WiFi
+2026-04-26,The Plaza,New York,5.0,1665,Iconic|Luxury
+2026-04-26,Pod 51,New York,3.0,196,Budget|Rooftop
+2026-04-27,The Ritz London,London,5.0,963,Luxury|Spa
+2026-04-27,Strand Palace,London,4.0,249,Central|Gym
+2026-04-27,Generator London,London,3.0,53,Hostel|Bar
+2026-04-27,Ritz Paris,Paris,5.0,1423,Luxury|History
+2026-04-27,Ibis Bastille,Paris,3.0,108,Basic|WiFi
+2026-04-27,The Plaza,New York,5.0,1323,Iconic|Luxury
+2026-04-27,Pod 51,New York,3.0,149,Budget|Rooftop
+2026-04-28,The Ritz London,London,5.0,942,Luxury|Spa
+2026-04-28,Strand Palace,London,4.0,223,Central|Gym
+2026-04-28,Generator London,London,3.0,68,Hostel|Bar
+2026-04-28,Ritz Paris,Paris,5.0,1425,Luxury|History
+2026-04-28,Ibis Bastille,Paris,3.0,112,Basic|WiFi
+2026-04-28,The Plaza,New York,5.0,1305,Iconic|Luxury
+2026-04-28,Pod 51,New York,3.0,127,Budget|Rooftop
+2026-04-29,The Ritz London,London,5.0,971,Luxury|Spa
+2026-04-29,Strand Palace,London,4.0,263,Central|Gym
+2026-04-29,Generator London,London,3.0,92,Hostel|Bar
+2026-04-29,Ritz Paris,Paris,5.0,1402,Luxury|History
+2026-04-29,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-04-29,The Plaza,New York,5.0,1297,Iconic|Luxury
+2026-04-29,Pod 51,New York,3.0,166,Budget|Rooftop
+2026-04-30,The Ritz London,London,5.0,969,Luxury|Spa
+2026-04-30,Strand Palace,London,4.0,234,Central|Gym
+2026-04-30,Generator London,London,3.0,46,Hostel|Bar
+2026-04-30,Ritz Paris,Paris,5.0,1406,Luxury|History
+2026-04-30,Ibis Bastille,Paris,3.0,101,Basic|WiFi
+2026-04-30,The Plaza,New York,5.0,1305,Iconic|Luxury
+2026-04-30,Pod 51,New York,3.0,160,Budget|Rooftop
+2026-05-01,The Ritz London,London,5.0,1201,Luxury|Spa
+2026-05-01,Strand Palace,London,4.0,283,Central|Gym
+2026-05-01,Generator London,London,3.0,99,Hostel|Bar
+2026-05-01,Ritz Paris,Paris,5.0,1771,Luxury|History
+2026-05-01,Ibis Bastille,Paris,3.0,169,Basic|WiFi
+2026-05-01,The Plaza,New York,5.0,1672,Iconic|Luxury
+2026-05-01,Pod 51,New York,3.0,176,Budget|Rooftop
+2026-05-02,The Ritz London,London,5.0,1235,Luxury|Spa
+2026-05-02,Generator London,London,3.0,90,Hostel|Bar
+2026-05-02,Ritz Paris,Paris,5.0,1781,Luxury|History
+2026-05-02,Ibis Bastille,Paris,3.0,137,Basic|WiFi
+2026-05-02,The Plaza,New York,5.0,1633,Iconic|Luxury
+2026-05-02,Pod 51,New York,3.0,146,Budget|Rooftop
+2026-05-03,The Ritz London,London,5.0,1205,Luxury|Spa
+2026-05-03,Strand Palace,London,4.0,278,Central|Gym
+2026-05-03,Generator London,London,3.0,102,Hostel|Bar
+2026-05-03,Ritz Paris,Paris,5.0,1799,Luxury|History
+2026-05-03,Ibis Bastille,Paris,3.0,170,Basic|WiFi
+2026-05-03,The Plaza,New York,5.0,1621,Iconic|Luxury
+2026-05-03,Pod 51,New York,3.0,178,Budget|Rooftop
+2026-05-04,The Ritz London,London,5.0,985,Luxury|Spa
+2026-05-04,Strand Palace,London,4.0,272,Central|Gym
+2026-05-04,Generator London,London,3.0,75,Hostel|Bar
+2026-05-04,Ritz Paris,Paris,5.0,1440,Luxury|History
+2026-05-04,Ibis Bastille,Paris,3.0,115,Basic|WiFi
+2026-05-04,The Plaza,New York,5.0,1304,Iconic|Luxury
+2026-05-04,Pod 51,New York,3.0,154,Budget|Rooftop
+2026-05-05,The Ritz London,London,5.0,946,Luxury|Spa
+2026-05-05,Strand Palace,London,4.0,224,Central|Gym
+2026-05-05,Generator London,London,3.0,62,Hostel|Bar
+2026-05-05,Ritz Paris,Paris,5.0,1402,Luxury|History
+2026-05-05,Ibis Bastille,Paris,3.0,94,Basic|WiFi
+2026-05-05,The Plaza,New York,5.0,1346,Iconic|Luxury
+2026-05-05,Pod 51,New York,3.0,113,Budget|Rooftop
+2026-05-06,The Ritz London,London,5.0,977,Luxury|Spa
+2026-05-06,Strand Palace,London,4.0,233,Central|Gym
+2026-05-06,Generator London,London,3.0,94,Hostel|Bar
+2026-05-06,Ritz Paris,Paris,5.0,1428,Luxury|History
+2026-05-06,Ibis Bastille,Paris,3.0,131,Basic|WiFi
+2026-05-06,The Plaza,New York,5.0,1293,Iconic|Luxury
+2026-05-06,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-05-07,The Ritz London,London,5.0,997,Luxury|Spa
+2026-05-07,Strand Palace,London,4.0,243,Central|Gym
+2026-05-07,Generator London,London,3.0,91,Hostel|Bar
+2026-05-07,Ritz Paris,Paris,5.0,1408,Luxury|History
+2026-05-07,Ibis Bastille,Paris,3.0,100,Basic|WiFi
+2026-05-07,The Plaza,New York,5.0,1312,Iconic|Luxury
+2026-05-07,Pod 51,New York,3.0,146,Budget|Rooftop
+2026-05-08,The Ritz London,London,5.0,1192,Luxury|Spa
+2026-05-08,Strand Palace,London,4.0,278,Central|Gym
+2026-05-08,Generator London,London,3.0,65,Hostel|Bar
+2026-05-08,Ritz Paris,Paris,5.0,1779,Luxury|History
+2026-05-08,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-05-08,The Plaza,New York,5.0,1661,Iconic|Luxury
+2026-05-08,Pod 51,New York,3.0,191,Budget|Rooftop
+2026-05-09,The Ritz London,London,5.0,1232,Luxury|Spa
+2026-05-09,Strand Palace,London,4.0,290,Central|Gym
+2026-05-09,Ritz Paris,Paris,5.0,1769,Luxury|History
+2026-05-09,Ibis Bastille,Paris,3.0,126,Basic|WiFi
+2026-05-09,The Plaza,New York,5.0,1623,Iconic|Luxury
+2026-05-09,Pod 51,New York,3.0,176,Budget|Rooftop
+2026-05-10,The Ritz London,London,5.0,1183,Luxury|Spa
+2026-05-10,Generator London,London,3.0,60,Hostel|Bar
+2026-05-10,Ritz Paris,Paris,5.0,1772,Luxury|History
+2026-05-10,Ibis Bastille,Paris,3.0,153,Basic|WiFi
+2026-05-10,The Plaza,New York,5.0,1624,Iconic|Luxury
+2026-05-10,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-05-11,The Ritz London,London,5.0,953,Luxury|Spa
+2026-05-11,Strand Palace,London,4.0,229,Central|Gym
+2026-05-11,Generator London,London,3.0,53,Hostel|Bar
+2026-05-11,Ritz Paris,Paris,5.0,1417,Luxury|History
+2026-05-11,Ibis Bastille,Paris,3.0,119,Basic|WiFi
+2026-05-11,The Plaza,New York,5.0,1303,Iconic|Luxury
+2026-05-11,Pod 51,New York,3.0,119,Budget|Rooftop
+2026-05-12,The Ritz London,London,5.0,956,Luxury|Spa
+2026-05-12,Strand Palace,London,4.0,271,Central|Gym
+2026-05-12,Generator London,London,3.0,83,Hostel|Bar
+2026-05-12,Ritz Paris,Paris,5.0,1431,Luxury|History
+2026-05-12,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-05-12,The Plaza,New York,5.0,1290,Iconic|Luxury
+2026-05-12,Pod 51,New York,3.0,138,Budget|Rooftop
+2026-05-13,The Ritz London,London,5.0,999,Luxury|Spa
+2026-05-13,Strand Palace,London,4.0,279,Central|Gym
+2026-05-13,Generator London,London,3.0,93,Hostel|Bar
+2026-05-13,Ritz Paris,Paris,5.0,1434,Luxury|History
+2026-05-13,Ibis Bastille,Paris,3.0,147,Basic|WiFi
+2026-05-13,The Plaza,New York,5.0,1291,Iconic|Luxury
+2026-05-13,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-05-14,The Ritz London,London,5.0,980,Luxury|Spa
+2026-05-14,Strand Palace,London,4.0,261,Central|Gym
+2026-05-14,Generator London,London,3.0,54,Hostel|Bar
+2026-05-14,Ritz Paris,Paris,5.0,1434,Luxury|History
+2026-05-14,Ibis Bastille,Paris,3.0,147,Basic|WiFi
+2026-05-14,The Plaza,New York,5.0,1296,Iconic|Luxury
+2026-05-14,Pod 51,New York,3.0,165,Budget|Rooftop
+2026-05-15,The Ritz London,London,5.0,1206,Luxury|Spa
+2026-05-15,Strand Palace,London,4.0,301,Central|Gym
+2026-05-15,Generator London,London,3.0,107,Hostel|Bar
+2026-05-15,Ritz Paris,Paris,5.0,1775,Luxury|History
+2026-05-15,Ibis Bastille,Paris,3.0,174,Basic|WiFi
+2026-05-15,The Plaza,New York,5.0,1671,Iconic|Luxury
+2026-05-16,The Ritz London,London,5.0,1207,Luxury|Spa
+2026-05-16,Strand Palace,London,4.0,320,Central|Gym
+2026-05-16,Generator London,London,3.0,53,Hostel|Bar
+2026-05-16,Ritz Paris,Paris,5.0,1759,Luxury|History
+2026-05-16,Ibis Bastille,Paris,3.0,151,Basic|WiFi
+2026-05-16,The Plaza,New York,5.0,1634,Iconic|Luxury
+2026-05-17,The Ritz London,London,5.0,1208,Luxury|Spa
+2026-05-17,Strand Palace,London,4.0,334,Central|Gym
+2026-05-17,Generator London,London,3.0,83,Hostel|Bar
+2026-05-17,Ritz Paris,Paris,5.0,1776,Luxury|History
+2026-05-17,Ibis Bastille,Paris,3.0,163,Basic|WiFi
+2026-05-17,The Plaza,New York,5.0,1665,Iconic|Luxury
+2026-05-17,Pod 51,New York,3.0,178,Budget|Rooftop
+2026-05-18,The Ritz London,London,5.0,951,Luxury|Spa
+2026-05-18,Strand Palace,London,4.0,275,Central|Gym
+2026-05-18,Generator London,London,3.0,79,Hostel|Bar
+2026-05-18,Ritz Paris,Paris,5.0,1445,Luxury|History
+2026-05-18,Ibis Bastille,Paris,3.0,110,Basic|WiFi
+2026-05-18,The Plaza,New York,5.0,1339,Iconic|Luxury
+2026-05-18,Pod 51,New York,3.0,149,Budget|Rooftop
+2026-05-19,The Ritz London,London,5.0,964,Luxury|Spa
+2026-05-19,Strand Palace,London,4.0,239,Central|Gym
+2026-05-19,Generator London,London,3.0,50,Hostel|Bar
+2026-05-19,Ritz Paris,Paris,5.0,1416,Luxury|History
+2026-05-19,Ibis Bastille,Paris,3.0,114,Basic|WiFi
+2026-05-19,The Plaza,New York,5.0,1344,Iconic|Luxury
+2026-05-19,Pod 51,New York,3.0,113,Budget|Rooftop
+2026-05-20,The Ritz London,London,5.0,978,Luxury|Spa
+2026-05-20,Strand Palace,London,4.0,256,Central|Gym
+2026-05-20,Generator London,London,3.0,80,Hostel|Bar
+2026-05-20,Ritz Paris,Paris,5.0,1449,Luxury|History
+2026-05-20,Ibis Bastille,Paris,3.0,128,Basic|WiFi
+2026-05-20,The Plaza,New York,5.0,1290,Iconic|Luxury
+2026-05-20,Pod 51,New York,3.0,123,Budget|Rooftop
+2026-05-21,The Ritz London,London,5.0,961,Luxury|Spa
+2026-05-21,Strand Palace,London,4.0,244,Central|Gym
+2026-05-21,Generator London,London,3.0,84,Hostel|Bar
+2026-05-21,Ritz Paris,Paris,5.0,1434,Luxury|History
+2026-05-21,Ibis Bastille,Paris,3.0,92,Basic|WiFi
+2026-05-21,The Plaza,New York,5.0,1309,Iconic|Luxury
+2026-05-21,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-05-22,The Ritz London,London,5.0,1186,Luxury|Spa
+2026-05-22,Strand Palace,London,4.0,295,Central|Gym
+2026-05-22,Generator London,London,3.0,70,Hostel|Bar
+2026-05-22,Ritz Paris,Paris,5.0,1753,Luxury|History
+2026-05-22,Ibis Bastille,Paris,3.0,164,Basic|WiFi
+2026-05-22,The Plaza,New York,5.0,1631,Iconic|Luxury
+2026-05-22,Pod 51,New York,3.0,193,Budget|Rooftop
+2026-05-23,The Ritz London,London,5.0,1185,Luxury|Spa
+2026-05-23,Strand Palace,London,4.0,332,Central|Gym
+2026-05-23,Generator London,London,3.0,93,Hostel|Bar
+2026-05-23,Ritz Paris,Paris,5.0,1764,Luxury|History
+2026-05-23,Ibis Bastille,Paris,3.0,151,Basic|WiFi
+2026-05-23,The Plaza,New York,5.0,1638,Iconic|Luxury
+2026-05-23,Pod 51,New York,3.0,147,Budget|Rooftop
+2026-05-24,The Ritz London,London,5.0,1179,Luxury|Spa
+2026-05-24,Strand Palace,London,4.0,299,Central|Gym
+2026-05-24,Generator London,London,3.0,54,Hostel|Bar
+2026-05-24,Ritz Paris,Paris,5.0,1747,Luxury|History
+2026-05-24,Ibis Bastille,Paris,3.0,125,Basic|WiFi
+2026-05-24,The Plaza,New York,5.0,1629,Iconic|Luxury
+2026-05-24,Pod 51,New York,3.0,180,Budget|Rooftop
+2026-05-25,The Ritz London,London,5.0,940,Luxury|Spa
+2026-05-25,Strand Palace,London,4.0,234,Central|Gym
+2026-05-25,Generator London,London,3.0,64,Hostel|Bar
+2026-05-25,Ritz Paris,Paris,5.0,1399,Luxury|History
+2026-05-25,Ibis Bastille,Paris,3.0,112,Basic|WiFi
+2026-05-25,The Plaza,New York,5.0,1319,Iconic|Luxury
+2026-05-25,Pod 51,New York,3.0,157,Budget|Rooftop
+2026-05-26,The Ritz London,London,5.0,994,Luxury|Spa
+2026-05-26,Strand Palace,London,4.0,260,Central|Gym
+2026-05-26,Generator London,London,3.0,90,Hostel|Bar
+2026-05-26,Ritz Paris,Paris,5.0,1431,Luxury|History
+2026-05-26,Ibis Bastille,Paris,3.0,109,Basic|WiFi
+2026-05-26,The Plaza,New York,5.0,1299,Iconic|Luxury
+2026-05-26,Pod 51,New York,3.0,129,Budget|Rooftop
+2026-05-27,The Ritz London,London,5.0,968,Luxury|Spa
+2026-05-27,Strand Palace,London,4.0,251,Central|Gym
+2026-05-27,Generator London,London,3.0,42,Hostel|Bar
+2026-05-27,Ritz Paris,Paris,5.0,1424,Luxury|History
+2026-05-27,Ibis Bastille,Paris,3.0,123,Basic|WiFi
+2026-05-27,The Plaza,New York,5.0,1292,Iconic|Luxury
+2026-05-27,Pod 51,New York,3.0,124,Budget|Rooftop
+2026-05-28,The Ritz London,London,5.0,951,Luxury|Spa
+2026-05-28,Strand Palace,London,4.0,232,Central|Gym
+2026-05-28,Generator London,London,3.0,76,Hostel|Bar
+2026-05-28,Ritz Paris,Paris,5.0,1397,Luxury|History
+2026-05-28,Ibis Bastille,Paris,3.0,92,Basic|WiFi
+2026-05-28,The Plaza,New York,5.0,1346,Iconic|Luxury
+2026-05-28,Pod 51,New York,3.0,139,Budget|Rooftop
+2026-05-29,The Ritz London,London,5.0,1188,Luxury|Spa
+2026-05-29,Strand Palace,London,4.0,321,Central|Gym
+2026-05-29,Generator London,London,3.0,95,Hostel|Bar
+2026-05-29,Ritz Paris,Paris,5.0,1741,Luxury|History
+2026-05-29,Ibis Bastille,Paris,3.0,132,Basic|WiFi
+2026-05-29,The Plaza,New York,5.0,1654,Iconic|Luxury
+2026-05-29,Pod 51,New York,3.0,152,Budget|Rooftop
+2026-05-30,The Ritz London,London,5.0,1208,Luxury|Spa
+2026-05-30,Strand Palace,London,4.0,277,Central|Gym
+2026-05-30,Generator London,London,3.0,108,Hostel|Bar
+2026-05-30,Ritz Paris,Paris,5.0,1747,Luxury|History
+2026-05-30,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-05-30,The Plaza,New York,5.0,1641,Iconic|Luxury
+2026-05-31,The Ritz London,London,5.0,1235,Luxury|Spa
+2026-05-31,Strand Palace,London,4.0,318,Central|Gym
+2026-05-31,Generator London,London,3.0,53,Hostel|Bar
+2026-05-31,Ritz Paris,Paris,5.0,1788,Luxury|History
+2026-05-31,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-05-31,The Plaza,New York,5.0,1660,Iconic|Luxury
+2026-05-31,Pod 51,New York,3.0,156,Budget|Rooftop
+2026-06-01,The Ritz London,London,5.0,949,Luxury|Spa
+2026-06-01,Strand Palace,London,4.0,270,Central|Gym
+2026-06-01,Generator London,London,3.0,41,Hostel|Bar
+2026-06-01,Ritz Paris,Paris,5.0,1394,Luxury|History
+2026-06-01,Ibis Bastille,Paris,3.0,137,Basic|WiFi
+2026-06-01,The Plaza,New York,5.0,1339,Iconic|Luxury
+2026-06-01,Pod 51,New York,3.0,127,Budget|Rooftop
+2026-06-02,The Ritz London,London,5.0,966,Luxury|Spa
+2026-06-02,Strand Palace,London,4.0,244,Central|Gym
+2026-06-02,Generator London,London,3.0,92,Hostel|Bar
+2026-06-02,Ritz Paris,Paris,5.0,1428,Luxury|History
+2026-06-02,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-06-02,The Plaza,New York,5.0,1343,Iconic|Luxury
+2026-06-02,Pod 51,New York,3.0,156,Budget|Rooftop
+2026-06-03,The Ritz London,London,5.0,980,Luxury|Spa
+2026-06-03,Strand Palace,London,4.0,221,Central|Gym
+2026-06-03,Generator London,London,3.0,56,Hostel|Bar
+2026-06-03,Ritz Paris,Paris,5.0,1417,Luxury|History
+2026-06-03,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-06-03,The Plaza,New York,5.0,1314,Iconic|Luxury
+2026-06-03,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-06-04,The Ritz London,London,5.0,976,Luxury|Spa
+2026-06-04,Strand Palace,London,4.0,248,Central|Gym
+2026-06-04,Generator London,London,3.0,76,Hostel|Bar
+2026-06-04,Ritz Paris,Paris,5.0,1435,Luxury|History
+2026-06-04,Ibis Bastille,Paris,3.0,91,Basic|WiFi
+2026-06-04,The Plaza,New York,5.0,1348,Iconic|Luxury
+2026-06-04,Pod 51,New York,3.0,124,Budget|Rooftop
+2026-06-05,The Ritz London,London,5.0,1201,Luxury|Spa
+2026-06-05,Strand Palace,London,4.0,308,Central|Gym
+2026-06-05,Generator London,London,3.0,74,Hostel|Bar
+2026-06-05,Ritz Paris,Paris,5.0,1794,Luxury|History
+2026-06-05,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-06-05,The Plaza,New York,5.0,1642,Iconic|Luxury
+2026-06-05,Pod 51,New York,3.0,181,Budget|Rooftop
+2026-06-06,The Ritz London,London,5.0,1208,Luxury|Spa
+2026-06-06,Strand Palace,London,4.0,317,Central|Gym
+2026-06-06,Generator London,London,3.0,77,Hostel|Bar
+2026-06-06,Ritz Paris,Paris,5.0,1786,Luxury|History
+2026-06-06,Ibis Bastille,Paris,3.0,146,Basic|WiFi
+2026-06-06,The Plaza,New York,5.0,1644,Iconic|Luxury
+2026-06-06,Pod 51,New York,3.0,181,Budget|Rooftop
+2026-06-07,Strand Palace,London,4.0,319,Central|Gym
+2026-06-07,Generator London,London,3.0,112,Hostel|Bar
+2026-06-07,Ritz Paris,Paris,5.0,1741,Luxury|History
+2026-06-07,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-06-07,Pod 51,New York,3.0,141,Budget|Rooftop
+2026-06-08,The Ritz London,London,5.0,945,Luxury|Spa
+2026-06-08,Strand Palace,London,4.0,259,Central|Gym
+2026-06-08,Generator London,London,3.0,85,Hostel|Bar
+2026-06-08,Ritz Paris,Paris,5.0,1403,Luxury|History
+2026-06-08,Ibis Bastille,Paris,3.0,112,Basic|WiFi
+2026-06-08,The Plaza,New York,5.0,1294,Iconic|Luxury
+2026-06-08,Pod 51,New York,3.0,123,Budget|Rooftop
+2026-06-09,The Ritz London,London,5.0,951,Luxury|Spa
+2026-06-09,Strand Palace,London,4.0,268,Central|Gym
+2026-06-09,Generator London,London,3.0,91,Hostel|Bar
+2026-06-09,Ritz Paris,Paris,5.0,1409,Luxury|History
+2026-06-09,Ibis Bastille,Paris,3.0,112,Basic|WiFi
+2026-06-09,The Plaza,New York,5.0,1347,Iconic|Luxury
+2026-06-09,Pod 51,New York,3.0,116,Budget|Rooftop
+2026-06-10,The Ritz London,London,5.0,994,Luxury|Spa
+2026-06-10,Strand Palace,London,4.0,276,Central|Gym
+2026-06-10,Generator London,London,3.0,85,Hostel|Bar
+2026-06-10,Ritz Paris,Paris,5.0,1439,Luxury|History
+2026-06-10,Ibis Bastille,Paris,3.0,142,Basic|WiFi
+2026-06-10,The Plaza,New York,5.0,1337,Iconic|Luxury
+2026-06-10,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-06-11,The Ritz London,London,5.0,956,Luxury|Spa
+2026-06-11,Strand Palace,London,4.0,220,Central|Gym
+2026-06-11,Generator London,London,3.0,83,Hostel|Bar
+2026-06-11,Ritz Paris,Paris,5.0,1407,Luxury|History
+2026-06-11,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-06-11,The Plaza,New York,5.0,1315,Iconic|Luxury
+2026-06-11,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-06-12,Strand Palace,London,4.0,327,Central|Gym
+2026-06-12,Generator London,London,3.0,74,Hostel|Bar
+2026-06-12,Ritz Paris,Paris,5.0,1794,Luxury|History
+2026-06-12,Ibis Bastille,Paris,3.0,174,Basic|WiFi
+2026-06-12,The Plaza,New York,5.0,1635,Iconic|Luxury
+2026-06-12,Pod 51,New York,3.0,180,Budget|Rooftop
+2026-06-13,The Ritz London,London,5.0,1189,Luxury|Spa
+2026-06-13,Strand Palace,London,4.0,322,Central|Gym
+2026-06-13,Generator London,London,3.0,111,Hostel|Bar
+2026-06-13,Ritz Paris,Paris,5.0,1742,Luxury|History
+2026-06-13,Ibis Bastille,Paris,3.0,171,Basic|WiFi
+2026-06-13,The Plaza,New York,5.0,1659,Iconic|Luxury
+2026-06-13,Pod 51,New York,3.0,141,Budget|Rooftop
+2026-06-14,The Ritz London,London,5.0,1234,Luxury|Spa
+2026-06-14,Strand Palace,London,4.0,311,Central|Gym
+2026-06-14,Generator London,London,3.0,95,Hostel|Bar
+2026-06-14,Ritz Paris,Paris,5.0,1753,Luxury|History
+2026-06-14,Ibis Bastille,Paris,3.0,153,Basic|WiFi
+2026-06-14,The Plaza,New York,5.0,1618,Iconic|Luxury
+2026-06-14,Pod 51,New York,3.0,177,Budget|Rooftop
+2026-06-15,The Ritz London,London,5.0,993,Luxury|Spa
+2026-06-15,Strand Palace,London,4.0,223,Central|Gym
+2026-06-15,Generator London,London,3.0,56,Hostel|Bar
+2026-06-15,Ritz Paris,Paris,5.0,1428,Luxury|History
+2026-06-15,Ibis Bastille,Paris,3.0,125,Basic|WiFi
+2026-06-15,The Plaza,New York,5.0,1319,Iconic|Luxury
+2026-06-15,Pod 51,New York,3.0,150,Budget|Rooftop
+2026-06-16,The Ritz London,London,5.0,975,Luxury|Spa
+2026-06-16,Strand Palace,London,4.0,237,Central|Gym
+2026-06-16,Generator London,London,3.0,54,Hostel|Bar
+2026-06-16,Ritz Paris,Paris,5.0,1420,Luxury|History
+2026-06-16,Ibis Bastille,Paris,3.0,142,Basic|WiFi
+2026-06-16,The Plaza,New York,5.0,1311,Iconic|Luxury
+2026-06-16,Pod 51,New York,3.0,147,Budget|Rooftop
+2026-06-17,The Ritz London,London,5.0,972,Luxury|Spa
+2026-06-17,Strand Palace,London,4.0,268,Central|Gym
+2026-06-17,Generator London,London,3.0,51,Hostel|Bar
+2026-06-17,Ritz Paris,Paris,5.0,1411,Luxury|History
+2026-06-17,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-06-17,The Plaza,New York,5.0,1327,Iconic|Luxury
+2026-06-17,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-06-18,The Ritz London,London,5.0,948,Luxury|Spa
+2026-06-18,Strand Palace,London,4.0,278,Central|Gym
+2026-06-18,Generator London,London,3.0,57,Hostel|Bar
+2026-06-18,Ritz Paris,Paris,5.0,1433,Luxury|History
+2026-06-18,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-06-18,The Plaza,New York,5.0,1312,Iconic|Luxury
+2026-06-18,Pod 51,New York,3.0,132,Budget|Rooftop
+2026-06-19,The Ritz London,London,5.0,1177,Luxury|Spa
+2026-06-19,Strand Palace,London,4.0,337,Central|Gym
+2026-06-19,Generator London,London,3.0,59,Hostel|Bar
+2026-06-19,Ritz Paris,Paris,5.0,1771,Luxury|History
+2026-06-19,Ibis Bastille,Paris,3.0,151,Basic|WiFi
+2026-06-19,The Plaza,New York,5.0,1626,Iconic|Luxury
+2026-06-19,Pod 51,New York,3.0,157,Budget|Rooftop
+2026-06-20,The Ritz London,London,5.0,1203,Luxury|Spa
+2026-06-20,Generator London,London,3.0,80,Hostel|Bar
+2026-06-20,Ritz Paris,Paris,5.0,1773,Luxury|History
+2026-06-20,Ibis Bastille,Paris,3.0,170,Basic|WiFi
+2026-06-20,The Plaza,New York,5.0,1673,Iconic|Luxury
+2026-06-20,Pod 51,New York,3.0,180,Budget|Rooftop
+2026-06-21,The Ritz London,London,5.0,1177,Luxury|Spa
+2026-06-21,Strand Palace,London,4.0,324,Central|Gym
+2026-06-21,Generator London,London,3.0,93,Hostel|Bar
+2026-06-21,Ritz Paris,Paris,5.0,1773,Luxury|History
+2026-06-21,Ibis Bastille,Paris,3.0,155,Basic|WiFi
+2026-06-21,The Plaza,New York,5.0,1648,Iconic|Luxury
+2026-06-21,Pod 51,New York,3.0,157,Budget|Rooftop
+2026-06-22,The Ritz London,London,5.0,977,Luxury|Spa
+2026-06-22,Strand Palace,London,4.0,266,Central|Gym
+2026-06-22,Generator London,London,3.0,56,Hostel|Bar
+2026-06-22,Ritz Paris,Paris,5.0,1401,Luxury|History
+2026-06-22,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-06-22,The Plaza,New York,5.0,1343,Iconic|Luxury
+2026-06-22,Pod 51,New York,3.0,115,Budget|Rooftop
+2026-06-23,The Ritz London,London,5.0,989,Luxury|Spa
+2026-06-23,Strand Palace,London,4.0,279,Central|Gym
+2026-06-23,Generator London,London,3.0,56,Hostel|Bar
+2026-06-23,Ritz Paris,Paris,5.0,1392,Luxury|History
+2026-06-23,Ibis Bastille,Paris,3.0,120,Basic|WiFi
+2026-06-23,The Plaza,New York,5.0,1311,Iconic|Luxury
+2026-06-23,Pod 51,New York,3.0,125,Budget|Rooftop
+2026-06-24,The Ritz London,London,5.0,958,Luxury|Spa
+2026-06-24,Strand Palace,London,4.0,236,Central|Gym
+2026-06-24,Generator London,London,3.0,40,Hostel|Bar
+2026-06-24,Ritz Paris,Paris,5.0,1391,Luxury|History
+2026-06-24,Ibis Bastille,Paris,3.0,110,Basic|WiFi
+2026-06-24,The Plaza,New York,5.0,1309,Iconic|Luxury
+2026-06-24,Pod 51,New York,3.0,141,Budget|Rooftop
+2026-06-25,The Ritz London,London,5.0,971,Luxury|Spa
+2026-06-25,Strand Palace,London,4.0,266,Central|Gym
+2026-06-25,Generator London,London,3.0,86,Hostel|Bar
+2026-06-25,Ritz Paris,Paris,5.0,1428,Luxury|History
+2026-06-25,Ibis Bastille,Paris,3.0,112,Basic|WiFi
+2026-06-25,The Plaza,New York,5.0,1315,Iconic|Luxury
+2026-06-25,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-06-26,Strand Palace,London,4.0,305,Central|Gym
+2026-06-26,Generator London,London,3.0,111,Hostel|Bar
+2026-06-26,Ritz Paris,Paris,5.0,1743,Luxury|History
+2026-06-26,Ibis Bastille,Paris,3.0,172,Basic|WiFi
+2026-06-26,The Plaza,New York,5.0,1637,Iconic|Luxury
+2026-06-26,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-06-27,The Ritz London,London,5.0,1190,Luxury|Spa
+2026-06-27,Ritz Paris,Paris,5.0,1776,Luxury|History
+2026-06-27,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-06-27,The Plaza,New York,5.0,1669,Iconic|Luxury
+2026-06-27,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-06-28,The Ritz London,London,5.0,1234,Luxury|Spa
+2026-06-28,Strand Palace,London,4.0,332,Central|Gym
+2026-06-28,Generator London,London,3.0,54,Hostel|Bar
+2026-06-28,Ritz Paris,Paris,5.0,1793,Luxury|History
+2026-06-28,The Plaza,New York,5.0,1637,Iconic|Luxury
+2026-06-28,Pod 51,New York,3.0,162,Budget|Rooftop
+2026-06-29,The Ritz London,London,5.0,968,Luxury|Spa
+2026-06-29,Strand Palace,London,4.0,235,Central|Gym
+2026-06-29,Generator London,London,3.0,79,Hostel|Bar
+2026-06-29,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-06-29,Ibis Bastille,Paris,3.0,96,Basic|WiFi
+2026-06-29,The Plaza,New York,5.0,1348,Iconic|Luxury
+2026-06-29,Pod 51,New York,3.0,140,Budget|Rooftop
+2026-06-30,The Ritz London,London,5.0,996,Luxury|Spa
+2026-06-30,Strand Palace,London,4.0,220,Central|Gym
+2026-06-30,Generator London,London,3.0,70,Hostel|Bar
+2026-06-30,Ritz Paris,Paris,5.0,1401,Luxury|History
+2026-06-30,Ibis Bastille,Paris,3.0,104,Basic|WiFi
+2026-06-30,The Plaza,New York,5.0,1340,Iconic|Luxury
+2026-06-30,Pod 51,New York,3.0,120,Budget|Rooftop
+2026-07-01,The Ritz London,London,5.0,1357,Luxury|Spa
+2026-07-01,Strand Palace,London,4.0,312,Central|Gym
+2026-07-01,Generator London,London,3.0,107,Hostel|Bar
+2026-07-01,The Plaza,New York,5.0,1816,Iconic|Luxury
+2026-07-01,Pod 51,New York,3.0,186,Budget|Rooftop
+2026-07-02,The Ritz London,London,5.0,1331,Luxury|Spa
+2026-07-02,Generator London,London,3.0,68,Hostel|Bar
+2026-07-02,Ritz Paris,Paris,5.0,1991,Luxury|History
+2026-07-02,Ibis Bastille,Paris,3.0,174,Basic|WiFi
+2026-07-02,The Plaza,New York,5.0,1814,Iconic|Luxury
+2026-07-02,Pod 51,New York,3.0,183,Budget|Rooftop
+2026-07-03,The Ritz London,London,5.0,1564,Luxury|Spa
+2026-07-03,Generator London,London,3.0,93,Hostel|Bar
+2026-07-03,Ritz Paris,Paris,5.0,2339,Luxury|History
+2026-07-03,Pod 51,New York,3.0,219,Budget|Rooftop
+2026-07-04,Strand Palace,London,4.0,396,Central|Gym
+2026-07-04,Ritz Paris,Paris,5.0,2333,Luxury|History
+2026-07-04,Ibis Bastille,Paris,3.0,214,Basic|WiFi
+2026-07-04,The Plaza,New York,5.0,2137,Iconic|Luxury
+2026-07-05,Generator London,London,3.0,111,Hostel|Bar
+2026-07-05,Ibis Bastille,Paris,3.0,210,Basic|WiFi
+2026-07-05,Pod 51,New York,3.0,198,Budget|Rooftop
+2026-07-06,Ritz Paris,Paris,5.0,1955,Luxury|History
+2026-07-06,The Plaza,New York,5.0,1809,Iconic|Luxury
+2026-07-06,Pod 51,New York,3.0,197,Budget|Rooftop
+2026-07-07,The Ritz London,London,5.0,1346,Luxury|Spa
+2026-07-07,Generator London,London,3.0,101,Hostel|Bar
+2026-07-07,Ibis Bastille,Paris,3.0,168,Basic|WiFi
+2026-07-07,Pod 51,New York,3.0,182,Budget|Rooftop
+2026-07-08,The Ritz London,London,5.0,1357,Luxury|Spa
+2026-07-08,Strand Palace,London,4.0,347,Central|Gym
+2026-07-08,Generator London,London,3.0,96,Hostel|Bar
+2026-07-08,Ibis Bastille,Paris,3.0,171,Basic|WiFi
+2026-07-08,The Plaza,New York,5.0,1835,Iconic|Luxury
+2026-07-08,Pod 51,New York,3.0,198,Budget|Rooftop
+2026-07-09,The Ritz London,London,5.0,1320,Luxury|Spa
+2026-07-09,Strand Palace,London,4.0,330,Central|Gym
+2026-07-09,Generator London,London,3.0,62,Hostel|Bar
+2026-07-09,Ibis Bastille,Paris,3.0,183,Basic|WiFi
+2026-07-10,The Ritz London,London,5.0,1572,Luxury|Spa
+2026-07-10,Strand Palace,London,4.0,376,Central|Gym
+2026-07-10,Generator London,London,3.0,84,Hostel|Bar
+2026-07-10,Ritz Paris,Paris,5.0,2301,Luxury|History
+2026-07-10,The Plaza,New York,5.0,2143,Iconic|Luxury
+2026-07-10,Pod 51,New York,3.0,240,Budget|Rooftop
+2026-07-11,Generator London,London,3.0,75,Hostel|Bar
+2026-07-11,Ibis Bastille,Paris,3.0,172,Basic|WiFi
+2026-07-11,The Plaza,New York,5.0,2161,Iconic|Luxury
+2026-07-11,Pod 51,New York,3.0,199,Budget|Rooftop
+2026-07-12,The Ritz London,London,5.0,1594,Luxury|Spa
+2026-07-13,The Ritz London,London,5.0,1326,Luxury|Spa
+2026-07-13,Strand Palace,London,4.0,314,Central|Gym
+2026-07-13,Ritz Paris,Paris,5.0,2008,Luxury|History
+2026-07-13,Ibis Bastille,Paris,3.0,166,Basic|WiFi
+2026-07-13,The Plaza,New York,5.0,1858,Iconic|Luxury
+2026-07-13,Pod 51,New York,3.0,215,Budget|Rooftop
+2026-07-14,The Ritz London,London,5.0,1353,Luxury|Spa
+2026-07-14,Generator London,London,3.0,113,Hostel|Bar
+2026-07-14,Ibis Bastille,Paris,3.0,170,Basic|WiFi
+2026-07-15,The Ritz London,London,5.0,1347,Luxury|Spa
+2026-07-15,Strand Palace,London,4.0,339,Central|Gym
+2026-07-15,Generator London,London,3.0,63,Hostel|Bar
+2026-07-15,Ritz Paris,Paris,5.0,1984,Luxury|History
+2026-07-15,Ibis Bastille,Paris,3.0,132,Basic|WiFi
+2026-07-15,Pod 51,New York,3.0,215,Budget|Rooftop
+2026-07-16,The Ritz London,London,5.0,1327,Luxury|Spa
+2026-07-16,Strand Palace,London,4.0,369,Central|Gym
+2026-07-16,Ritz Paris,Paris,5.0,1965,Luxury|History
+2026-07-16,Ibis Bastille,Paris,3.0,153,Basic|WiFi
+2026-07-16,The Plaza,New York,5.0,1822,Iconic|Luxury
+2026-07-16,Pod 51,New York,3.0,184,Budget|Rooftop
+2026-07-17,The Ritz London,London,5.0,1567,Luxury|Spa
+2026-07-17,Strand Palace,London,4.0,395,Central|Gym
+2026-07-17,Ritz Paris,Paris,5.0,2311,Luxury|History
+2026-07-17,Ibis Bastille,Paris,3.0,185,Basic|WiFi
+2026-07-17,The Plaza,New York,5.0,2164,Iconic|Luxury
+2026-07-17,Pod 51,New York,3.0,189,Budget|Rooftop
+2026-07-18,Strand Palace,London,4.0,383,Central|Gym
+2026-07-18,Ritz Paris,Paris,5.0,2332,Luxury|History
+2026-07-18,Ibis Bastille,Paris,3.0,189,Basic|WiFi
+2026-07-18,Pod 51,New York,3.0,233,Budget|Rooftop
+2026-07-19,Strand Palace,London,4.0,401,Central|Gym
+2026-07-19,Ritz Paris,Paris,5.0,2319,Luxury|History
+2026-07-19,Ibis Bastille,Paris,3.0,190,Basic|WiFi
+2026-07-19,The Plaza,New York,5.0,2176,Iconic|Luxury
+2026-07-19,Pod 51,New York,3.0,190,Budget|Rooftop
+2026-07-20,The Ritz London,London,5.0,1335,Luxury|Spa
+2026-07-20,Strand Palace,London,4.0,354,Central|Gym
+2026-07-20,Generator London,London,3.0,109,Hostel|Bar
+2026-07-20,Ritz Paris,Paris,5.0,1979,Luxury|History
+2026-07-20,The Plaza,New York,5.0,1864,Iconic|Luxury
+2026-07-20,Pod 51,New York,3.0,209,Budget|Rooftop
+2026-07-21,The Ritz London,London,5.0,1373,Luxury|Spa
+2026-07-21,Strand Palace,London,4.0,340,Central|Gym
+2026-07-21,Generator London,London,3.0,101,Hostel|Bar
+2026-07-21,Ritz Paris,Paris,5.0,1979,Luxury|History
+2026-07-21,Ibis Bastille,Paris,3.0,177,Basic|WiFi
+2026-07-21,The Plaza,New York,5.0,1815,Iconic|Luxury
+2026-07-22,The Ritz London,London,5.0,1351,Luxury|Spa
+2026-07-22,Strand Palace,London,4.0,348,Central|Gym
+2026-07-22,Generator London,London,3.0,100,Hostel|Bar
+2026-07-22,Ritz Paris,Paris,5.0,1958,Luxury|History
+2026-07-22,The Plaza,New York,5.0,1815,Iconic|Luxury
+2026-07-22,Pod 51,New York,3.0,197,Budget|Rooftop
+2026-07-23,The Ritz London,London,5.0,1346,Luxury|Spa
+2026-07-23,Strand Palace,London,4.0,355,Central|Gym
+2026-07-23,Ritz Paris,Paris,5.0,1978,Luxury|History
+2026-07-23,Ibis Bastille,Paris,3.0,133,Basic|WiFi
+2026-07-23,The Plaza,New York,5.0,1839,Iconic|Luxury
+2026-07-23,Pod 51,New York,3.0,202,Budget|Rooftop
+2026-07-24,Strand Palace,London,4.0,420,Central|Gym
+2026-07-24,Pod 51,New York,3.0,214,Budget|Rooftop
+2026-07-25,The Ritz London,London,5.0,1607,Luxury|Spa
+2026-07-25,Strand Palace,London,4.0,406,Central|Gym
+2026-07-25,Ibis Bastille,Paris,3.0,177,Basic|WiFi
+2026-07-25,The Plaza,New York,5.0,2186,Iconic|Luxury
+2026-07-26,The Ritz London,London,5.0,1566,Luxury|Spa
+2026-07-26,Strand Palace,London,4.0,386,Central|Gym
+2026-07-26,Generator London,London,3.0,72,Hostel|Bar
+2026-07-26,Ritz Paris,Paris,5.0,2356,Luxury|History
+2026-07-26,Pod 51,New York,3.0,245,Budget|Rooftop
+2026-07-27,Strand Palace,London,4.0,356,Central|Gym
+2026-07-27,Ritz Paris,Paris,5.0,1988,Luxury|History
+2026-07-27,Ibis Bastille,Paris,3.0,130,Basic|WiFi
+2026-07-27,The Plaza,New York,5.0,1831,Iconic|Luxury
+2026-07-28,The Ritz London,London,5.0,1347,Luxury|Spa
+2026-07-28,Strand Palace,London,4.0,343,Central|Gym
+2026-07-28,Ritz Paris,Paris,5.0,1965,Luxury|History
+2026-07-28,Ibis Bastille,Paris,3.0,136,Basic|WiFi
+2026-07-28,The Plaza,New York,5.0,1825,Iconic|Luxury
+2026-07-28,Pod 51,New York,3.0,197,Budget|Rooftop
+2026-07-29,Ritz Paris,Paris,5.0,1961,Luxury|History
+2026-07-29,Ibis Bastille,Paris,3.0,188,Basic|WiFi
+2026-07-29,Pod 51,New York,3.0,201,Budget|Rooftop
+2026-07-30,The Ritz London,London,5.0,1369,Luxury|Spa
+2026-07-30,Strand Palace,London,4.0,315,Central|Gym
+2026-07-30,Generator London,London,3.0,79,Hostel|Bar
+2026-07-30,Ritz Paris,Paris,5.0,1975,Luxury|History
+2026-07-30,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-07-30,The Plaza,New York,5.0,1834,Iconic|Luxury
+2026-07-31,The Ritz London,London,5.0,1561,Luxury|Spa
+2026-07-31,Ritz Paris,Paris,5.0,2347,Luxury|History
+2026-07-31,The Plaza,New York,5.0,2156,Iconic|Luxury
+2026-07-31,Pod 51,New York,3.0,212,Budget|Rooftop
+2026-08-01,The Ritz London,London,5.0,1562,Luxury|Spa
+2026-08-01,Strand Palace,London,4.0,386,Central|Gym
+2026-08-01,The Plaza,New York,5.0,2185,Iconic|Luxury
+2026-08-01,Pod 51,New York,3.0,214,Budget|Rooftop
+2026-08-02,Strand Palace,London,4.0,416,Central|Gym
+2026-08-02,Generator London,London,3.0,130,Hostel|Bar
+2026-08-02,Ritz Paris,Paris,5.0,2319,Luxury|History
+2026-08-02,Ibis Bastille,Paris,3.0,195,Basic|WiFi
+2026-08-02,The Plaza,New York,5.0,2184,Iconic|Luxury
+2026-08-03,Generator London,London,3.0,72,Hostel|Bar
+2026-08-03,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-08-03,Pod 51,New York,3.0,174,Budget|Rooftop
+2026-08-04,The Ritz London,London,5.0,1367,Luxury|Spa
+2026-08-04,Strand Palace,London,4.0,364,Central|Gym
+2026-08-04,The Plaza,New York,5.0,1823,Iconic|Luxury
+2026-08-05,The Ritz London,London,5.0,1331,Luxury|Spa
+2026-08-05,Generator London,London,3.0,89,Hostel|Bar
+2026-08-05,The Plaza,New York,5.0,1867,Iconic|Luxury
+2026-08-06,Strand Palace,London,4.0,361,Central|Gym
+2026-08-06,Generator London,London,3.0,87,Hostel|Bar
+2026-08-06,Ritz Paris,Paris,5.0,1993,Luxury|History
+2026-08-06,The Plaza,New York,5.0,1841,Iconic|Luxury
+2026-08-06,Pod 51,New York,3.0,167,Budget|Rooftop
+2026-08-07,The Ritz London,London,5.0,1589,Luxury|Spa
+2026-08-07,Generator London,London,3.0,79,Hostel|Bar
+2026-08-07,Ritz Paris,Paris,5.0,2341,Luxury|History
+2026-08-07,Ibis Bastille,Paris,3.0,177,Basic|WiFi
+2026-08-07,The Plaza,New York,5.0,2167,Iconic|Luxury
+2026-08-07,Pod 51,New York,3.0,221,Budget|Rooftop
+2026-08-08,The Ritz London,London,5.0,1586,Luxury|Spa
+2026-08-08,Generator London,London,3.0,88,Hostel|Bar
+2026-08-08,Ibis Bastille,Paris,3.0,202,Basic|WiFi
+2026-08-08,The Plaza,New York,5.0,2175,Iconic|Luxury
+2026-08-08,Pod 51,New York,3.0,241,Budget|Rooftop
+2026-08-09,The Plaza,New York,5.0,2191,Iconic|Luxury
+2026-08-09,Pod 51,New York,3.0,196,Budget|Rooftop
+2026-08-10,The Ritz London,London,5.0,1357,Luxury|Spa
+2026-08-10,Strand Palace,London,4.0,324,Central|Gym
+2026-08-10,Generator London,London,3.0,119,Hostel|Bar
+2026-08-10,Ritz Paris,Paris,5.0,1964,Luxury|History
+2026-08-10,The Plaza,New York,5.0,1810,Iconic|Luxury
+2026-08-11,Strand Palace,London,4.0,315,Central|Gym
+2026-08-11,Generator London,London,3.0,72,Hostel|Bar
+2026-08-11,Ritz Paris,Paris,5.0,2001,Luxury|History
+2026-08-11,The Plaza,New York,5.0,1865,Iconic|Luxury
+2026-08-11,Pod 51,New York,3.0,179,Budget|Rooftop
+2026-08-12,The Ritz London,London,5.0,1357,Luxury|Spa
+2026-08-12,Strand Palace,London,4.0,334,Central|Gym
+2026-08-12,Generator London,London,3.0,101,Hostel|Bar
+2026-08-12,Ritz Paris,Paris,5.0,1974,Luxury|History
+2026-08-12,The Plaza,New York,5.0,1825,Iconic|Luxury
+2026-08-13,The Ritz London,London,5.0,1355,Luxury|Spa
+2026-08-13,Ritz Paris,Paris,5.0,1972,Luxury|History
+2026-08-13,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-08-13,Pod 51,New York,3.0,193,Budget|Rooftop
+2026-08-14,The Ritz London,London,5.0,1590,Luxury|Spa
+2026-08-14,Strand Palace,London,4.0,414,Central|Gym
+2026-08-14,Ritz Paris,Paris,5.0,2309,Luxury|History
+2026-08-14,The Plaza,New York,5.0,2169,Iconic|Luxury
+2026-08-14,Pod 51,New York,3.0,225,Budget|Rooftop
+2026-08-15,The Ritz London,London,5.0,1583,Luxury|Spa
+2026-08-15,Strand Palace,London,4.0,414,Central|Gym
+2026-08-15,Generator London,London,3.0,111,Hostel|Bar
+2026-08-15,Ritz Paris,Paris,5.0,2352,Luxury|History
+2026-08-15,Ibis Bastille,Paris,3.0,188,Basic|WiFi
+2026-08-16,Strand Palace,London,4.0,370,Central|Gym
+2026-08-16,Generator London,London,3.0,118,Hostel|Bar
+2026-08-16,Ritz Paris,Paris,5.0,2325,Luxury|History
+2026-08-16,Ibis Bastille,Paris,3.0,181,Basic|WiFi
+2026-08-16,Pod 51,New York,3.0,192,Budget|Rooftop
+2026-08-17,The Ritz London,London,5.0,1323,Luxury|Spa
+2026-08-17,Strand Palace,London,4.0,355,Central|Gym
+2026-08-17,Ritz Paris,Paris,5.0,2008,Luxury|History
+2026-08-17,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-08-18,The Ritz London,London,5.0,1340,Luxury|Spa
+2026-08-18,Strand Palace,London,4.0,368,Central|Gym
+2026-08-18,Generator London,London,3.0,93,Hostel|Bar
+2026-08-18,Ritz Paris,Paris,5.0,1981,Luxury|History
+2026-08-18,Ibis Bastille,Paris,3.0,185,Basic|WiFi
+2026-08-18,The Plaza,New York,5.0,1815,Iconic|Luxury
+2026-08-18,Pod 51,New York,3.0,166,Budget|Rooftop
+2026-08-19,The Ritz London,London,5.0,1321,Luxury|Spa
+2026-08-19,Strand Palace,London,4.0,324,Central|Gym
+2026-08-19,Generator London,London,3.0,91,Hostel|Bar
+2026-08-19,Ritz Paris,Paris,5.0,1987,Luxury|History
+2026-08-19,Ibis Bastille,Paris,3.0,146,Basic|WiFi
+2026-08-19,The Plaza,New York,5.0,1851,Iconic|Luxury
+2026-08-20,The Ritz London,London,5.0,1364,Luxury|Spa
+2026-08-20,Strand Palace,London,4.0,329,Central|Gym
+2026-08-20,Generator London,London,3.0,85,Hostel|Bar
+2026-08-20,Ritz Paris,Paris,5.0,1988,Luxury|History
+2026-08-20,The Plaza,New York,5.0,1836,Iconic|Luxury
+2026-08-20,Pod 51,New York,3.0,190,Budget|Rooftop
+2026-08-21,Strand Palace,London,4.0,377,Central|Gym
+2026-08-21,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-08-21,The Plaza,New York,5.0,2194,Iconic|Luxury
+2026-08-21,Pod 51,New York,3.0,225,Budget|Rooftop
+2026-08-22,The Ritz London,London,5.0,1594,Luxury|Spa
+2026-08-22,Strand Palace,London,4.0,415,Central|Gym
+2026-08-22,Ritz Paris,Paris,5.0,2327,Luxury|History
+2026-08-22,The Plaza,New York,5.0,2144,Iconic|Luxury
+2026-08-23,Strand Palace,London,4.0,421,Central|Gym
+2026-08-23,Ibis Bastille,Paris,3.0,181,Basic|WiFi
+2026-08-23,Pod 51,New York,3.0,210,Budget|Rooftop
+2026-08-24,The Ritz London,London,5.0,1338,Luxury|Spa
+2026-08-24,Generator London,London,3.0,113,Hostel|Bar
+2026-08-24,Ibis Bastille,Paris,3.0,131,Basic|WiFi
+2026-08-24,Pod 51,New York,3.0,168,Budget|Rooftop
+2026-08-25,Strand Palace,London,4.0,359,Central|Gym
+2026-08-25,Generator London,London,3.0,102,Hostel|Bar
+2026-08-25,Ritz Paris,Paris,5.0,1982,Luxury|History
+2026-08-25,Pod 51,New York,3.0,180,Budget|Rooftop
+2026-08-26,Strand Palace,London,4.0,331,Central|Gym
+2026-08-26,Generator London,London,3.0,97,Hostel|Bar
+2026-08-26,Ritz Paris,Paris,5.0,1966,Luxury|History
+2026-08-26,Ibis Bastille,Paris,3.0,178,Basic|WiFi
+2026-08-26,The Plaza,New York,5.0,1858,Iconic|Luxury
+2026-08-26,Pod 51,New York,3.0,164,Budget|Rooftop
+2026-08-27,The Ritz London,London,5.0,1337,Luxury|Spa
+2026-08-27,Generator London,London,3.0,69,Hostel|Bar
+2026-08-27,Ritz Paris,Paris,5.0,1974,Luxury|History
+2026-08-27,The Plaza,New York,5.0,1810,Iconic|Luxury
+2026-08-27,Pod 51,New York,3.0,213,Budget|Rooftop
+2026-08-28,The Ritz London,London,5.0,1566,Luxury|Spa
+2026-08-28,Strand Palace,London,4.0,396,Central|Gym
+2026-08-28,Generator London,London,3.0,114,Hostel|Bar
+2026-08-28,Ritz Paris,Paris,5.0,2302,Luxury|History
+2026-08-28,Ibis Bastille,Paris,3.0,193,Basic|WiFi
+2026-08-28,The Plaza,New York,5.0,2170,Iconic|Luxury
+2026-08-28,Pod 51,New York,3.0,209,Budget|Rooftop
+2026-08-29,Strand Palace,London,4.0,390,Central|Gym
+2026-08-29,Generator London,London,3.0,102,Hostel|Bar
+2026-08-29,Pod 51,New York,3.0,226,Budget|Rooftop
+2026-08-30,Strand Palace,London,4.0,387,Central|Gym
+2026-08-30,Generator London,London,3.0,110,Hostel|Bar
+2026-08-30,Ritz Paris,Paris,5.0,2345,Luxury|History
+2026-08-30,The Plaza,New York,5.0,2148,Iconic|Luxury
+2026-08-31,The Ritz London,London,5.0,1328,Luxury|Spa
+2026-08-31,Strand Palace,London,4.0,347,Central|Gym
+2026-08-31,Ritz Paris,Paris,5.0,1950,Luxury|History
+2026-08-31,Ibis Bastille,Paris,3.0,183,Basic|WiFi
+2026-08-31,The Plaza,New York,5.0,1854,Iconic|Luxury
+2026-08-31,Pod 51,New York,3.0,176,Budget|Rooftop
+2026-09-01,The Ritz London,London,5.0,941,Luxury|Spa
+2026-09-01,Strand Palace,London,4.0,258,Central|Gym
+2026-09-01,Generator London,London,3.0,52,Hostel|Bar
+2026-09-01,Ritz Paris,Paris,5.0,1400,Luxury|History
+2026-09-01,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-09-01,The Plaza,New York,5.0,1319,Iconic|Luxury
+2026-09-01,Pod 51,New York,3.0,131,Budget|Rooftop
+2026-09-02,The Ritz London,London,5.0,962,Luxury|Spa
+2026-09-02,Strand Palace,London,4.0,257,Central|Gym
+2026-09-02,Generator London,London,3.0,75,Hostel|Bar
+2026-09-02,Ritz Paris,Paris,5.0,1434,Luxury|History
+2026-09-02,Ibis Bastille,Paris,3.0,147,Basic|WiFi
+2026-09-02,The Plaza,New York,5.0,1318,Iconic|Luxury
+2026-09-02,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-09-03,The Ritz London,London,5.0,989,Luxury|Spa
+2026-09-03,Strand Palace,London,4.0,233,Central|Gym
+2026-09-03,Generator London,London,3.0,48,Hostel|Bar
+2026-09-03,Ritz Paris,Paris,5.0,1392,Luxury|History
+2026-09-03,Ibis Bastille,Paris,3.0,119,Basic|WiFi
+2026-09-03,The Plaza,New York,5.0,1306,Iconic|Luxury
+2026-09-03,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-09-04,The Ritz London,London,5.0,1215,Luxury|Spa
+2026-09-04,Strand Palace,London,4.0,332,Central|Gym
+2026-09-04,Generator London,London,3.0,95,Hostel|Bar
+2026-09-04,Ritz Paris,Paris,5.0,1782,Luxury|History
+2026-09-04,Ibis Bastille,Paris,3.0,116,Basic|WiFi
+2026-09-04,The Plaza,New York,5.0,1652,Iconic|Luxury
+2026-09-04,Pod 51,New York,3.0,173,Budget|Rooftop
+2026-09-05,The Ritz London,London,5.0,1210,Luxury|Spa
+2026-09-05,Strand Palace,London,4.0,298,Central|Gym
+2026-09-05,Generator London,London,3.0,55,Hostel|Bar
+2026-09-05,Ritz Paris,Paris,5.0,1750,Luxury|History
+2026-09-05,Ibis Bastille,Paris,3.0,156,Basic|WiFi
+2026-09-05,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-09-06,The Ritz London,London,5.0,1222,Luxury|Spa
+2026-09-06,Strand Palace,London,4.0,296,Central|Gym
+2026-09-06,Generator London,London,3.0,104,Hostel|Bar
+2026-09-06,Ritz Paris,Paris,5.0,1794,Luxury|History
+2026-09-06,Ibis Bastille,Paris,3.0,169,Basic|WiFi
+2026-09-06,The Plaza,New York,5.0,1649,Iconic|Luxury
+2026-09-06,Pod 51,New York,3.0,182,Budget|Rooftop
+2026-09-07,The Ritz London,London,5.0,984,Luxury|Spa
+2026-09-07,Strand Palace,London,4.0,275,Central|Gym
+2026-09-07,Generator London,London,3.0,94,Hostel|Bar
+2026-09-07,Ritz Paris,Paris,5.0,1395,Luxury|History
+2026-09-07,Ibis Bastille,Paris,3.0,114,Basic|WiFi
+2026-09-07,The Plaza,New York,5.0,1348,Iconic|Luxury
+2026-09-07,Pod 51,New York,3.0,161,Budget|Rooftop
+2026-09-08,The Ritz London,London,5.0,968,Luxury|Spa
+2026-09-08,Strand Palace,London,4.0,238,Central|Gym
+2026-09-08,Generator London,London,3.0,78,Hostel|Bar
+2026-09-08,Ritz Paris,Paris,5.0,1434,Luxury|History
+2026-09-08,Ibis Bastille,Paris,3.0,101,Basic|WiFi
+2026-09-08,The Plaza,New York,5.0,1350,Iconic|Luxury
+2026-09-08,Pod 51,New York,3.0,129,Budget|Rooftop
+2026-09-09,The Ritz London,London,5.0,973,Luxury|Spa
+2026-09-09,Strand Palace,London,4.0,237,Central|Gym
+2026-09-09,Generator London,London,3.0,69,Hostel|Bar
+2026-09-09,Ritz Paris,Paris,5.0,1450,Luxury|History
+2026-09-09,Ibis Bastille,Paris,3.0,143,Basic|WiFi
+2026-09-09,The Plaza,New York,5.0,1343,Iconic|Luxury
+2026-09-09,Pod 51,New York,3.0,117,Budget|Rooftop
+2026-09-10,The Ritz London,London,5.0,956,Luxury|Spa
+2026-09-10,Strand Palace,London,4.0,276,Central|Gym
+2026-09-10,Generator London,London,3.0,63,Hostel|Bar
+2026-09-10,Ritz Paris,Paris,5.0,1404,Luxury|History
+2026-09-10,Ibis Bastille,Paris,3.0,141,Basic|WiFi
+2026-09-10,The Plaza,New York,5.0,1313,Iconic|Luxury
+2026-09-10,Pod 51,New York,3.0,166,Budget|Rooftop
+2026-09-11,The Ritz London,London,5.0,1209,Luxury|Spa
+2026-09-11,Strand Palace,London,4.0,333,Central|Gym
+2026-09-11,Generator London,London,3.0,103,Hostel|Bar
+2026-09-11,Ritz Paris,Paris,5.0,1740,Luxury|History
+2026-09-11,Ibis Bastille,Paris,3.0,151,Basic|WiFi
+2026-09-11,The Plaza,New York,5.0,1662,Iconic|Luxury
+2026-09-11,Pod 51,New York,3.0,183,Budget|Rooftop
+2026-09-12,The Ritz London,London,5.0,1235,Luxury|Spa
+2026-09-12,Strand Palace,London,4.0,284,Central|Gym
+2026-09-12,Generator London,London,3.0,78,Hostel|Bar
+2026-09-12,Ritz Paris,Paris,5.0,1768,Luxury|History
+2026-09-12,Ibis Bastille,Paris,3.0,119,Basic|WiFi
+2026-09-12,The Plaza,New York,5.0,1631,Iconic|Luxury
+2026-09-12,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-09-13,The Ritz London,London,5.0,1215,Luxury|Spa
+2026-09-13,Strand Palace,London,4.0,325,Central|Gym
+2026-09-13,Generator London,London,3.0,93,Hostel|Bar
+2026-09-13,Ritz Paris,Paris,5.0,1753,Luxury|History
+2026-09-13,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-09-13,The Plaza,New York,5.0,1670,Iconic|Luxury
+2026-09-13,Pod 51,New York,3.0,174,Budget|Rooftop
+2026-09-14,The Ritz London,London,5.0,946,Luxury|Spa
+2026-09-14,Strand Palace,London,4.0,220,Central|Gym
+2026-09-14,Generator London,London,3.0,42,Hostel|Bar
+2026-09-14,Ritz Paris,Paris,5.0,1450,Luxury|History
+2026-09-14,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-09-14,The Plaza,New York,5.0,1298,Iconic|Luxury
+2026-09-14,Pod 51,New York,3.0,133,Budget|Rooftop
+2026-09-15,The Ritz London,London,5.0,953,Luxury|Spa
+2026-09-15,Strand Palace,London,4.0,223,Central|Gym
+2026-09-15,Generator London,London,3.0,74,Hostel|Bar
+2026-09-15,Ritz Paris,Paris,5.0,1440,Luxury|History
+2026-09-15,Ibis Bastille,Paris,3.0,127,Basic|WiFi
+2026-09-15,The Plaza,New York,5.0,1313,Iconic|Luxury
+2026-09-15,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-09-16,The Ritz London,London,5.0,948,Luxury|Spa
+2026-09-16,Strand Palace,London,4.0,227,Central|Gym
+2026-09-16,Generator London,London,3.0,95,Hostel|Bar
+2026-09-16,Ritz Paris,Paris,5.0,1427,Luxury|History
+2026-09-16,Ibis Bastille,Paris,3.0,100,Basic|WiFi
+2026-09-16,The Plaza,New York,5.0,1313,Iconic|Luxury
+2026-09-16,Pod 51,New York,3.0,116,Budget|Rooftop
+2026-09-17,The Ritz London,London,5.0,976,Luxury|Spa
+2026-09-17,Strand Palace,London,4.0,262,Central|Gym
+2026-09-17,Generator London,London,3.0,65,Hostel|Bar
+2026-09-17,Ritz Paris,Paris,5.0,1396,Luxury|History
+2026-09-17,Ibis Bastille,Paris,3.0,100,Basic|WiFi
+2026-09-17,The Plaza,New York,5.0,1308,Iconic|Luxury
+2026-09-17,Pod 51,New York,3.0,118,Budget|Rooftop
+2026-09-18,The Ritz London,London,5.0,1200,Luxury|Spa
+2026-09-18,Strand Palace,London,4.0,291,Central|Gym
+2026-09-18,Generator London,London,3.0,104,Hostel|Bar
+2026-09-18,Ritz Paris,Paris,5.0,1744,Luxury|History
+2026-09-18,Pod 51,New York,3.0,142,Budget|Rooftop
+2026-09-19,The Ritz London,London,5.0,1181,Luxury|Spa
+2026-09-19,Strand Palace,London,4.0,277,Central|Gym
+2026-09-19,Generator London,London,3.0,97,Hostel|Bar
+2026-09-19,Ritz Paris,Paris,5.0,1772,Luxury|History
+2026-09-19,Ibis Bastille,Paris,3.0,175,Basic|WiFi
+2026-09-19,The Plaza,New York,5.0,1639,Iconic|Luxury
+2026-09-19,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-09-20,The Ritz London,London,5.0,1218,Luxury|Spa
+2026-09-20,Strand Palace,London,4.0,277,Central|Gym
+2026-09-20,Generator London,London,3.0,100,Hostel|Bar
+2026-09-20,Ritz Paris,Paris,5.0,1763,Luxury|History
+2026-09-20,Ibis Bastille,Paris,3.0,175,Basic|WiFi
+2026-09-20,The Plaza,New York,5.0,1639,Iconic|Luxury
+2026-09-20,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-09-21,The Ritz London,London,5.0,981,Luxury|Spa
+2026-09-21,Strand Palace,London,4.0,252,Central|Gym
+2026-09-21,Generator London,London,3.0,52,Hostel|Bar
+2026-09-21,Ritz Paris,Paris,5.0,1449,Luxury|History
+2026-09-21,Ibis Bastille,Paris,3.0,133,Basic|WiFi
+2026-09-21,The Plaza,New York,5.0,1328,Iconic|Luxury
+2026-09-21,Pod 51,New York,3.0,137,Budget|Rooftop
+2026-09-22,The Ritz London,London,5.0,960,Luxury|Spa
+2026-09-22,Strand Palace,London,4.0,230,Central|Gym
+2026-09-22,Generator London,London,3.0,89,Hostel|Bar
+2026-09-22,Ritz Paris,Paris,5.0,1443,Luxury|History
+2026-09-22,Ibis Bastille,Paris,3.0,145,Basic|WiFi
+2026-09-22,The Plaza,New York,5.0,1312,Iconic|Luxury
+2026-09-22,Pod 51,New York,3.0,163,Budget|Rooftop
+2026-09-23,The Ritz London,London,5.0,951,Luxury|Spa
+2026-09-23,Strand Palace,London,4.0,229,Central|Gym
+2026-09-23,Generator London,London,3.0,53,Hostel|Bar
+2026-09-23,Ritz Paris,Paris,5.0,1447,Luxury|History
+2026-09-23,Ibis Bastille,Paris,3.0,127,Basic|WiFi
+2026-09-23,The Plaza,New York,5.0,1331,Iconic|Luxury
+2026-09-23,Pod 51,New York,3.0,148,Budget|Rooftop
+2026-09-24,The Ritz London,London,5.0,975,Luxury|Spa
+2026-09-24,Strand Palace,London,4.0,226,Central|Gym
+2026-09-24,Generator London,London,3.0,92,Hostel|Bar
+2026-09-24,Ritz Paris,Paris,5.0,1395,Luxury|History
+2026-09-24,Ibis Bastille,Paris,3.0,131,Basic|WiFi
+2026-09-24,The Plaza,New York,5.0,1333,Iconic|Luxury
+2026-09-24,Pod 51,New York,3.0,147,Budget|Rooftop
+2026-09-25,The Ritz London,London,5.0,1224,Luxury|Spa
+2026-09-25,Strand Palace,London,4.0,319,Central|Gym
+2026-09-25,Generator London,London,3.0,105,Hostel|Bar
+2026-09-25,Ritz Paris,Paris,5.0,1757,Luxury|History
+2026-09-25,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-09-25,Pod 51,New York,3.0,192,Budget|Rooftop
+2026-09-26,The Ritz London,London,5.0,1190,Luxury|Spa
+2026-09-26,Strand Palace,London,4.0,308,Central|Gym
+2026-09-26,Generator London,London,3.0,93,Hostel|Bar
+2026-09-26,Ritz Paris,Paris,5.0,1792,Luxury|History
+2026-09-26,Ibis Bastille,Paris,3.0,125,Basic|WiFi
+2026-09-26,The Plaza,New York,5.0,1649,Iconic|Luxury
+2026-09-26,Pod 51,New York,3.0,148,Budget|Rooftop
+2026-09-27,The Ritz London,London,5.0,1187,Luxury|Spa
+2026-09-27,Strand Palace,London,4.0,312,Central|Gym
+2026-09-27,Generator London,London,3.0,90,Hostel|Bar
+2026-09-27,Ritz Paris,Paris,5.0,1743,Luxury|History
+2026-09-27,The Plaza,New York,5.0,1639,Iconic|Luxury
+2026-09-27,Pod 51,New York,3.0,155,Budget|Rooftop
+2026-09-28,The Ritz London,London,5.0,981,Luxury|Spa
+2026-09-28,Strand Palace,London,4.0,232,Central|Gym
+2026-09-28,Generator London,London,3.0,41,Hostel|Bar
+2026-09-28,Ritz Paris,Paris,5.0,1430,Luxury|History
+2026-09-28,Ibis Bastille,Paris,3.0,141,Basic|WiFi
+2026-09-28,The Plaza,New York,5.0,1308,Iconic|Luxury
+2026-09-28,Pod 51,New York,3.0,143,Budget|Rooftop
+2026-09-29,The Ritz London,London,5.0,941,Luxury|Spa
+2026-09-29,Strand Palace,London,4.0,246,Central|Gym
+2026-09-29,Generator London,London,3.0,98,Hostel|Bar
+2026-09-29,Ritz Paris,Paris,5.0,1430,Luxury|History
+2026-09-29,Ibis Bastille,Paris,3.0,103,Basic|WiFi
+2026-09-29,The Plaza,New York,5.0,1303,Iconic|Luxury
+2026-09-29,Pod 51,New York,3.0,166,Budget|Rooftop
+2026-09-30,The Ritz London,London,5.0,952,Luxury|Spa
+2026-09-30,Strand Palace,London,4.0,275,Central|Gym
+2026-09-30,Generator London,London,3.0,69,Hostel|Bar
+2026-09-30,Ritz Paris,Paris,5.0,1394,Luxury|History
+2026-09-30,Ibis Bastille,Paris,3.0,129,Basic|WiFi
+2026-09-30,The Plaza,New York,5.0,1314,Iconic|Luxury
+2026-09-30,Pod 51,New York,3.0,139,Budget|Rooftop
+2026-10-01,The Ritz London,London,5.0,978,Luxury|Spa
+2026-10-01,Strand Palace,London,4.0,227,Central|Gym
+2026-10-01,Generator London,London,3.0,47,Hostel|Bar
+2026-10-01,Ritz Paris,Paris,5.0,1419,Luxury|History
+2026-10-01,Ibis Bastille,Paris,3.0,146,Basic|WiFi
+2026-10-01,The Plaza,New York,5.0,1302,Iconic|Luxury
+2026-10-01,Pod 51,New York,3.0,136,Budget|Rooftop
+2026-10-02,The Ritz London,London,5.0,1220,Luxury|Spa
+2026-10-02,Strand Palace,London,4.0,307,Central|Gym
+2026-10-02,Generator London,London,3.0,107,Hostel|Bar
+2026-10-02,Ritz Paris,Paris,5.0,1770,Luxury|History
+2026-10-02,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-10-02,Pod 51,New York,3.0,192,Budget|Rooftop
+2026-10-03,The Ritz London,London,5.0,1200,Luxury|Spa
+2026-10-03,Strand Palace,London,4.0,281,Central|Gym
+2026-10-03,Generator London,London,3.0,67,Hostel|Bar
+2026-10-03,Ritz Paris,Paris,5.0,1751,Luxury|History
+2026-10-03,Ibis Bastille,Paris,3.0,128,Basic|WiFi
+2026-10-03,The Plaza,New York,5.0,1673,Iconic|Luxury
+2026-10-03,Pod 51,New York,3.0,160,Budget|Rooftop
+2026-10-04,The Ritz London,London,5.0,1208,Luxury|Spa
+2026-10-04,Strand Palace,London,4.0,308,Central|Gym
+2026-10-04,Generator London,London,3.0,68,Hostel|Bar
+2026-10-04,Ritz Paris,Paris,5.0,1756,Luxury|History
+2026-10-04,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-10-04,The Plaza,New York,5.0,1660,Iconic|Luxury
+2026-10-04,Pod 51,New York,3.0,161,Budget|Rooftop
+2026-10-05,The Ritz London,London,5.0,970,Luxury|Spa
+2026-10-05,Strand Palace,London,4.0,236,Central|Gym
+2026-10-05,Generator London,London,3.0,76,Hostel|Bar
+2026-10-05,Ritz Paris,Paris,5.0,1414,Luxury|History
+2026-10-05,Ibis Bastille,Paris,3.0,95,Basic|WiFi
+2026-10-05,The Plaza,New York,5.0,1331,Iconic|Luxury
+2026-10-05,Pod 51,New York,3.0,147,Budget|Rooftop
+2026-10-06,The Ritz London,London,5.0,980,Luxury|Spa
+2026-10-06,Strand Palace,London,4.0,242,Central|Gym
+2026-10-06,Generator London,London,3.0,96,Hostel|Bar
+2026-10-06,Ritz Paris,Paris,5.0,1401,Luxury|History
+2026-10-06,Ibis Bastille,Paris,3.0,105,Basic|WiFi
+2026-10-06,The Plaza,New York,5.0,1321,Iconic|Luxury
+2026-10-06,Pod 51,New York,3.0,168,Budget|Rooftop
+2026-10-07,The Ritz London,London,5.0,951,Luxury|Spa
+2026-10-07,Strand Palace,London,4.0,241,Central|Gym
+2026-10-07,Generator London,London,3.0,44,Hostel|Bar
+2026-10-07,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-10-07,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-10-07,The Plaza,New York,5.0,1317,Iconic|Luxury
+2026-10-07,Pod 51,New York,3.0,154,Budget|Rooftop
+2026-10-08,The Ritz London,London,5.0,960,Luxury|Spa
+2026-10-08,Strand Palace,London,4.0,249,Central|Gym
+2026-10-08,Generator London,London,3.0,58,Hostel|Bar
+2026-10-08,Ritz Paris,Paris,5.0,1410,Luxury|History
+2026-10-08,Ibis Bastille,Paris,3.0,134,Basic|WiFi
+2026-10-08,The Plaza,New York,5.0,1345,Iconic|Luxury
+2026-10-08,Pod 51,New York,3.0,138,Budget|Rooftop
+2026-10-09,The Ritz London,London,5.0,1211,Luxury|Spa
+2026-10-09,Strand Palace,London,4.0,281,Central|Gym
+2026-10-09,Generator London,London,3.0,86,Hostel|Bar
+2026-10-09,Ritz Paris,Paris,5.0,1795,Luxury|History
+2026-10-09,Ibis Bastille,Paris,3.0,151,Basic|WiFi
+2026-10-09,The Plaza,New York,5.0,1623,Iconic|Luxury
+2026-10-09,Pod 51,New York,3.0,159,Budget|Rooftop
+2026-10-10,The Ritz London,London,5.0,1206,Luxury|Spa
+2026-10-10,Strand Palace,London,4.0,295,Central|Gym
+2026-10-10,Generator London,London,3.0,103,Hostel|Bar
+2026-10-10,Ritz Paris,Paris,5.0,1781,Luxury|History
+2026-10-10,The Plaza,New York,5.0,1634,Iconic|Luxury
+2026-10-10,Pod 51,New York,3.0,144,Budget|Rooftop
+2026-10-11,The Ritz London,London,5.0,1212,Luxury|Spa
+2026-10-11,Strand Palace,London,4.0,300,Central|Gym
+2026-10-11,Generator London,London,3.0,52,Hostel|Bar
+2026-10-11,Ritz Paris,Paris,5.0,1767,Luxury|History
+2026-10-11,Ibis Bastille,Paris,3.0,164,Basic|WiFi
+2026-10-11,The Plaza,New York,5.0,1630,Iconic|Luxury
+2026-10-11,Pod 51,New York,3.0,143,Budget|Rooftop
+2026-10-12,The Ritz London,London,5.0,997,Luxury|Spa
+2026-10-12,Strand Palace,London,4.0,220,Central|Gym
+2026-10-12,Generator London,London,3.0,66,Hostel|Bar
+2026-10-12,Ritz Paris,Paris,5.0,1412,Luxury|History
+2026-10-12,Ibis Bastille,Paris,3.0,123,Basic|WiFi
+2026-10-12,The Plaza,New York,5.0,1330,Iconic|Luxury
+2026-10-12,Pod 51,New York,3.0,136,Budget|Rooftop
+2026-10-13,The Ritz London,London,5.0,991,Luxury|Spa
+2026-10-13,Strand Palace,London,4.0,273,Central|Gym
+2026-10-13,Generator London,London,3.0,85,Hostel|Bar
+2026-10-13,Ritz Paris,Paris,5.0,1403,Luxury|History
+2026-10-13,Ibis Bastille,Paris,3.0,125,Basic|WiFi
+2026-10-13,The Plaza,New York,5.0,1297,Iconic|Luxury
+2026-10-13,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-10-14,The Ritz London,London,5.0,995,Luxury|Spa
+2026-10-14,Strand Palace,London,4.0,228,Central|Gym
+2026-10-14,Generator London,London,3.0,63,Hostel|Bar
+2026-10-14,Ritz Paris,Paris,5.0,1442,Luxury|History
+2026-10-14,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-10-14,The Plaza,New York,5.0,1317,Iconic|Luxury
+2026-10-14,Pod 51,New York,3.0,150,Budget|Rooftop
+2026-10-15,The Ritz London,London,5.0,978,Luxury|Spa
+2026-10-15,Strand Palace,London,4.0,245,Central|Gym
+2026-10-15,Generator London,London,3.0,85,Hostel|Bar
+2026-10-15,Ritz Paris,Paris,5.0,1414,Luxury|History
+2026-10-15,Ibis Bastille,Paris,3.0,104,Basic|WiFi
+2026-10-15,The Plaza,New York,5.0,1298,Iconic|Luxury
+2026-10-15,Pod 51,New York,3.0,154,Budget|Rooftop
+2026-10-16,The Ritz London,London,5.0,1190,Luxury|Spa
+2026-10-16,Strand Palace,London,4.0,304,Central|Gym
+2026-10-16,Generator London,London,3.0,68,Hostel|Bar
+2026-10-16,Ritz Paris,Paris,5.0,1774,Luxury|History
+2026-10-16,The Plaza,New York,5.0,1620,Iconic|Luxury
+2026-10-16,Pod 51,New York,3.0,198,Budget|Rooftop
+2026-10-17,The Ritz London,London,5.0,1214,Luxury|Spa
+2026-10-17,Strand Palace,London,4.0,292,Central|Gym
+2026-10-17,Generator London,London,3.0,95,Hostel|Bar
+2026-10-17,Ritz Paris,Paris,5.0,1785,Luxury|History
+2026-10-17,Ibis Bastille,Paris,3.0,115,Basic|WiFi
+2026-10-17,The Plaza,New York,5.0,1670,Iconic|Luxury
+2026-10-18,The Ritz London,London,5.0,1204,Luxury|Spa
+2026-10-18,Strand Palace,London,4.0,295,Central|Gym
+2026-10-18,Generator London,London,3.0,90,Hostel|Bar
+2026-10-18,Ritz Paris,Paris,5.0,1750,Luxury|History
+2026-10-18,Ibis Bastille,Paris,3.0,155,Basic|WiFi
+2026-10-18,The Plaza,New York,5.0,1652,Iconic|Luxury
+2026-10-18,Pod 51,New York,3.0,179,Budget|Rooftop
+2026-10-19,The Ritz London,London,5.0,974,Luxury|Spa
+2026-10-19,Strand Palace,London,4.0,248,Central|Gym
+2026-10-19,Generator London,London,3.0,63,Hostel|Bar
+2026-10-19,Ritz Paris,Paris,5.0,1435,Luxury|History
+2026-10-19,Ibis Bastille,Paris,3.0,94,Basic|WiFi
+2026-10-19,The Plaza,New York,5.0,1349,Iconic|Luxury
+2026-10-19,Pod 51,New York,3.0,134,Budget|Rooftop
+2026-10-20,The Ritz London,London,5.0,959,Luxury|Spa
+2026-10-20,Strand Palace,London,4.0,238,Central|Gym
+2026-10-20,Generator London,London,3.0,51,Hostel|Bar
+2026-10-20,Ritz Paris,Paris,5.0,1426,Luxury|History
+2026-10-20,Ibis Bastille,Paris,3.0,109,Basic|WiFi
+2026-10-20,The Plaza,New York,5.0,1300,Iconic|Luxury
+2026-10-20,Pod 51,New York,3.0,146,Budget|Rooftop
+2026-10-21,The Ritz London,London,5.0,950,Luxury|Spa
+2026-10-21,Strand Palace,London,4.0,256,Central|Gym
+2026-10-21,Generator London,London,3.0,60,Hostel|Bar
+2026-10-21,Ritz Paris,Paris,5.0,1395,Luxury|History
+2026-10-21,Ibis Bastille,Paris,3.0,96,Basic|WiFi
+2026-10-21,The Plaza,New York,5.0,1325,Iconic|Luxury
+2026-10-21,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-10-22,The Ritz London,London,5.0,974,Luxury|Spa
+2026-10-22,Strand Palace,London,4.0,240,Central|Gym
+2026-10-22,Generator London,London,3.0,81,Hostel|Bar
+2026-10-22,Ritz Paris,Paris,5.0,1438,Luxury|History
+2026-10-22,Ibis Bastille,Paris,3.0,108,Basic|WiFi
+2026-10-22,The Plaza,New York,5.0,1342,Iconic|Luxury
+2026-10-22,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-10-23,The Ritz London,London,5.0,1188,Luxury|Spa
+2026-10-23,Strand Palace,London,4.0,315,Central|Gym
+2026-10-23,Generator London,London,3.0,69,Hostel|Bar
+2026-10-23,Ritz Paris,Paris,5.0,1754,Luxury|History
+2026-10-23,Ibis Bastille,Paris,3.0,115,Basic|WiFi
+2026-10-24,The Ritz London,London,5.0,1214,Luxury|Spa
+2026-10-24,Strand Palace,London,4.0,283,Central|Gym
+2026-10-24,Generator London,London,3.0,68,Hostel|Bar
+2026-10-24,Ritz Paris,Paris,5.0,1780,Luxury|History
+2026-10-24,Ibis Bastille,Paris,3.0,118,Basic|WiFi
+2026-10-24,The Plaza,New York,5.0,1653,Iconic|Luxury
+2026-10-24,Pod 51,New York,3.0,182,Budget|Rooftop
+2026-10-25,The Ritz London,London,5.0,1201,Luxury|Spa
+2026-10-25,Strand Palace,London,4.0,333,Central|Gym
+2026-10-25,Generator London,London,3.0,66,Hostel|Bar
+2026-10-25,The Plaza,New York,5.0,1662,Iconic|Luxury
+2026-10-25,Pod 51,New York,3.0,184,Budget|Rooftop
+2026-10-26,The Ritz London,London,5.0,953,Luxury|Spa
+2026-10-26,Strand Palace,London,4.0,228,Central|Gym
+2026-10-26,Generator London,London,3.0,52,Hostel|Bar
+2026-10-26,Ritz Paris,Paris,5.0,1446,Luxury|History
+2026-10-26,Ibis Bastille,Paris,3.0,128,Basic|WiFi
+2026-10-26,The Plaza,New York,5.0,1321,Iconic|Luxury
+2026-10-26,Pod 51,New York,3.0,137,Budget|Rooftop
+2026-10-27,The Ritz London,London,5.0,941,Luxury|Spa
+2026-10-27,Strand Palace,London,4.0,253,Central|Gym
+2026-10-27,Generator London,London,3.0,99,Hostel|Bar
+2026-10-27,Ritz Paris,Paris,5.0,1406,Luxury|History
+2026-10-27,Ibis Bastille,Paris,3.0,104,Basic|WiFi
+2026-10-27,The Plaza,New York,5.0,1303,Iconic|Luxury
+2026-10-27,Pod 51,New York,3.0,115,Budget|Rooftop
+2026-10-28,The Ritz London,London,5.0,944,Luxury|Spa
+2026-10-28,Strand Palace,London,4.0,227,Central|Gym
+2026-10-28,Generator London,London,3.0,52,Hostel|Bar
+2026-10-28,Ritz Paris,Paris,5.0,1399,Luxury|History
+2026-10-28,Ibis Bastille,Paris,3.0,102,Basic|WiFi
+2026-10-28,The Plaza,New York,5.0,1312,Iconic|Luxury
+2026-10-28,Pod 51,New York,3.0,150,Budget|Rooftop
+2026-10-29,The Ritz London,London,5.0,960,Luxury|Spa
+2026-10-29,Strand Palace,London,4.0,221,Central|Gym
+2026-10-29,Generator London,London,3.0,95,Hostel|Bar
+2026-10-29,Ritz Paris,Paris,5.0,1445,Luxury|History
+2026-10-29,Ibis Bastille,Paris,3.0,103,Basic|WiFi
+2026-10-29,The Plaza,New York,5.0,1306,Iconic|Luxury
+2026-10-29,Pod 51,New York,3.0,167,Budget|Rooftop
+2026-10-30,Strand Palace,London,4.0,322,Central|Gym
+2026-10-30,Generator London,London,3.0,89,Hostel|Bar
+2026-10-30,Ritz Paris,Paris,5.0,1789,Luxury|History
+2026-10-30,Ibis Bastille,Paris,3.0,151,Basic|WiFi
+2026-10-30,The Plaza,New York,5.0,1665,Iconic|Luxury
+2026-10-31,Strand Palace,London,4.0,310,Central|Gym
+2026-10-31,Generator London,London,3.0,68,Hostel|Bar
+2026-10-31,Ritz Paris,Paris,5.0,1782,Luxury|History
+2026-10-31,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-10-31,The Plaza,New York,5.0,1654,Iconic|Luxury
+2026-10-31,Pod 51,New York,3.0,179,Budget|Rooftop
+2026-11-01,The Ritz London,London,5.0,1209,Luxury|Spa
+2026-11-01,Strand Palace,London,4.0,288,Central|Gym
+2026-11-01,Generator London,London,3.0,58,Hostel|Bar
+2026-11-01,Ritz Paris,Paris,5.0,1785,Luxury|History
+2026-11-01,Ibis Bastille,Paris,3.0,167,Basic|WiFi
+2026-11-01,The Plaza,New York,5.0,1646,Iconic|Luxury
+2026-11-01,Pod 51,New York,3.0,164,Budget|Rooftop
+2026-11-02,The Ritz London,London,5.0,957,Luxury|Spa
+2026-11-02,Strand Palace,London,4.0,280,Central|Gym
+2026-11-02,Generator London,London,3.0,92,Hostel|Bar
+2026-11-02,Ritz Paris,Paris,5.0,1433,Luxury|History
+2026-11-02,Ibis Bastille,Paris,3.0,93,Basic|WiFi
+2026-11-02,The Plaza,New York,5.0,1321,Iconic|Luxury
+2026-11-02,Pod 51,New York,3.0,146,Budget|Rooftop
+2026-11-03,The Ritz London,London,5.0,991,Luxury|Spa
+2026-11-03,Strand Palace,London,4.0,253,Central|Gym
+2026-11-03,Generator London,London,3.0,63,Hostel|Bar
+2026-11-03,Ritz Paris,Paris,5.0,1418,Luxury|History
+2026-11-03,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-11-03,The Plaza,New York,5.0,1291,Iconic|Luxury
+2026-11-03,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-11-04,The Ritz London,London,5.0,968,Luxury|Spa
+2026-11-04,Strand Palace,London,4.0,248,Central|Gym
+2026-11-04,Generator London,London,3.0,65,Hostel|Bar
+2026-11-04,Ritz Paris,Paris,5.0,1393,Luxury|History
+2026-11-04,Ibis Bastille,Paris,3.0,144,Basic|WiFi
+2026-11-04,The Plaza,New York,5.0,1302,Iconic|Luxury
+2026-11-04,Pod 51,New York,3.0,159,Budget|Rooftop
+2026-11-05,The Ritz London,London,5.0,967,Luxury|Spa
+2026-11-05,Strand Palace,London,4.0,270,Central|Gym
+2026-11-05,Generator London,London,3.0,85,Hostel|Bar
+2026-11-05,Ritz Paris,Paris,5.0,1436,Luxury|History
+2026-11-05,Ibis Bastille,Paris,3.0,122,Basic|WiFi
+2026-11-05,The Plaza,New York,5.0,1321,Iconic|Luxury
+2026-11-05,Pod 51,New York,3.0,169,Budget|Rooftop
+2026-11-06,The Ritz London,London,5.0,1215,Luxury|Spa
+2026-11-06,Strand Palace,London,4.0,324,Central|Gym
+2026-11-06,Generator London,London,3.0,81,Hostel|Bar
+2026-11-06,Ritz Paris,Paris,5.0,1742,Luxury|History
+2026-11-06,Ibis Bastille,Paris,3.0,169,Basic|WiFi
+2026-11-06,The Plaza,New York,5.0,1634,Iconic|Luxury
+2026-11-06,Pod 51,New York,3.0,189,Budget|Rooftop
+2026-11-07,The Ritz London,London,5.0,1186,Luxury|Spa
+2026-11-07,Strand Palace,London,4.0,321,Central|Gym
+2026-11-07,Generator London,London,3.0,75,Hostel|Bar
+2026-11-07,Ritz Paris,Paris,5.0,1786,Luxury|History
+2026-11-07,Ibis Bastille,Paris,3.0,133,Basic|WiFi
+2026-11-07,Pod 51,New York,3.0,168,Budget|Rooftop
+2026-11-08,The Ritz London,London,5.0,1223,Luxury|Spa
+2026-11-08,Strand Palace,London,4.0,304,Central|Gym
+2026-11-08,Generator London,London,3.0,90,Hostel|Bar
+2026-11-08,Ritz Paris,Paris,5.0,1743,Luxury|History
+2026-11-08,Ibis Bastille,Paris,3.0,122,Basic|WiFi
+2026-11-08,The Plaza,New York,5.0,1668,Iconic|Luxury
+2026-11-08,Pod 51,New York,3.0,197,Budget|Rooftop
+2026-11-09,The Ritz London,London,5.0,959,Luxury|Spa
+2026-11-09,Strand Palace,London,4.0,236,Central|Gym
+2026-11-09,Generator London,London,3.0,73,Hostel|Bar
+2026-11-09,Ritz Paris,Paris,5.0,1419,Luxury|History
+2026-11-09,Ibis Bastille,Paris,3.0,129,Basic|WiFi
+2026-11-09,The Plaza,New York,5.0,1313,Iconic|Luxury
+2026-11-09,Pod 51,New York,3.0,112,Budget|Rooftop
+2026-11-10,The Ritz London,London,5.0,950,Luxury|Spa
+2026-11-10,Strand Palace,London,4.0,251,Central|Gym
+2026-11-10,Generator London,London,3.0,77,Hostel|Bar
+2026-11-10,Ritz Paris,Paris,5.0,1415,Luxury|History
+2026-11-10,Ibis Bastille,Paris,3.0,114,Basic|WiFi
+2026-11-10,The Plaza,New York,5.0,1337,Iconic|Luxury
+2026-11-10,Pod 51,New York,3.0,148,Budget|Rooftop
+2026-11-11,The Ritz London,London,5.0,986,Luxury|Spa
+2026-11-11,Strand Palace,London,4.0,278,Central|Gym
+2026-11-11,Generator London,London,3.0,43,Hostel|Bar
+2026-11-11,Ritz Paris,Paris,5.0,1402,Luxury|History
+2026-11-11,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-11-11,The Plaza,New York,5.0,1344,Iconic|Luxury
+2026-11-11,Pod 51,New York,3.0,164,Budget|Rooftop
+2026-11-12,The Ritz London,London,5.0,980,Luxury|Spa
+2026-11-12,Strand Palace,London,4.0,238,Central|Gym
+2026-11-12,Generator London,London,3.0,100,Hostel|Bar
+2026-11-12,Ritz Paris,Paris,5.0,1439,Luxury|History
+2026-11-12,Ibis Bastille,Paris,3.0,97,Basic|WiFi
+2026-11-12,The Plaza,New York,5.0,1349,Iconic|Luxury
+2026-11-12,Pod 51,New York,3.0,125,Budget|Rooftop
+2026-11-13,The Ritz London,London,5.0,1221,Luxury|Spa
+2026-11-13,Strand Palace,London,4.0,323,Central|Gym
+2026-11-13,Generator London,London,3.0,59,Hostel|Bar
+2026-11-13,Ritz Paris,Paris,5.0,1777,Luxury|History
+2026-11-13,The Plaza,New York,5.0,1650,Iconic|Luxury
+2026-11-13,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-11-14,The Ritz London,London,5.0,1179,Luxury|Spa
+2026-11-14,Strand Palace,London,4.0,277,Central|Gym
+2026-11-14,Generator London,London,3.0,78,Hostel|Bar
+2026-11-14,Ritz Paris,Paris,5.0,1783,Luxury|History
+2026-11-14,The Plaza,New York,5.0,1657,Iconic|Luxury
+2026-11-14,Pod 51,New York,3.0,178,Budget|Rooftop
+2026-11-15,The Ritz London,London,5.0,1209,Luxury|Spa
+2026-11-15,Strand Palace,London,4.0,297,Central|Gym
+2026-11-15,Ritz Paris,Paris,5.0,1781,Luxury|History
+2026-11-15,Ibis Bastille,Paris,3.0,138,Basic|WiFi
+2026-11-15,The Plaza,New York,5.0,1642,Iconic|Luxury
+2026-11-15,Pod 51,New York,3.0,178,Budget|Rooftop
+2026-11-16,The Ritz London,London,5.0,949,Luxury|Spa
+2026-11-16,Strand Palace,London,4.0,268,Central|Gym
+2026-11-16,Generator London,London,3.0,84,Hostel|Bar
+2026-11-16,Ritz Paris,Paris,5.0,1415,Luxury|History
+2026-11-16,Ibis Bastille,Paris,3.0,142,Basic|WiFi
+2026-11-16,The Plaza,New York,5.0,1293,Iconic|Luxury
+2026-11-16,Pod 51,New York,3.0,134,Budget|Rooftop
+2026-11-17,The Ritz London,London,5.0,949,Luxury|Spa
+2026-11-17,Strand Palace,London,4.0,260,Central|Gym
+2026-11-17,Generator London,London,3.0,95,Hostel|Bar
+2026-11-17,Ritz Paris,Paris,5.0,1439,Luxury|History
+2026-11-17,Ibis Bastille,Paris,3.0,149,Basic|WiFi
+2026-11-17,The Plaza,New York,5.0,1324,Iconic|Luxury
+2026-11-17,Pod 51,New York,3.0,123,Budget|Rooftop
+2026-11-18,The Ritz London,London,5.0,947,Luxury|Spa
+2026-11-18,Strand Palace,London,4.0,250,Central|Gym
+2026-11-18,Generator London,London,3.0,98,Hostel|Bar
+2026-11-18,Ritz Paris,Paris,5.0,1422,Luxury|History
+2026-11-18,Ibis Bastille,Paris,3.0,117,Basic|WiFi
+2026-11-18,The Plaza,New York,5.0,1338,Iconic|Luxury
+2026-11-18,Pod 51,New York,3.0,164,Budget|Rooftop
+2026-11-19,The Ritz London,London,5.0,941,Luxury|Spa
+2026-11-19,Strand Palace,London,4.0,227,Central|Gym
+2026-11-19,Generator London,London,3.0,76,Hostel|Bar
+2026-11-19,Ritz Paris,Paris,5.0,1413,Luxury|History
+2026-11-19,Ibis Bastille,Paris,3.0,124,Basic|WiFi
+2026-11-19,The Plaza,New York,5.0,1350,Iconic|Luxury
+2026-11-19,Pod 51,New York,3.0,148,Budget|Rooftop
+2026-11-20,The Ritz London,London,5.0,1202,Luxury|Spa
+2026-11-20,Strand Palace,London,4.0,311,Central|Gym
+2026-11-20,Generator London,London,3.0,101,Hostel|Bar
+2026-11-20,Ritz Paris,Paris,5.0,1788,Luxury|History
+2026-11-20,Ibis Bastille,Paris,3.0,133,Basic|WiFi
+2026-11-20,The Plaza,New York,5.0,1664,Iconic|Luxury
+2026-11-20,Pod 51,New York,3.0,165,Budget|Rooftop
+2026-11-21,The Ritz London,London,5.0,1178,Luxury|Spa
+2026-11-21,Strand Palace,London,4.0,322,Central|Gym
+2026-11-21,Generator London,London,3.0,107,Hostel|Bar
+2026-11-21,Ritz Paris,Paris,5.0,1744,Luxury|History
+2026-11-21,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-11-21,The Plaza,New York,5.0,1663,Iconic|Luxury
+2026-11-22,The Ritz London,London,5.0,1209,Luxury|Spa
+2026-11-22,Strand Palace,London,4.0,281,Central|Gym
+2026-11-22,Generator London,London,3.0,95,Hostel|Bar
+2026-11-22,Ritz Paris,Paris,5.0,1758,Luxury|History
+2026-11-22,Ibis Bastille,Paris,3.0,152,Basic|WiFi
+2026-11-22,Pod 51,New York,3.0,171,Budget|Rooftop
+2026-11-23,The Ritz London,London,5.0,971,Luxury|Spa
+2026-11-23,Strand Palace,London,4.0,261,Central|Gym
+2026-11-23,Generator London,London,3.0,70,Hostel|Bar
+2026-11-23,Ritz Paris,Paris,5.0,1438,Luxury|History
+2026-11-23,Ibis Bastille,Paris,3.0,148,Basic|WiFi
+2026-11-23,The Plaza,New York,5.0,1296,Iconic|Luxury
+2026-11-23,Pod 51,New York,3.0,111,Budget|Rooftop
+2026-11-24,The Ritz London,London,5.0,972,Luxury|Spa
+2026-11-24,Strand Palace,London,4.0,278,Central|Gym
+2026-11-24,Generator London,London,3.0,84,Hostel|Bar
+2026-11-24,Ritz Paris,Paris,5.0,1408,Luxury|History
+2026-11-24,Ibis Bastille,Paris,3.0,114,Basic|WiFi
+2026-11-24,The Plaza,New York,5.0,1334,Iconic|Luxury
+2026-11-24,Pod 51,New York,3.0,161,Budget|Rooftop
+2026-11-25,The Ritz London,London,5.0,997,Luxury|Spa
+2026-11-25,Strand Palace,London,4.0,264,Central|Gym
+2026-11-25,Generator London,London,3.0,63,Hostel|Bar
+2026-11-25,Ritz Paris,Paris,5.0,1444,Luxury|History
+2026-11-25,Ibis Bastille,Paris,3.0,102,Basic|WiFi
+2026-11-25,The Plaza,New York,5.0,1320,Iconic|Luxury
+2026-11-25,Pod 51,New York,3.0,125,Budget|Rooftop
+2026-11-26,The Ritz London,London,5.0,984,Luxury|Spa
+2026-11-26,Strand Palace,London,4.0,239,Central|Gym
+2026-11-26,Generator London,London,3.0,40,Hostel|Bar
+2026-11-26,Ritz Paris,Paris,5.0,1445,Luxury|History
+2026-11-26,Ibis Bastille,Paris,3.0,139,Basic|WiFi
+2026-11-26,The Plaza,New York,5.0,1314,Iconic|Luxury
+2026-11-26,Pod 51,New York,3.0,153,Budget|Rooftop
+2026-11-27,Strand Palace,London,4.0,323,Central|Gym
+2026-11-27,Generator London,London,3.0,96,Hostel|Bar
+2026-11-27,Ibis Bastille,Paris,3.0,170,Basic|WiFi
+2026-11-27,The Plaza,New York,5.0,1624,Iconic|Luxury
+2026-11-27,Pod 51,New York,3.0,200,Budget|Rooftop
+2026-11-28,The Ritz London,London,5.0,1236,Luxury|Spa
+2026-11-28,Strand Palace,London,4.0,304,Central|Gym
+2026-11-28,Generator London,London,3.0,69,Hostel|Bar
+2026-11-28,Ritz Paris,Paris,5.0,1756,Luxury|History
+2026-11-28,Ibis Bastille,Paris,3.0,162,Basic|WiFi
+2026-11-28,The Plaza,New York,5.0,1675,Iconic|Luxury
+2026-11-28,Pod 51,New York,3.0,172,Budget|Rooftop
+2026-11-29,The Ritz London,London,5.0,1220,Luxury|Spa
+2026-11-29,Strand Palace,London,4.0,301,Central|Gym
+2026-11-29,Generator London,London,3.0,63,Hostel|Bar
+2026-11-29,Ibis Bastille,Paris,3.0,122,Basic|WiFi
+2026-11-29,The Plaza,New York,5.0,1665,Iconic|Luxury
+2026-11-29,Pod 51,New York,3.0,157,Budget|Rooftop
+2026-11-30,The Ritz London,London,5.0,969,Luxury|Spa
+2026-11-30,Strand Palace,London,4.0,268,Central|Gym
+2026-11-30,Generator London,London,3.0,68,Hostel|Bar
+2026-11-30,Ritz Paris,Paris,5.0,1394,Luxury|History
+2026-11-30,Ibis Bastille,Paris,3.0,96,Basic|WiFi
+2026-11-30,The Plaza,New York,5.0,1349,Iconic|Luxury
+2026-11-30,Pod 51,New York,3.0,122,Budget|Rooftop
+2026-12-01,The Ritz London,London,5.0,977,Luxury|Spa
+2026-12-01,Strand Palace,London,4.0,258,Central|Gym
+2026-12-01,Generator London,London,3.0,91,Hostel|Bar
+2026-12-01,Ritz Paris,Paris,5.0,1394,Luxury|History
+2026-12-01,Ibis Bastille,Paris,3.0,130,Basic|WiFi
+2026-12-01,The Plaza,New York,5.0,1322,Iconic|Luxury
+2026-12-01,Pod 51,New York,3.0,142,Budget|Rooftop
+2026-12-02,The Ritz London,London,5.0,1000,Luxury|Spa
+2026-12-02,Strand Palace,London,4.0,220,Central|Gym
+2026-12-02,Generator London,London,3.0,51,Hostel|Bar
+2026-12-02,Ritz Paris,Paris,5.0,1422,Luxury|History
+2026-12-02,Ibis Bastille,Paris,3.0,106,Basic|WiFi
+2026-12-02,The Plaza,New York,5.0,1295,Iconic|Luxury
+2026-12-02,Pod 51,New York,3.0,151,Budget|Rooftop
+2026-12-03,The Ritz London,London,5.0,961,Luxury|Spa
+2026-12-03,Strand Palace,London,4.0,223,Central|Gym
+2026-12-03,Generator London,London,3.0,81,Hostel|Bar
+2026-12-03,Ritz Paris,Paris,5.0,1426,Luxury|History
+2026-12-03,Ibis Bastille,Paris,3.0,100,Basic|WiFi
+2026-12-03,The Plaza,New York,5.0,1344,Iconic|Luxury
+2026-12-03,Pod 51,New York,3.0,131,Budget|Rooftop
+2026-12-04,The Ritz London,London,5.0,1183,Luxury|Spa
+2026-12-04,Strand Palace,London,4.0,337,Central|Gym
+2026-12-04,Generator London,London,3.0,109,Hostel|Bar
+2026-12-04,Ritz Paris,Paris,5.0,1790,Luxury|History
+2026-12-04,Ibis Bastille,Paris,3.0,160,Basic|WiFi
+2026-12-04,The Plaza,New York,5.0,1667,Iconic|Luxury
+2026-12-04,Pod 51,New York,3.0,160,Budget|Rooftop
+2026-12-05,The Ritz London,London,5.0,1222,Luxury|Spa
+2026-12-05,Strand Palace,London,4.0,317,Central|Gym
+2026-12-05,Generator London,London,3.0,90,Hostel|Bar
+2026-12-05,Ritz Paris,Paris,5.0,1751,Luxury|History
+2026-12-05,Ibis Bastille,Paris,3.0,140,Basic|WiFi
+2026-12-05,The Plaza,New York,5.0,1628,Iconic|Luxury
+2026-12-05,Pod 51,New York,3.0,161,Budget|Rooftop
+2026-12-06,Strand Palace,London,4.0,302,Central|Gym
+2026-12-06,Ritz Paris,Paris,5.0,1740,Luxury|History
+2026-12-06,The Plaza,New York,5.0,1617,Iconic|Luxury
+2026-12-07,The Ritz London,London,5.0,958,Luxury|Spa
+2026-12-07,Strand Palace,London,4.0,233,Central|Gym
+2026-12-07,Generator London,London,3.0,64,Hostel|Bar
+2026-12-07,Ritz Paris,Paris,5.0,1426,Luxury|History
+2026-12-07,Ibis Bastille,Paris,3.0,104,Basic|WiFi
+2026-12-07,The Plaza,New York,5.0,1312,Iconic|Luxury
+2026-12-07,Pod 51,New York,3.0,134,Budget|Rooftop
+2026-12-08,The Ritz London,London,5.0,983,Luxury|Spa
+2026-12-08,Strand Palace,London,4.0,229,Central|Gym
+2026-12-08,Generator London,London,3.0,51,Hostel|Bar
+2026-12-08,Ritz Paris,Paris,5.0,1448,Luxury|History
+2026-12-08,Ibis Bastille,Paris,3.0,140,Basic|WiFi
+2026-12-08,The Plaza,New York,5.0,1334,Iconic|Luxury
+2026-12-08,Pod 51,New York,3.0,116,Budget|Rooftop
+2026-12-09,The Ritz London,London,5.0,1000,Luxury|Spa
+2026-12-09,Strand Palace,London,4.0,250,Central|Gym
+2026-12-09,Generator London,London,3.0,43,Hostel|Bar
+2026-12-09,Ritz Paris,Paris,5.0,1426,Luxury|History
+2026-12-09,Ibis Bastille,Paris,3.0,121,Basic|WiFi
+2026-12-09,The Plaza,New York,5.0,1311,Iconic|Luxury
+2026-12-09,Pod 51,New York,3.0,113,Budget|Rooftop
+2026-12-10,The Ritz London,London,5.0,973,Luxury|Spa
+2026-12-10,Strand Palace,London,4.0,232,Central|Gym
+2026-12-10,Generator London,London,3.0,47,Hostel|Bar
+2026-12-10,Ritz Paris,Paris,5.0,1399,Luxury|History
+2026-12-10,Ibis Bastille,Paris,3.0,94,Basic|WiFi
+2026-12-10,The Plaza,New York,5.0,1346,Iconic|Luxury
+2026-12-10,Pod 51,New York,3.0,113,Budget|Rooftop
+2026-12-11,The Ritz London,London,5.0,1188,Luxury|Spa
+2026-12-11,Strand Palace,London,4.0,299,Central|Gym
+2026-12-11,Generator London,London,3.0,80,Hostel|Bar
+2026-12-11,Ritz Paris,Paris,5.0,1760,Luxury|History
+2026-12-11,Ibis Bastille,Paris,3.0,137,Basic|WiFi
+2026-12-11,The Plaza,New York,5.0,1632,Iconic|Luxury
+2026-12-11,Pod 51,New York,3.0,155,Budget|Rooftop
+2026-12-12,The Ritz London,London,5.0,1197,Luxury|Spa
+2026-12-12,Strand Palace,London,4.0,294,Central|Gym
+2026-12-12,Generator London,London,3.0,63,Hostel|Bar
+2026-12-12,Ritz Paris,Paris,5.0,1771,Luxury|History
+2026-12-12,Ibis Bastille,Paris,3.0,155,Basic|WiFi
+2026-12-12,The Plaza,New York,5.0,1674,Iconic|Luxury
+2026-12-12,Pod 51,New York,3.0,178,Budget|Rooftop
+2026-12-13,The Ritz London,London,5.0,1183,Luxury|Spa
+2026-12-13,Strand Palace,London,4.0,313,Central|Gym
+2026-12-13,Generator London,London,3.0,89,Hostel|Bar
+2026-12-13,Ritz Paris,Paris,5.0,1767,Luxury|History
+2026-12-13,Ibis Bastille,Paris,3.0,156,Basic|WiFi
+2026-12-13,The Plaza,New York,5.0,1626,Iconic|Luxury
+2026-12-13,Pod 51,New York,3.0,184,Budget|Rooftop
+2026-12-14,The Ritz London,London,5.0,950,Luxury|Spa
+2026-12-14,Strand Palace,London,4.0,252,Central|Gym
+2026-12-14,Generator London,London,3.0,90,Hostel|Bar
+2026-12-14,Ritz Paris,Paris,5.0,1441,Luxury|History
+2026-12-14,Ibis Bastille,Paris,3.0,91,Basic|WiFi
+2026-12-14,The Plaza,New York,5.0,1346,Iconic|Luxury
+2026-12-14,Pod 51,New York,3.0,145,Budget|Rooftop
+2026-12-15,Strand Palace,London,4.0,415,Central|Gym
+2026-12-15,Generator London,London,3.0,96,Hostel|Bar
+2026-12-15,Ibis Bastille,Paris,3.0,174,Basic|WiFi
+2026-12-15,The Plaza,New York,5.0,2345,Iconic|Luxury
+2026-12-16,Strand Palace,London,4.0,429,Central|Gym
+2026-12-16,Pod 51,New York,3.0,237,Budget|Rooftop
+2026-12-17,Generator London,London,3.0,131,Hostel|Bar
+2026-12-17,Ibis Bastille,Paris,3.0,196,Basic|WiFi
+2026-12-17,The Plaza,New York,5.0,2358,Iconic|Luxury
+2026-12-17,Pod 51,New York,3.0,261,Budget|Rooftop
+2026-12-18,Ibis Bastille,Paris,3.0,200,Basic|WiFi
+2026-12-18,The Plaza,New York,5.0,2685,Iconic|Luxury
+2026-12-18,Pod 51,New York,3.0,271,Budget|Rooftop
+2026-12-19,The Ritz London,London,5.0,1993,Luxury|Spa
+2026-12-19,Strand Palace,London,4.0,512,Central|Gym
+2026-12-19,Pod 51,New York,3.0,268,Budget|Rooftop
+2026-12-20,The Ritz London,London,5.0,1942,Luxury|Spa
+2026-12-20,Strand Palace,London,4.0,503,Central|Gym
+2026-12-21,Strand Palace,London,4.0,432,Central|Gym
+2026-12-21,Ritz Paris,Paris,5.0,2564,Luxury|History
+2026-12-22,Ibis Bastille,Paris,3.0,230,Basic|WiFi
+2026-12-22,Pod 51,New York,3.0,221,Budget|Rooftop
+2026-12-23,Strand Palace,London,4.0,406,Central|Gym
+2026-12-23,Ritz Paris,Paris,5.0,2515,Luxury|History
+2026-12-23,Ibis Bastille,Paris,3.0,214,Basic|WiFi
+2026-12-24,Strand Palace,London,4.0,464,Central|Gym
+2026-12-24,Ritz Paris,Paris,5.0,2545,Luxury|History
+2026-12-24,The Plaza,New York,5.0,2354,Iconic|Luxury
+2026-12-24,Pod 51,New York,3.0,231,Budget|Rooftop
+2026-12-26,Generator London,London,3.0,93,Hostel|Bar
+2026-12-26,Ritz Paris,Paris,5.0,2899,Luxury|History
+2026-12-26,Pod 51,New York,3.0,278,Budget|Rooftop
+2026-12-27,Ritz Paris,Paris,5.0,2904,Luxury|History
+2026-12-28,Strand Palace,London,4.0,439,Central|Gym
+2026-12-28,Ibis Bastille,Paris,3.0,220,Basic|WiFi
+2026-12-28,The Plaza,New York,5.0,2361,Iconic|Luxury
+2026-12-28,Pod 51,New York,3.0,242,Budget|Rooftop
+2026-12-29,The Ritz London,London,5.0,1717,Luxury|Spa
+2026-12-29,Generator London,London,3.0,86,Hostel|Bar
+2026-12-29,Ritz Paris,Paris,5.0,2548,Luxury|History
+2026-12-29,Ibis Bastille,Paris,3.0,177,Basic|WiFi
+2026-12-30,The Ritz London,London,5.0,1760,Luxury|Spa
+2026-12-30,Generator London,London,3.0,110,Hostel|Bar
+2026-12-30,Ibis Bastille,Paris,3.0,222,Basic|WiFi
+2026-12-30,Pod 51,New York,3.0,251,Budget|Rooftop
+2026-12-31,The Ritz London,London,5.0,1721,Luxury|Spa
+2026-12-31,Ritz Paris,Paris,5.0,2561,Luxury|History
+2026-12-31,Ibis Bastille,Paris,3.0,230,Basic|WiFi

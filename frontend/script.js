@@ -14,9 +14,19 @@ const stepsContainer = document.getElementById("steps-container");
 const stepCount = document.getElementById("step-count");
 const toggleStepsBtn = document.getElementById("toggle-steps");
 
+// ── Session state (multi-turn conversation) ──────────────────────────
+let currentSessionId = null;
+
+function resetSession() {
+  currentSessionId = null;
+  btnText.textContent = "Plan My Trip";
+  promptEl.placeholder = "Where do you want to go? Tell us about your ideal trip...";
+}
+
 // Suggestion chips
 document.querySelectorAll(".chip").forEach(chip => {
   chip.addEventListener("click", () => {
+    resetSession();
     promptEl.value = chip.dataset.prompt;
     promptEl.focus();
   });
@@ -26,10 +36,6 @@ document.querySelectorAll(".chip").forEach(chip => {
 toggleStepsBtn.addEventListener("click", () => {
   stepsContainer.classList.toggle("hidden");
   const isOpen = !stepsContainer.classList.contains("hidden");
-  toggleStepsBtn.textContent = isOpen
-    ? `Hide Execution Trace (${stepCount.textContent} steps)`
-    : `Show Execution Trace (${stepCount.textContent} steps)`;
-  // re-add the span for the count
   toggleStepsBtn.innerHTML = isOpen
     ? `Hide Execution Trace (<span id="step-count">${stepsContainer.children.length}</span> steps)`
     : `Show Execution Trace (<span id="step-count">${stepsContainer.children.length}</span> steps)`;
@@ -44,16 +50,22 @@ runBtn.addEventListener("click", async () => {
   hideAll();
 
   try {
+    const body = { prompt };
+    if (currentSessionId) {
+      body.session_id = currentSessionId;
+    }
+
     const res = await fetch("/api/execute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify(body),
     });
 
     const data = await res.json();
 
     if (data.status === "error") {
       showError(data.error || "Unknown error");
+      resetSession();
     } else {
       renderResponse(data.response);
     }
@@ -103,15 +115,25 @@ function renderResponse(responseStr) {
   try {
     parsed = JSON.parse(responseStr);
   } catch {
-    // Not JSON -- show as text
+    // Not JSON -- show as plain text (legacy clarification format)
+    renderClarificationText(responseStr);
+    return;
   }
 
   if (parsed) {
+    // Multi-turn clarification with session_id
+    if (parsed.type === "clarification") {
+      currentSessionId = parsed.session_id || null;
+      renderClarification(parsed.message || responseStr);
+      return;
+    }
     if (parsed.status === "budget_infeasible") {
+      resetSession();
       renderBudgetInfeasible(parsed);
       return;
     }
     if (parsed.status === "no_pricing_data") {
+      resetSession();
       renderNoPricingData(parsed);
       return;
     }
@@ -128,11 +150,74 @@ function renderResponse(responseStr) {
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
+    resetSession();
     renderPackages(packages, warning);
   } else {
-    textResponseContent.textContent = responseStr;
-    textResponseSection.classList.remove("hidden");
+    renderClarificationText(responseStr);
   }
+}
+
+function renderClarificationText(text) {
+  currentSessionId = null;
+  textResponseContent.textContent = text;
+  textResponseSection.classList.remove("hidden");
+}
+
+function renderClarification(message) {
+  btnText.textContent = "Continue";
+  promptEl.value = "";
+  promptEl.placeholder = "Answer the question above to continue planning...";
+  promptEl.focus();
+
+  let html = `<div class="clarification-card">
+    <div class="clarification-icon">&#x2753;</div>
+    <div class="clarification-message">${esc(message).replace(/\n/g, "<br>")}</div>`;
+
+  const chips = detectClarificationChips(message);
+  if (chips.length > 0) {
+    html += `<div class="clarification-chips">`;
+    chips.forEach(chip => {
+      html += `<button class="clarify-chip" data-value="${esc(chip)}">${esc(chip)}</button>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="clarification-hint">Type your answer below, or click a suggestion to fill it in.</div>`;
+  html += `</div>`;
+
+  textResponseContent.innerHTML = html;
+  textResponseSection.classList.remove("hidden");
+
+  textResponseContent.querySelectorAll(".clarify-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const current = promptEl.value.trim();
+      promptEl.value = current ? current + ", " + btn.dataset.value : btn.dataset.value;
+      promptEl.focus();
+    });
+  });
+}
+
+function detectClarificationChips(message) {
+  const lower = message.toLowerCase();
+  const chips = [];
+
+  if (/\b(origin|depart|flying from|airport|where.*from|city.*from)\b/.test(lower)) {
+    chips.push("TLV", "NYC", "London", "Paris", "Berlin");
+  }
+  if (/\b(destination|where.*go|country|region|which.*city)\b/.test(lower)) {
+    chips.push("Europe", "Southeast Asia", "Caribbean", "Anywhere cheap");
+  }
+  if (/\b(budget|how much|price|spend|cost)\b/.test(lower)) {
+    chips.push("Under $1000", "$1000-2000", "$2000-3000", "No limit");
+  }
+  if (/\b(how long|duration|days|week|nights)\b/.test(lower)) {
+    chips.push("3-4 days", "1 week", "10 days", "2 weeks");
+  }
+  if (/\b(interest|activit|style|prefer|must.see)\b/.test(lower)) {
+    chips.push("Beaches", "Culture & Museums", "Food & Nightlife", "Adventure", "Relaxation");
+  }
+
+  return chips;
 }
 
 function renderBudgetInfeasible(data) {

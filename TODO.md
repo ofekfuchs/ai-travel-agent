@@ -44,8 +44,9 @@
 - [x] Frontend error handling for budget_infeasible and no_pricing_data statuses
 - [x] Updated architecture.png with Supervisor-driven ReAct loop diagram
 - [x] Per-destination observations in Supervisor context (richer reasoning)
-- [ ] Multi-turn conversation (follow-up like "make it cheaper")
-- [ ] Per-destination hotel tagging (destination_city field for Supervisor reasoning)
+- [x] Multi-turn conversation (session memory + follow-up context merging)
+- [x] Interactive clarification chips (smart quick-reply buttons under questions)
+- [x] Per-destination hotel tagging (destination_city field for Supervisor reasoning)
 
 ---
 
@@ -65,7 +66,7 @@
 
 ## Known Limitations
 
-- No multi-turn conversation (each request is independent)
+- Multi-turn memory is in-memory only (lost on server restart; Supabase persistence is a future option)
 - Booking links are search URLs, not direct deeplinks to specific fares
 - RAG only covers ~460 Wikivoyage chunks (popular destinations)
 - Weather for far-future dates uses historical averages, not forecasts

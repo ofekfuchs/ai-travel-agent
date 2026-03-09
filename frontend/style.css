@@ -800,5 +800,57 @@ body {
 
 .status-details p { margin-bottom: 0.25rem; }
 
+/* ── Clarification Card (multi-turn) ──────────────────────────────────── */
+.clarification-card {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.clarification-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.clarification-message {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.clarification-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.clarify-chip {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid var(--primary);
+  border-radius: 20px;
+  background: var(--primary-light);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.clarify-chip:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.clarification-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
 /* ── Utilities ────────────────────────────────────────────────────────── */
 .hidden { display: none !important; }

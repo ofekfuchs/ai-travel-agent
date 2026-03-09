@@ -51,6 +51,7 @@ class AgentInfoResponse(BaseModel):
 
 class ExecuteRequest(BaseModel):
     prompt: str
+    session_id: Optional[str] = None
 
 
 class ExecuteResponse(BaseModel):

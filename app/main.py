@@ -56,6 +56,11 @@ DAILY_EXPENSES_ESTIMATE = 50
 BUDGET_TOLERANCE = 1.05
 
 MAX_SUPERVISOR_ROUNDS = 6
+MAX_SESSIONS = 200
+
+# In-memory session store for multi-turn conversation.
+# Keyed by session_id, stores constraints + prompt from previous turns.
+_session_memory: dict[str, dict] = {}
 
 
 # ── GET /api/team_info ─────────────────────────────────────────────────────
@@ -169,10 +174,31 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
       Reason → Act → Observe → Reason → Act → ...
     """
     try:
+        session_id = request.session_id or str(uuid.uuid4())
         state = SharedState(
             raw_prompt=request.prompt,
-            session_id=str(uuid.uuid4()),
+            session_id=session_id,
         )
+
+        # ── Multi-turn: load previous session context ─────────────────
+        prev_session = _session_memory.get(session_id) if request.session_id else None
+        if prev_session:
+            prev_prompt = prev_session.get("original_prompt", "")
+            prev_constraints = prev_session.get("constraints", {})
+            prev_history = prev_session.get("conversation_history", [])
+
+            state.raw_prompt = f"{prev_prompt}\n\nUser follow-up: {request.prompt}"
+            if prev_constraints:
+                state.constraints = prev_constraints.copy()
+            state.conversation_history = prev_history + [
+                {"role": "user", "content": request.prompt}
+            ]
+            print(f"\n  SESSION RESUMED: {session_id[:8]}... "
+                  f"(prior constraints: {list(prev_constraints.keys()) if prev_constraints else 'none'})", flush=True)
+        else:
+            state.conversation_history = [
+                {"role": "user", "content": request.prompt}
+            ]
 
         t_start = time.time()
 
@@ -214,8 +240,18 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     "clarification_question",
                     "Could you provide more details about your trip?"
                 )
+                # Save session so follow-up prompts inherit context
+                _save_session_memory(state)
+                state.conversation_history.append(
+                    {"role": "assistant", "content": question}
+                )
+                clarification_response = json.dumps({
+                    "type": "clarification",
+                    "message": question,
+                    "session_id": state.session_id,
+                }, default=str)
                 return ExecuteResponse(
-                    status="ok", error=None, response=question,
+                    status="ok", error=None, response=clarification_response,
                     steps=[Step(**s) for s in state.steps],
                 )
 
@@ -641,6 +677,7 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
 
 def _build_final_response(state: SharedState) -> ExecuteResponse:
     """Format the final approved (or best-effort) trip plan."""
+    _save_session_memory(state)
     if state.draft_plans:
         formatted = json.dumps(state.draft_plans, indent=2, default=str)
         save_trip(
@@ -698,6 +735,28 @@ def _build_best_effort_response(state: SharedState, reason: str) -> ExecuteRespo
         status="ok", error=None, response=formatted,
         steps=[Step(**s) for s in state.steps],
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#   SESSION MEMORY (multi-turn conversation)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _save_session_memory(state: SharedState) -> None:
+    """Save current session state so follow-up requests can resume context.
+
+    Stores: original prompt, extracted constraints, and conversation history.
+    The next request with the same session_id will inherit this context,
+    enabling multi-turn conversation like a real assistant.
+    """
+    if len(_session_memory) >= MAX_SESSIONS:
+        oldest = next(iter(_session_memory))
+        del _session_memory[oldest]
+
+    _session_memory[state.session_id] = {
+        "original_prompt": state.raw_prompt,
+        "constraints": state.constraints.copy() if state.constraints else {},
+        "conversation_history": state.conversation_history.copy(),
+    }
 
 
 # ── Health check ───────────────────────────────────────────────────────────

@@ -87,6 +87,14 @@ def run_supervisor(state: SharedState) -> dict:
     """Call the LLM to decide the next action based on the full current state."""
     user_context_parts = [f"User prompt: {state.raw_prompt}"]
 
+    if state.conversation_history and len(state.conversation_history) > 1:
+        user_context_parts.append(
+            "CONVERSATION CONTEXT: This is a follow-up message. The user previously "
+            "provided information that was merged into the prompt above. "
+            "Treat the combined prompt as a single coherent request. "
+            "Do NOT ask for information already present in the merged prompt."
+        )
+
     if state.constraints:
         user_context_parts.append(
             f"Extracted constraints: {json.dumps(state.constraints, default=str)}"

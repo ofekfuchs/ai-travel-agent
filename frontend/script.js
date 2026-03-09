@@ -1,59 +1,53 @@
-const promptEl = document.getElementById("prompt");
-const runBtn = document.getElementById("run-btn");
-const btnText = runBtn.querySelector(".btn-text");
-const btnSpinner = runBtn.querySelector(".btn-spinner");
-const loadingEl = document.getElementById("loading");
-const errorSection = document.getElementById("error-section");
-const errorMessage = document.getElementById("error-message");
-const packagesSection = document.getElementById("packages-section");
-const packagesContainer = document.getElementById("packages-container");
-const textResponseSection = document.getElementById("text-response-section");
-const textResponseContent = document.getElementById("text-response-content");
-const stepsSection = document.getElementById("steps-section");
-const stepsContainer = document.getElementById("steps-container");
-const stepCount = document.getElementById("step-count");
-const toggleStepsBtn = document.getElementById("toggle-steps");
+/* ── DOM refs ─────────────────────────────────────────────────────────── */
+const promptEl  = document.getElementById("prompt");
+const sendBtn   = document.getElementById("send-btn");
+const chatArea  = document.getElementById("chat-area");
+const newTripBtn = document.getElementById("new-trip-btn");
 
-// ── Session state (multi-turn conversation) ──────────────────────────
+/* ── Session state ────────────────────────────────────────────────────── */
 let currentSessionId = null;
 
-function resetSession() {
-  currentSessionId = null;
-  btnText.textContent = "Plan My Trip";
-  promptEl.placeholder = "Where do you want to go? Tell us about your ideal trip...";
-}
+/* ── Init ─────────────────────────────────────────────────────────────── */
+showWelcome();
 
-// Suggestion chips
-document.querySelectorAll(".chip").forEach(chip => {
-  chip.addEventListener("click", () => {
-    resetSession();
-    promptEl.value = chip.dataset.prompt;
-    promptEl.focus();
-  });
+/* ── Auto-resize textarea ─────────────────────────────────────────────── */
+promptEl.addEventListener("input", () => {
+  promptEl.style.height = "auto";
+  promptEl.style.height = Math.min(promptEl.scrollHeight, 120) + "px";
 });
 
-// Toggle steps visibility
-toggleStepsBtn.addEventListener("click", () => {
-  stepsContainer.classList.toggle("hidden");
-  const isOpen = !stepsContainer.classList.contains("hidden");
-  toggleStepsBtn.innerHTML = isOpen
-    ? `Hide Execution Trace (<span id="step-count">${stepsContainer.children.length}</span> steps)`
-    : `Show Execution Trace (<span id="step-count">${stepsContainer.children.length}</span> steps)`;
+/* ── Enter to send ────────────────────────────────────────────────────── */
+promptEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendBtn.click();
+  }
 });
 
-// Main handler
-runBtn.addEventListener("click", async () => {
+/* ── New Trip ─────────────────────────────────────────────────────────── */
+newTripBtn.addEventListener("click", () => {
+  resetSession();
+  chatArea.innerHTML = "";
+  showWelcome();
+  promptEl.value = "";
+  promptEl.style.height = "auto";
+  promptEl.focus();
+});
+
+/* ── Main send handler ────────────────────────────────────────────────── */
+sendBtn.addEventListener("click", async () => {
   const prompt = promptEl.value.trim();
-  if (!prompt) return;
+  if (!prompt || sendBtn.disabled) return;
 
-  setLoading(true);
-  hideAll();
+  addUserMessage(prompt);
+  promptEl.value = "";
+  promptEl.style.height = "auto";
+  sendBtn.disabled = true;
+  addTypingIndicator();
 
   try {
     const body = { prompt };
-    if (currentSessionId) {
-      body.session_id = currentSessionId;
-    }
+    if (currentSessionId) body.session_id = currentSessionId;
 
     const res = await fetch("/api/execute", {
       method: "POST",
@@ -62,90 +56,155 @@ runBtn.addEventListener("click", async () => {
     });
 
     const data = await res.json();
+    removeTypingIndicator();
 
     if (data.status === "error") {
-      showError(data.error || "Unknown error");
+      addAgentMessage(`<div class="error-text">${esc(data.error || "Unknown error")}</div>`);
       resetSession();
     } else {
       renderResponse(data.response);
     }
 
-    renderSteps(data.steps || []);
-
+    if (data.steps && data.steps.length > 0) {
+      addStepsSection(data.steps);
+    }
   } catch (err) {
-    showError(`Network error: ${err.message}`);
+    removeTypingIndicator();
+    addAgentMessage(`<div class="error-text">Network error: ${esc(err.message)}</div>`);
   } finally {
-    setLoading(false);
+    sendBtn.disabled = false;
   }
 });
 
-function setLoading(on) {
-  runBtn.disabled = on;
-  loadingEl.classList.toggle("hidden", !on);
-  btnText.textContent = on ? "Working..." : "Plan My Trip";
-  btnSpinner.classList.toggle("hidden", !on);
+/* ═══════════════════════════════════════════════════════════════════════
+   CHAT MANAGEMENT
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function showWelcome() {
+  const msg = addAgentMessage(
+    `<div class="welcome-title">Welcome!</div>
+     <p class="welcome-sub">I'm your AI Travel Agent. Tell me about your dream trip — where you want to go, when, your budget, and what you enjoy — and I'll plan everything.</p>
+     <div class="quick-actions">
+       <button class="quick-chip" data-prompt="4 days in Paris in June, budget $1500, flying from New York. I love museums and good food.">Paris trip</button>
+       <button class="quick-chip" data-prompt="A week in London in September, moderate budget around $2000. I'm interested in history and pubs.">London week</button>
+       <button class="quick-chip" data-prompt="Romantic getaway to Berlin for 3 days, budget $1000 flying from Paris. We like art and nightlife.">Berlin romantic</button>
+     </div>`,
+    "welcome-msg"
+  );
+
+  msg.querySelectorAll(".quick-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      resetSession();
+      promptEl.value = chip.dataset.prompt;
+      promptEl.focus();
+    });
+  });
 }
 
-function hideAll() {
-  errorSection.classList.add("hidden");
-  packagesSection.classList.add("hidden");
-  textResponseSection.classList.add("hidden");
-  stepsSection.classList.add("hidden");
-  packagesContainer.innerHTML = "";
-  stepsContainer.innerHTML = "";
+function resetSession() {
+  currentSessionId = null;
+  promptEl.placeholder = "Describe your dream trip...";
 }
 
-function showError(msg) {
-  errorMessage.textContent = msg;
-  errorSection.classList.remove("hidden");
+function addUserMessage(text) {
+  const msg = document.createElement("div");
+  msg.className = "msg user-msg";
+  msg.innerHTML = `
+    <div class="msg-avatar">You</div>
+    <div class="msg-content"><p>${esc(text)}</p></div>`;
+  chatArea.appendChild(msg);
+  scrollToBottom();
+  return msg;
 }
 
-// ── Response rendering ──────────────────────────────────────────────────
+function addAgentMessage(html, extraClass) {
+  const msg = document.createElement("div");
+  msg.className = `msg agent-msg${extraClass ? " " + extraClass : ""}`;
+  msg.innerHTML = `
+    <div class="msg-avatar">&#9992;</div>
+    <div class="msg-content">${html}</div>`;
+  chatArea.appendChild(msg);
+  scrollToBottom();
+  return msg;
+}
+
+function addTypingIndicator() {
+  removeTypingIndicator();
+  const msg = document.createElement("div");
+  msg.className = "msg agent-msg typing-msg";
+  msg.id = "typing-indicator";
+  msg.innerHTML = `
+    <div class="msg-avatar">&#9992;</div>
+    <div class="msg-content">
+      <div class="typing-indicator">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="typing-label">Planning your trip...</span>
+      </div>
+    </div>`;
+  chatArea.appendChild(msg);
+  scrollToBottom();
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById("typing-indicator");
+  if (el) el.remove();
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RESPONSE RENDERING
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function renderResponse(responseStr) {
   if (!responseStr) {
-    textResponseContent.textContent = "No response received.";
-    textResponseSection.classList.remove("hidden");
+    addAgentMessage(`<p>No response received.</p>`);
+    return;
+  }
+
+  let parsed = null;
+  try { parsed = JSON.parse(responseStr); } catch { /* not JSON */ }
+
+  if (!parsed) {
+    addAgentMessage(`<p>${esc(responseStr)}</p>`);
+    return;
+  }
+
+  if (parsed.type === "clarification") {
+    currentSessionId = parsed.session_id || null;
+    renderClarification(parsed.message || responseStr);
+    return;
+  }
+
+  if (parsed.status === "budget_infeasible") {
+    resetSession();
+    renderBudgetInfeasible(parsed);
+    return;
+  }
+
+  if (parsed.status === "no_pricing_data") {
+    resetSession();
+    renderNoPricingData(parsed);
     return;
   }
 
   let packages = null;
-  let warning = null;
-  let parsed = null;
-  try {
-    parsed = JSON.parse(responseStr);
-  } catch {
-    // Not JSON -- show as plain text (legacy clarification format)
-    renderClarificationText(responseStr);
-    return;
-  }
+  let warning  = null;
 
-  if (parsed) {
-    // Multi-turn clarification with session_id
-    if (parsed.type === "clarification") {
-      currentSessionId = parsed.session_id || null;
-      renderClarification(parsed.message || responseStr);
-      return;
-    }
-    if (parsed.status === "budget_infeasible") {
-      resetSession();
-      renderBudgetInfeasible(parsed);
-      return;
-    }
-    if (parsed.status === "no_pricing_data") {
-      resetSession();
-      renderNoPricingData(parsed);
-      return;
-    }
-    if (Array.isArray(parsed)) {
-      packages = parsed;
-    } else if (parsed.packages && Array.isArray(parsed.packages)) {
-      packages = parsed.packages;
-      if (parsed.status === "best_effort") {
-        const issues = parsed.verifier_issues || [];
-        const question = parsed.question || "";
-        warning = { issues, question, category: parsed.repair_category || "" };
-      }
+  if (Array.isArray(parsed)) {
+    packages = parsed;
+  } else if (parsed.packages && Array.isArray(parsed.packages)) {
+    packages = parsed.packages;
+    if (parsed.status === "best_effort") {
+      warning = {
+        issues: parsed.verifier_issues || [],
+        question: parsed.question || "",
+        category: parsed.repair_category || "",
+      };
     }
   }
 
@@ -153,77 +212,58 @@ function renderResponse(responseStr) {
     resetSession();
     renderPackages(packages, warning);
   } else {
-    renderClarificationText(responseStr);
+    addAgentMessage(`<p>${esc(responseStr)}</p>`);
   }
 }
 
-function renderClarificationText(text) {
-  currentSessionId = null;
-  textResponseContent.textContent = text;
-  textResponseSection.classList.remove("hidden");
-}
+/* ── Clarification ────────────────────────────────────────────────────── */
 
 function renderClarification(message) {
-  btnText.textContent = "Continue";
-  promptEl.value = "";
-  promptEl.placeholder = "Answer the question above to continue planning...";
-  promptEl.focus();
-
-  let html = `<div class="clarification-card">
-    <div class="clarification-icon">&#x2753;</div>
-    <div class="clarification-message">${esc(message).replace(/\n/g, "<br>")}</div>`;
+  let html = `<p>${esc(message).replace(/\n/g, "<br>")}</p>`;
 
   const chips = detectClarificationChips(message);
   if (chips.length > 0) {
-    html += `<div class="clarification-chips">`;
-    chips.forEach(chip => {
-      html += `<button class="clarify-chip" data-value="${esc(chip)}">${esc(chip)}</button>`;
+    html += `<div class="clarify-chips">`;
+    chips.forEach(c => {
+      html += `<button class="clarify-chip" data-value="${esc(c)}">${esc(c)}</button>`;
     });
     html += `</div>`;
   }
 
-  html += `<div class="clarification-hint">Type your answer below, or click a suggestion to fill it in.</div>`;
-  html += `</div>`;
+  const msg = addAgentMessage(html);
 
-  textResponseContent.innerHTML = html;
-  textResponseSection.classList.remove("hidden");
-
-  textResponseContent.querySelectorAll(".clarify-chip").forEach(btn => {
+  msg.querySelectorAll(".clarify-chip").forEach(btn => {
     btn.addEventListener("click", () => {
-      const current = promptEl.value.trim();
-      promptEl.value = current ? current + ", " + btn.dataset.value : btn.dataset.value;
+      const cur = promptEl.value.trim();
+      promptEl.value = cur ? cur + ", " + btn.dataset.value : btn.dataset.value;
       promptEl.focus();
     });
   });
+
+  promptEl.placeholder = "Answer the question above to continue...";
 }
 
 function detectClarificationChips(message) {
   const lower = message.toLowerCase();
   const chips = [];
-
-  if (/\b(origin|depart|flying from|airport|where.*from|city.*from)\b/.test(lower)) {
+  if (/\b(origin|depart|flying from|airport|where.*from|city.*from)\b/.test(lower))
     chips.push("TLV", "NYC", "London", "Paris", "Berlin");
-  }
-  if (/\b(destination|where.*go|country|region|which.*city)\b/.test(lower)) {
+  if (/\b(destination|where.*go|country|region|which.*city)\b/.test(lower))
     chips.push("Europe", "Southeast Asia", "Caribbean", "Anywhere cheap");
-  }
-  if (/\b(budget|how much|price|spend|cost)\b/.test(lower)) {
+  if (/\b(budget|how much|price|spend|cost)\b/.test(lower))
     chips.push("Under $1000", "$1000-2000", "$2000-3000", "No limit");
-  }
-  if (/\b(how long|duration|days|week|nights)\b/.test(lower)) {
+  if (/\b(how long|duration|days|week|nights)\b/.test(lower))
     chips.push("3-4 days", "1 week", "10 days", "2 weeks");
-  }
-  if (/\b(interest|activit|style|prefer|must.see)\b/.test(lower)) {
+  if (/\b(interest|activit|style|prefer|must.see)\b/.test(lower))
     chips.push("Beaches", "Culture & Museums", "Food & Nightlife", "Adventure", "Relaxation");
-  }
-
   return chips;
 }
+
+/* ── Budget Infeasible ────────────────────────────────────────────────── */
 
 function renderBudgetInfeasible(data) {
   const cb = data.cost_breakdown || {};
   const cheapFlights = data.cheapest_flights_found || [];
-  const cheapHotels = data.cheapest_hotels_found || [];
   const question = data.question || "";
 
   let html = `<div class="status-card budget-card">
@@ -270,9 +310,10 @@ function renderBudgetInfeasible(data) {
   }
 
   html += `</div>`;
-  packagesContainer.innerHTML = html;
-  packagesSection.classList.remove("hidden");
+  addAgentMessage(html);
 }
+
+/* ── No Pricing Data ──────────────────────────────────────────────────── */
 
 function renderNoPricingData(data) {
   const constraints = data.constraints_extracted || {};
@@ -290,30 +331,31 @@ function renderNoPricingData(data) {
     </div>
   </div>`;
 
-  packagesContainer.innerHTML = html;
-  packagesSection.classList.remove("hidden");
+  addAgentMessage(html);
 }
 
+/* ── Packages ─────────────────────────────────────────────────────────── */
+
 function renderPackages(packages, warning) {
-  packagesContainer.innerHTML = "";
+  addAgentMessage(
+    `<p>I found <strong>${packages.length} trip package${packages.length > 1 ? "s" : ""}</strong> for you! Compare the options below.</p>`
+  );
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "packages-wrapper";
 
   if (warning) {
-    const banner = document.createElement("div");
-    banner.className = "warning-banner";
-    let bannerHTML = `<div class="warning-icon">&#9888;</div>
-      <div class="warning-body">
-        <strong>Best-effort results</strong> — the quality checker flagged some issues:`;
+    let wh = `<div class="warning-banner"><div class="warning-icon">&#9888;</div><div class="warning-body"><strong>Best-effort results</strong> — the quality checker flagged some issues:`;
     if (warning.issues && warning.issues.length) {
-      bannerHTML += `<ul class="warning-issues">`;
-      warning.issues.forEach(i => { bannerHTML += `<li>${esc(i)}</li>`; });
-      bannerHTML += `</ul>`;
+      wh += `<ul class="warning-issues">`;
+      warning.issues.forEach(i => { wh += `<li>${esc(i)}</li>`; });
+      wh += `</ul>`;
     }
     if (warning.question) {
-      bannerHTML += `<p class="warning-question">${esc(warning.question)}</p>`;
+      wh += `<p class="warning-question">${esc(warning.question)}</p>`;
     }
-    bannerHTML += `</div>`;
-    banner.innerHTML = bannerHTML;
-    packagesContainer.appendChild(banner);
+    wh += `</div></div>`;
+    wrapper.innerHTML += wh;
   }
 
   packages.forEach(pkg => {
@@ -325,27 +367,20 @@ function renderPackages(packages, warning) {
       card.innerHTML = `<div class="package-header"><div><span class="package-label">${esc(pkg.label || pkg.destination || "Package")}</span></div></div>
         <div class="package-body"><pre>${esc(JSON.stringify(pkg, null, 2))}</pre></div>`;
     }
-    packagesContainer.appendChild(card);
+    wrapper.appendChild(card);
   });
 
-  packagesSection.classList.remove("hidden");
+  chatArea.appendChild(wrapper);
+  scrollToBottom();
 }
 
-function formatDateWindow(dw) {
-  if (!dw) return "";
-  if (typeof dw === "string") return dw;
-  if (typeof dw === "object") {
-    const start = dw.start || dw.start_date || dw.from || "";
-    const end = dw.end || dw.end_date || dw.to || "";
-    if (start && end) return `${start} to ${end}`;
-    return start || end || JSON.stringify(dw);
-  }
-  return String(dw);
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   PACKAGE CARD BUILDERS
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function buildPackageHTML(pkg) {
   const label = pkg.label || "Trip Package";
-  const dest = pkg.destination || "Unknown";
+  const dest  = pkg.destination || "Unknown";
   const dates = formatDateWindow(pkg.date_window);
   const total = getTotal(pkg);
 
@@ -358,10 +393,8 @@ function buildPackageHTML(pkg) {
       </div>
       <div class="package-total">${total}</div>
     </div>
-    <div class="package-body">
-  `;
+    <div class="package-body">`;
 
-  // Detail grid: flights, hotel, weather, pois
   html += `<div class="detail-grid">`;
   html += buildFlightBox(pkg);
   html += buildHotelBox(pkg);
@@ -369,39 +402,22 @@ function buildPackageHTML(pkg) {
   html += buildDataBox(pkg);
   html += `</div>`;
 
-  // Itinerary
-  if (pkg.itinerary && pkg.itinerary.length > 0) {
-    html += buildItinerary(pkg.itinerary);
-  }
-
-  // Cost breakdown
+  if (pkg.itinerary && pkg.itinerary.length > 0) html += buildItinerary(pkg.itinerary);
   html += buildCostBreakdown(pkg);
 
-  // Rationale
-  if (pkg.rationale) {
+  if (pkg.rationale)
     html += `<div class="rationale"><strong>Why this package:</strong> ${esc(pkg.rationale)}</div>`;
-  }
 
-  // Booking links -- try package-level first, then individual item URLs
   const links = pkg.booking_links || {};
-  const flightLink = links.flights_search
-    || (pkg.flights && pkg.flights.outbound && pkg.flights.outbound.booking_url)
-    || "";
-  const hotelLink = links.hotels_search
-    || (pkg.hotel && pkg.hotel.booking_url)
-    || "";
+  const flightLink = links.flights_search || (pkg.flights && pkg.flights.outbound && pkg.flights.outbound.booking_url) || "";
+  const hotelLink  = links.hotels_search  || (pkg.hotel && pkg.hotel.booking_url) || "";
   if (flightLink || hotelLink) {
     html += `<div class="booking-links">`;
-    if (flightLink) {
-      html += `<a href="${esc(flightLink)}" target="_blank" rel="noopener" class="booking-btn flights-btn">Search Flights</a>`;
-    }
-    if (hotelLink) {
-      html += `<a href="${esc(hotelLink)}" target="_blank" rel="noopener" class="booking-btn hotels-btn">Search Hotels</a>`;
-    }
+    if (flightLink) html += `<a href="${esc(flightLink)}" target="_blank" rel="noopener" class="booking-btn flights-btn">Search Flights</a>`;
+    if (hotelLink)  html += `<a href="${esc(hotelLink)}" target="_blank" rel="noopener" class="booking-btn hotels-btn">Search Hotels</a>`;
     html += `</div>`;
   }
 
-  // Assumptions
   const assumptions = toArray(pkg.assumptions);
   if (assumptions.length > 0) {
     html += `<details class="assumptions"><summary>Notes & Assumptions (${assumptions.length})</summary><ul>`;
@@ -419,58 +435,54 @@ function buildFlightBox(pkg) {
   const ret = f.return || f.return_flight || {};
   const totalCost = f.total_flight_cost || f.total_cost || 0;
 
-  if (!out.origin && !out.routing && !totalCost) {
-    return `<div class="detail-box"><h4>Flights</h4>
-      <div class="detail-main">No flight data</div></div>`;
-  }
+  if (!out.origin && !out.routing && !totalCost)
+    return `<div class="detail-box"><h4>Flights</h4><div class="detail-main">No flight data</div></div>`;
 
   let html = `<div class="detail-box"><h4>Flights</h4>`;
 
   if (out.origin || out.routing) {
     const outRoute = out.routing || `${out.origin || "?"} → ${out.destination || "?"}`;
-    let outSub = out.airline ? `${out.airline}` : "";
+    let outSub = out.airline || "";
     if (out.departure) outSub += outSub ? ` · ${formatDateTime(out.departure)}` : formatDateTime(out.departure);
     if (out.stops !== undefined) outSub += ` · ${out.stops === 0 ? "Direct" : out.stops + " stop(s)"}`;
     html += `<div class="flight-leg">
       <div class="flight-leg-label">Outbound</div>
       <div class="detail-main">${esc(outRoute)}</div>
-      <div class="detail-sub">${esc(outSub)}</div>
-    </div>`;
+      <div class="detail-sub">${esc(outSub)}</div></div>`;
   }
 
   if (ret.origin || ret.routing || ret.departure) {
     const retRoute = ret.routing || `${ret.origin || "?"} → ${ret.destination || "?"}`;
-    let retSub = ret.airline ? `${ret.airline}` : "";
+    let retSub = ret.airline || "";
     if (ret.departure) retSub += retSub ? ` · ${formatDateTime(ret.departure)}` : formatDateTime(ret.departure);
     if (ret.stops !== undefined) retSub += ` · ${ret.stops === 0 ? "Direct" : ret.stops + " stop(s)"}`;
     html += `<div class="flight-leg">
       <div class="flight-leg-label">Return</div>
       <div class="detail-main">${esc(retRoute)}</div>
-      <div class="detail-sub">${esc(retSub)}</div>
-    </div>`;
+      <div class="detail-sub">${esc(retSub)}</div></div>`;
   }
 
-  if (totalCost) {
+  if (totalCost)
     html += `<div class="detail-sub" style="margin-top:0.5rem;font-weight:600">$${Math.round(totalCost)} roundtrip</div>`;
-  }
+
   html += `</div>`;
   return html;
 }
 
 function buildHotelBox(pkg) {
   const h = pkg.hotel || {};
-  const name = h.name || "No hotel data";
+  const name     = h.name || "No hotel data";
   const perNight = h.per_night || h.per_night_usd || h.price_per_night || 0;
-  const totalCost = h.total_cost || h.total_cost_usd || h.total_price || 0;
-  const nights = h.nights || "";
-  const address = h.address || "";
-  const checkIn = h.check_in || "";
+  const totalC   = h.total_cost || h.total_cost_usd || h.total_price || 0;
+  const nights   = h.nights || "";
+  const address  = h.address || "";
+  const checkIn  = h.check_in || "";
   const checkOut = h.check_out || "";
 
   let sub = "";
-  if (perNight) sub += `$${Math.round(perNight)}/night`;
-  if (nights) sub += sub ? ` · ${nights} nights` : `${nights} nights`;
-  if (totalCost) sub += sub ? ` · $${Math.round(totalCost)} total` : `$${Math.round(totalCost)} total`;
+  if (perNight)  sub += `$${Math.round(perNight)}/night`;
+  if (nights)    sub += sub ? ` · ${nights} nights` : `${nights} nights`;
+  if (totalC)    sub += sub ? ` · $${Math.round(totalC)} total` : `$${Math.round(totalC)} total`;
   if (h.rating && h.rating > 0) sub += sub ? ` · ${h.rating}/10` : `${h.rating}/10`;
 
   let extra = "";
@@ -479,18 +491,13 @@ function buildHotelBox(pkg) {
 
   return `<div class="detail-box"><h4>Hotel</h4>
     <div class="detail-main">${esc(name)}</div>
-    <div class="detail-sub">${esc(sub)}</div>
-    ${extra}
-  </div>`;
+    <div class="detail-sub">${esc(sub)}</div>${extra}</div>`;
 }
 
 function buildWeatherBox(pkg) {
   const w = pkg.weather_summary || "No weather data";
   const short = typeof w === "string" ? w.slice(0, 120) + (w.length > 120 ? "..." : "") : "";
-
-  return `<div class="detail-box"><h4>Weather</h4>
-    <div class="detail-main">${esc(short)}</div>
-  </div>`;
+  return `<div class="detail-box"><h4>Weather</h4><div class="detail-main">${esc(short)}</div></div>`;
 }
 
 function buildDataBox(pkg) {
@@ -499,11 +506,9 @@ function buildDataBox(pkg) {
   if (pkg.hotel && pkg.hotel.name) sources.push("Hotels");
   if (pkg.weather_summary) sources.push("Weather");
   if (pkg.itinerary && pkg.itinerary.length) sources.push("Itinerary");
-
   return `<div class="detail-box"><h4>Data Sources</h4>
     <div class="detail-main">${sources.length} sources used</div>
-    <div class="detail-sub">${sources.join(", ") || "None"}</div>
-  </div>`;
+    <div class="detail-sub">${sources.join(", ") || "None"}</div></div>`;
 }
 
 function buildItinerary(days) {
@@ -513,17 +518,14 @@ function buildItinerary(days) {
   dayList.forEach(day => {
     if (!day || typeof day !== "object") return;
     const title = `Day ${day.day || "?"}` + (day.date ? ` — ${day.date}` : "");
-    html += `<div class="day-card">
-      <div class="day-title">${esc(title)}</div>`;
+    html += `<div class="day-card"><div class="day-title">${esc(title)}</div>`;
     const acts = toArray(day.activities);
     if (acts.length) {
       html += `<ul>`;
       acts.forEach(a => { html += `<li>${esc(typeof a === "object" ? (a.name || a.activity || JSON.stringify(a)) : a)}</li>`; });
       html += `</ul>`;
     }
-    if (day.notes) {
-      html += `<div class="detail-sub" style="margin-top:0.25rem;font-style:italic">${esc(day.notes)}</div>`;
-    }
+    if (day.notes) html += `<div class="detail-sub" style="margin-top:0.25rem;font-style:italic">${esc(day.notes)}</div>`;
     html += `</div>`;
   });
   html += `</div>`;
@@ -533,17 +535,17 @@ function buildItinerary(days) {
 function buildCostBreakdown(pkg) {
   const c = pkg.cost_breakdown || {};
   const flights = c.flights || c.flights_usd || 0;
-  const hotel = c.hotel || c.hotel_usd || 0;
-  const daily = c.daily_expenses_estimate || c.daily_expenses_estimate_usd || 0;
-  const total = c.total || c.total_usd || 0;
+  const hotel   = c.hotel || c.hotel_usd || 0;
+  const daily   = c.daily_expenses_estimate || c.daily_expenses_estimate_usd || 0;
+  const total   = c.total || c.total_usd || 0;
 
   if (!total && !flights && !hotel) return "";
 
   let html = `<div class="cost-breakdown"><h4>Cost Breakdown</h4>`;
   if (flights) html += `<div class="cost-row"><span>Flights</span><span>$${Math.round(flights)}</span></div>`;
-  if (hotel) html += `<div class="cost-row"><span>Hotel</span><span>$${Math.round(hotel)}</span></div>`;
-  if (daily) html += `<div class="cost-row"><span>Daily expenses (est.)</span><span>$${Math.round(daily)}</span></div>`;
-  if (total) html += `<div class="cost-row total"><span>Total</span><span>$${Math.round(total)}</span></div>`;
+  if (hotel)   html += `<div class="cost-row"><span>Hotel</span><span>$${Math.round(hotel)}</span></div>`;
+  if (daily)   html += `<div class="cost-row"><span>Daily expenses (est.)</span><span>$${Math.round(daily)}</span></div>`;
+  if (total)   html += `<div class="cost-row total"><span>Total</span><span>$${Math.round(total)}</span></div>`;
   if (c.daily_expenses_notes) html += `<div class="detail-sub" style="margin-top:0.5rem">${esc(c.daily_expenses_notes)}</div>`;
   html += `</div>`;
   return html;
@@ -555,7 +557,79 @@ function getTotal(pkg) {
   return t ? `$${Math.round(t).toLocaleString()}` : "";
 }
 
-// ── Steps rendering (ReAct-style trace) ──────────────────────────────────
+function formatDateWindow(dw) {
+  if (!dw) return "";
+  if (typeof dw === "string") return dw;
+  if (typeof dw === "object") {
+    const start = dw.start || dw.start_date || dw.from || "";
+    const end   = dw.end || dw.end_date || dw.to || "";
+    if (start && end) return `${start} to ${end}`;
+    return start || end || JSON.stringify(dw);
+  }
+  return String(dw);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EXECUTION TRACE (ReAct-style)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function addStepsSection(steps) {
+  const infos = steps.map(classifyStep);
+  const supervisorCount = infos.filter(s => s.role === "thought").length;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "trace-wrapper";
+
+  let html = `<button class="trace-toggle">
+    <span class="trace-toggle-icon">&#9654;</span>
+    Execution Trace &mdash; ${steps.length} steps, ${supervisorCount} reasoning cycles
+  </button>`;
+
+  html += `<div class="trace-body hidden">`;
+  steps.forEach((step, i) => {
+    const si = infos[i];
+    const obs = si.role === "thought" ? extractObservation(step) : null;
+    const obsH = obs ? `<div class="step-observation">Observed: ${esc(obs)}</div>` : "";
+
+    html += `<div class="step-card step-role-${si.role}">`;
+    html += `<div class="step-header">
+      <span>
+        <span class="react-badge ${si.role}">${si.roleLabel}</span>
+        <span class="module-name">${esc(si.module)}</span>
+        ${si.summary ? `<span class="step-summary">${esc(si.summary)}</span>` : ""}
+      </span>
+      <span class="step-toggle-icon">&#9660;</span>
+    </div>`;
+    html += `<div class="step-body">
+      ${obsH}
+      <h4>Prompt</h4>
+      <pre>${esc(typeof step.prompt === "object" ? JSON.stringify(step.prompt, null, 2) : String(step.prompt))}</pre>
+      <h4>Response</h4>
+      <pre>${esc(typeof step.response === "object" ? JSON.stringify(step.response, null, 2) : String(step.response))}</pre>
+    </div>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  wrapper.innerHTML = html;
+
+  const toggle = wrapper.querySelector(".trace-toggle");
+  const body   = wrapper.querySelector(".trace-body");
+  toggle.addEventListener("click", () => {
+    body.classList.toggle("hidden");
+    toggle.querySelector(".trace-toggle-icon").innerHTML =
+      body.classList.contains("hidden") ? "&#9654;" : "&#9660;";
+  });
+
+  wrapper.querySelectorAll(".step-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.nextElementSibling.classList.toggle("open");
+    });
+  });
+
+  chatArea.appendChild(wrapper);
+  scrollToBottom();
+}
 
 function classifyStep(step) {
   const mod = (step.module || "").toLowerCase();
@@ -564,38 +638,30 @@ function classifyStep(step) {
   if (mod === "supervisor") {
     const action = parsed ? parsed.next_action : "?";
     const reason = parsed ? parsed.reason : "";
-    return {
-      role: "thought", roleLabel: "THOUGHT", module: "Supervisor",
-      summary: `${action}${reason ? " — " + reason : ""}`,
-    };
+    return { role: "thought", roleLabel: "THOUGHT", module: "Supervisor",
+             summary: `${action}${reason ? " — " + reason : ""}` };
   }
   if (mod === "planner") {
-    const taskCount = parsed && parsed.tasks ? parsed.tasks.length : 0;
+    const tc = parsed && parsed.tasks ? parsed.tasks.length : 0;
     const dests = parsed && parsed.constraints && parsed.constraints.destinations
       ? parsed.constraints.destinations.join(", ") : "";
-    return {
-      role: "plan", roleLabel: "PLAN", module: "Planner",
-      summary: `${taskCount} tasks${dests ? " for " + dests : ""}`,
-    };
+    return { role: "plan", roleLabel: "PLAN", module: "Planner",
+             summary: `${tc} tasks${dests ? " for " + dests : ""}` };
   }
   if (mod.includes("synthesizer") || mod.includes("trip")) {
-    const pkgs = parsed && parsed.packages ? parsed.packages.length : (parsed ? 1 : 0);
-    return {
-      role: "action", roleLabel: "SYNTHESIS", module: "Trip Synthesizer",
-      summary: `${pkgs} package(s) assembled`,
-    };
+    const pc = parsed && parsed.packages ? parsed.packages.length : (parsed ? 1 : 0);
+    return { role: "action", roleLabel: "SYNTHESIS", module: "Trip Synthesizer",
+             summary: `${pc} package(s) assembled` };
   }
   if (mod === "verifier") {
-    const decision = parsed ? parsed.decision : "?";
-    const issueCount = parsed && parsed.issues ? parsed.issues.length : 0;
-    const warnCount = parsed && parsed.warnings ? parsed.warnings.length : 0;
-    let detail = decision;
-    if (issueCount) detail += `, ${issueCount} issue(s)`;
-    if (warnCount) detail += `, ${warnCount} warning(s)`;
-    return {
-      role: "reflection", roleLabel: "REFLECTION", module: "Verifier",
-      summary: detail,
-    };
+    const dec = parsed ? parsed.decision : "?";
+    const ic  = parsed && parsed.issues   ? parsed.issues.length   : 0;
+    const wc  = parsed && parsed.warnings ? parsed.warnings.length : 0;
+    let detail = dec;
+    if (ic) detail += `, ${ic} issue(s)`;
+    if (wc) detail += `, ${wc} warning(s)`;
+    return { role: "reflection", roleLabel: "REFLECTION", module: "Verifier",
+             summary: detail };
   }
   return { role: "action", roleLabel: "ACTION", module: step.module || "Agent", summary: "" };
 }
@@ -603,77 +669,23 @@ function classifyStep(step) {
 function extractObservation(step) {
   if (!step.prompt || !step.prompt.user) return null;
   const text = step.prompt.user;
-  const dataMatch = text.match(/Data collected so far:\s*(\{[^}]+\})/);
-  if (!dataMatch) return null;
+  const m = text.match(/Data collected so far:\s*(\{[^}]+\})/);
+  if (!m) return null;
   try {
-    const data = JSON.parse(dataMatch[1]);
+    const d = JSON.parse(m[1]);
     const parts = [];
-    if (data.flights) parts.push(`${data.flights} flights`);
-    if (data.hotels) parts.push(`${data.hotels} hotels`);
-    if (data.weather) parts.push(`${data.weather} weather`);
-    if (data.pois) parts.push(`${data.pois} POIs`);
-    if (data.rag_chunks) parts.push(`${data.rag_chunks} RAG chunks`);
+    if (d.flights)    parts.push(`${d.flights} flights`);
+    if (d.hotels)     parts.push(`${d.hotels} hotels`);
+    if (d.weather)    parts.push(`${d.weather} weather`);
+    if (d.pois)       parts.push(`${d.pois} POIs`);
+    if (d.rag_chunks) parts.push(`${d.rag_chunks} RAG chunks`);
     return parts.length ? parts.join(", ") : null;
   } catch { return null; }
 }
 
-function renderSteps(steps) {
-  if (!steps || steps.length === 0) return;
-
-  stepsContainer.innerHTML = "";
-  let supervisorCount = 0;
-
-  steps.forEach((step, idx) => {
-    const info = classifyStep(step);
-    if (info.role === "thought") supervisorCount++;
-
-    const card = document.createElement("div");
-    card.className = `step-card step-role-${info.role}`;
-
-    const observation = info.role === "thought" ? extractObservation(step) : null;
-    const obsHTML = observation
-      ? `<div class="step-observation">Observed: ${esc(observation)}</div>`
-      : "";
-
-    const header = document.createElement("div");
-    header.className = "step-header";
-    header.innerHTML = `
-      <span>
-        <span class="react-badge ${info.role}">${info.roleLabel}</span>
-        <span class="module-name">${esc(info.module)}</span>
-        ${info.summary ? `<span class="step-summary">${esc(info.summary)}</span>` : ""}
-      </span>
-      <span class="step-toggle-icon">&#9660;</span>
-    `;
-
-    const body = document.createElement("div");
-    body.className = "step-body";
-
-    let bodyHTML = "";
-    if (obsHTML) bodyHTML += obsHTML;
-    bodyHTML += `<h4>Prompt (sent to LLM)</h4>
-      <pre>${esc(typeof step.prompt === "object" ? JSON.stringify(step.prompt, null, 2) : String(step.prompt))}</pre>
-      <h4>Response (from LLM)</h4>
-      <pre>${esc(typeof step.response === "object" ? JSON.stringify(step.response, null, 2) : String(step.response))}</pre>`;
-    body.innerHTML = bodyHTML;
-
-    header.addEventListener("click", () => body.classList.toggle("open"));
-    card.appendChild(header);
-    card.appendChild(body);
-    stepsContainer.appendChild(card);
-  });
-
-  const label = `Show Execution Trace — ReAct Loop (<span id="step-count">${steps.length}</span> steps, ${supervisorCount} reasoning cycles)`;
-  toggleStepsBtn.innerHTML = label;
-  stepsSection.classList.remove("hidden");
-}
-
-function tryParseJSON(str) {
-  if (!str || typeof str !== "string") return null;
-  try { return JSON.parse(str); } catch { return null; }
-}
-
-// ── Utilities ────────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function esc(str) {
   if (typeof str !== "string") return String(str || "");
@@ -694,7 +706,10 @@ function formatDateTime(dt) {
     const d = new Date(dt);
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
       " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return dt;
-  }
+  } catch { return dt; }
+}
+
+function tryParseJSON(str) {
+  if (!str || typeof str !== "string") return null;
+  try { return JSON.parse(str); } catch { return null; }
 }

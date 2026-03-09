@@ -47,12 +47,13 @@
 - [x] Multi-turn conversation (session memory + follow-up context merging)
 - [x] Interactive clarification chips (smart quick-reply buttons under questions)
 - [x] Per-destination hotel tagging (destination_city field for Supervisor reasoning)
+- [x] Chat-based UI/UX redesign (conversation history, message bubbles, typing indicator)
 
 ---
 
 ## Nice to Have (Differentiators, Do After Core Is Solid)
 
-- [ ] Loading progress in UI — show "Searching flights for Miami..." in real-time
+- [ ] Loading progress in UI — show "Searching flights for Miami..." in real-time (SSE/WebSocket)
 - [ ] Trip comparison view — side-by-side packages
 - [ ] Export trip to PDF or email
 - [ ] Rate limiting / input sanitization on API

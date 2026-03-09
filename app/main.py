@@ -1,19 +1,25 @@
-"""Main FastAPI application and Supervisor orchestration loop.
+"""Main FastAPI application -- Supervisor-driven agentic loop.
 
-Architecture: Supervisor → Planner → Executor → Trip Synthesizer → Verifier
+Architecture: The Supervisor is called at EVERY decision point, making this
+a true agent rather than a static workflow:
+
+  Supervisor → Plan → Execute(Phase1) → Supervisor → Execute(Phase2) → Synthesize → Verify
+                                          ↑ observes partial results, decides:
+                                            continue / pivot / synthesize
 
 Key principles:
-- Hard cap of 5 LLM calls per /api/execute invocation.
-- Supervisor is the SOLE decision maker (ask_clarification / plan / finalize).
-- Gate B (after Executor): budget infeasibility → return best-effort + question.
-  This is an orchestrator optimization, not a routing decision.
-- Strict Verifier: never auto-approve. Cap handling in THIS loop, not in Verifier.
-- Delta replanning: if rejected and under cap, classify repair category.
+- Hard cap of 8 LLM calls per /api/execute invocation.
+- Supervisor is called MULTIPLE TIMES -- it observes, reasons, and adapts.
+- Planner extracts constraints + generates tasks in ONE call (saves budget).
+- RAG grounds destination choices BEFORE planning.
+- Executor runs in destination-group batches so Supervisor can observe.
+- Delta replanning on rejection when budget allows.
 """
 
 import json
 import time
 import traceback
+import uuid
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
@@ -34,10 +40,11 @@ from app.models.schemas import (
 from app.models.shared_state import SharedState
 from app.llm.client import LLMCapReached
 from app.agents.supervisor import run_supervisor
-from app.agents.planner import run_planner
+from app.agents.planner import run_planner, split_tasks_by_destination, get_destination_groups
 from app.agents.executor import run_executor
 from app.agents.synthesizer import run_synthesizer
 from app.agents.verifier import run_verifier
+from app.utils.trip_store import save_trip, save_session, log_execution
 
 app = FastAPI(title="AI Travel Agent")
 
@@ -48,7 +55,7 @@ if FRONTEND_DIR.is_dir():
 DAILY_EXPENSES_ESTIMATE = 50
 BUDGET_TOLERANCE = 1.05
 
-MAX_LOOP_ITERATIONS = 2
+MAX_SUPERVISOR_ROUNDS = 6
 
 
 # ── GET /api/team_info ─────────────────────────────────────────────────────
@@ -69,33 +76,73 @@ async def get_team_info() -> TeamInfoResponse:
 
 @app.get("/api/agent_info", response_model=AgentInfoResponse)
 async def get_agent_info() -> AgentInfoResponse:
-    dummy_step = Step(
-        module="Supervisor",
-        prompt={"system": "You are the Supervisor.", "user": "Plan me a trip."},
-        response={"content": "Routing to Planner."},
-    )
+    example_steps = [
+        Step(
+            module="Supervisor",
+            prompt={"system": "(Supervisor system prompt)", "user": "User prompt + current state"},
+            response={"content": '{"next_action": "plan", "reason": "Origin and season provided, enough to plan."}'},
+        ),
+        Step(
+            module="Planner",
+            prompt={"system": "(Planner system prompt)", "user": "User prompt + RAG knowledge + constraints"},
+            response={"content": '{"constraints": {"origin": "New York", ...}, "tasks": [{"task": "search_flights", ...}]}'},
+        ),
+        Step(
+            module="Supervisor",
+            prompt={"system": "(Supervisor system prompt)", "user": "State with partial data from Miami"},
+            response={"content": '{"next_action": "continue", "reason": "Only 1 destination searched, need more for comparison."}'},
+        ),
+        Step(
+            module="Supervisor",
+            prompt={"system": "(Supervisor system prompt)", "user": "State with data from Miami + San Juan"},
+            response={"content": '{"next_action": "synthesize", "reason": "2 destinations with data, enough to build packages."}'},
+        ),
+        Step(
+            module="Trip Synthesizer",
+            prompt={"system": "(Synthesizer system prompt)", "user": "All flight/hotel/weather/POI data"},
+            response={"content": '{"packages": [{"label": "Budget Pick", "destination": "Miami", ...}, ...]}'},
+        ),
+        Step(
+            module="Verifier",
+            prompt={"system": "(Verifier system prompt)", "user": "Draft packages + constraints"},
+            response={"content": '{"decision": "APPROVE", "issues": [], "warnings": ["minor notes"]}'},
+        ),
+    ]
     example = AgentInfoPromptExample(
-        prompt="A week in May, somewhere in Europe with good weather, best value for money.",
-        full_response="(Full response will be populated after end-to-end implementation.)",
-        steps=[dummy_step],
+        prompt="Beach vacation in June from New York",
+        full_response=(
+            "The agent returns 2-3 tiered trip packages (Budget Pick, Best Value, Premium) "
+            "each containing: destination, flights with outbound/return details and booking URLs, "
+            "hotel with name/price/booking URL, weather summary, day-by-day itinerary, "
+            "cost breakdown, rationale, and assumptions. The Supervisor makes 3+ decisions "
+            "during execution, observing partial results and adapting (e.g., skipping "
+            "expensive destinations, collecting more data for comparison)."
+        ),
+        steps=example_steps,
     )
     return AgentInfoResponse(
         description=(
-            "Full-Package AI Travel Agent. Given a free-form travel request, "
-            "the agent autonomously recommends destinations, finds flights and "
-            "hotels, checks weather, builds a day-by-day itinerary, and returns "
-            "a complete priced trip package with rationale."
+            "Autonomous Full-Package AI Travel Agent using a Supervisor-driven "
+            "agentic loop (ReAct pattern). Given a free-form travel request, the "
+            "Supervisor reasons at every decision point: it plans, observes partial "
+            "results from flight/hotel/weather/POI tools, decides whether to continue "
+            "searching, pivot destinations, or synthesize packages. Uses RAG (Pinecone "
+            "with Wikivoyage) to ground destination choices, Supabase for caching and "
+            "session persistence, and a pragmatic Verifier for quality assurance."
         ),
         purpose=(
             "Solve the problem of planning trips from vague, flexible intent. "
-            "Users no longer need exact dates or destinations upfront."
+            "Users describe their ideal trip in plain language and receive complete, "
+            "priced, bookable trip packages — no exact dates or destinations needed upfront."
         ),
         prompt_template=AgentInfoPromptTemplate(
             template=(
-                "Describe your ideal trip in free-form text. For example: "
-                "desired region, rough dates or season, budget range, pace "
-                "(relaxed / active), interests (beaches, culture, nightlife…), "
-                "and number of travellers."
+                "Describe your ideal trip in free-form text. Include any of: "
+                "origin city, desired region or destination, rough dates or season, "
+                "budget range, pace (relaxed / active), interests (beaches, culture, "
+                "nightlife, food…), and number of travellers. Example: "
+                "'Beach vacation in June from New York' or "
+                "'1 week in Europe, best value, culture and food, from TLV'."
             )
         ),
         prompt_examples=[example],
@@ -114,26 +161,54 @@ async def get_model_architecture() -> FileResponse:
 
 @app.post("/api/execute", response_model=ExecuteResponse)
 async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
-    """Main orchestration loop with LLM call cap and Gate B optimization."""
-    try:
-        state = SharedState(raw_prompt=request.prompt)
+    """Supervisor-driven agentic loop.
 
-        for iteration in range(MAX_LOOP_ITERATIONS):
-            t0 = time.time()
+    The Supervisor is called at EVERY decision point.  It observes the
+    current state (partial tool results, prices vs budget, etc.) and
+    decides what happens next.  This is the ReAct pattern:
+      Reason → Act → Observe → Reason → Act → ...
+    """
+    try:
+        state = SharedState(
+            raw_prompt=request.prompt,
+            session_id=str(uuid.uuid4()),
+        )
+
+        t_start = time.time()
+
+        for round_num in range(MAX_SUPERVISOR_ROUNDS):
             print(f"\n{'='*60}", flush=True)
-            print(f"  ITERATION {iteration + 1}/{MAX_LOOP_ITERATIONS}  "
-                  f"(LLM calls used: {state.llm_call_count}/{state.llm_call_cap})", flush=True)
+            print(f"  SUPERVISOR ROUND {round_num + 1}/{MAX_SUPERVISOR_ROUNDS}  "
+                  f"(LLM calls: {state.llm_call_count}/{state.llm_call_cap})", flush=True)
             print(f"{'='*60}", flush=True)
 
-            # ── Step 1: Supervisor ──────────────────────────────────────
+            # ── Supervisor decides ─────────────────────────────────────
             if not state.can_call_llm():
-                print("  LLM cap reached before Supervisor -- returning best-effort", flush=True)
-                return _build_best_effort_response(state, "LLM call budget exhausted.")
-            print(f"  [1/5] Supervisor deciding ...", flush=True)
+                print("  LLM cap reached -- returning best-effort", flush=True)
+                return _build_best_effort_response(state, "LLM budget exhausted.")
+
             decision = run_supervisor(state)
             action = decision.get("next_action", "plan")
-            print(f"         -> action={action} (calls: {state.llm_call_count})", flush=True)
+            reason = decision.get("reason", "")
+            print(f"  Supervisor -> {action} (calls: {state.llm_call_count})", flush=True)
+            print(f"    reason: {reason}", flush=True)
 
+            log_execution(
+                session_id=state.session_id,
+                round_num=round_num,
+                action=action,
+                reason=reason,
+                data_snapshot={
+                    "flights": len(state.flight_options),
+                    "hotels": len(state.hotel_options),
+                    "weather": len(state.weather_context),
+                    "pois": len(state.poi_list),
+                    "rag": len(state.destination_chunks),
+                    "llm_calls": state.llm_call_count,
+                },
+            )
+
+            # ── ask_clarification ──────────────────────────────────────
             if action == "ask_clarification":
                 question = decision.get(
                     "clarification_question",
@@ -144,90 +219,146 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     steps=[Step(**s) for s in state.steps],
                 )
 
+            # ── finalize ───────────────────────────────────────────────
             if action == "finalize":
                 return _build_final_response(state)
 
-            # ── Step 2: Planner ─────────────────────────────────────────
-            repair_cat = None
-            if iteration > 0 and state.verifier_verdicts:
-                repair_cat = _classify_rejection(state.verifier_verdicts[-1])
-                print(f"         Repair category: {repair_cat}", flush=True)
+            # ── plan / replan ──────────────────────────────────────────
+            if action in ("plan", "replan", "pivot"):
+                if not state.can_call_llm():
+                    return _build_best_effort_response(state, "LLM budget exhausted.")
 
-            if not state.can_call_llm():
-                print("  LLM cap reached before Planner -- returning best-effort", flush=True)
-                return _build_best_effort_response(state, "LLM call budget exhausted.")
-            t1 = time.time()
-            print(f"  [2/5] Planner generating tasks ...", flush=True)
-            run_planner(state, repair_category=repair_cat)
-            print(f"         -> {len(state.task_list)} tasks ({time.time()-t1:.1f}s, calls: {state.llm_call_count})", flush=True)
-            for t in state.task_list:
-                print(f"           * {t.get('task')}: {t.get('params', {})}", flush=True)
+                repair_cat = None
+                if action == "replan" and state.verifier_verdicts:
+                    repair_cat = _classify_rejection(state.verifier_verdicts[-1])
+                    print(f"    Repair category: {repair_cat}", flush=True)
 
-            # ── Step 3: Executor ────────────────────────────────────────
-            t2 = time.time()
-            print(f"  [3/5] Executor running tasks ...", flush=True)
-            run_executor(state)
-            print(f"         -> done ({time.time()-t2:.1f}s, calls: {state.llm_call_count})", flush=True)
-            print(f"           flights={len(state.flight_options)} "
-                  f"hotels={len(state.hotel_options)} weather={len(state.weather_context)} "
-                  f"POIs={len(state.poi_list)} RAG={len(state.destination_chunks)}", flush=True)
+                if action == "pivot":
+                    pivot_hint = decision.get("pivot_instructions", "")
+                    if pivot_hint:
+                        state.raw_prompt = f"{state.raw_prompt}\n\nAGENT NOTE: {pivot_hint}"
+                        print(f"    Pivot: {pivot_hint}", flush=True)
 
-            # ── Data guard: don't synthesize without pricing data ──────
-            if not state.flight_options and not state.hotel_options:
-                print(f"  NO PRICING DATA: flights=0 hotels=0 -- cannot synthesize", flush=True)
-                return _build_no_data_response(state)
+                t1 = time.time()
+                print(f"  Planner generating tasks (+RAG +constraints) ...", flush=True)
+                run_planner(state, repair_category=repair_cat)
+                print(f"    -> {len(state.task_list)} tasks ({time.time()-t1:.1f}s)", flush=True)
+                if state.constraints:
+                    print(f"    constraints: {json.dumps(state.constraints, default=str)[:200]}", flush=True)
+                for t in state.task_list:
+                    print(f"      * {t.get('task')}: {t.get('params', {})}", flush=True)
 
-            # ── GATE B: Feasibility Check (orchestrator optimization) ──
-            feasibility = _feasibility_check(state)
-            if feasibility:
-                print(f"  GATE B TRIGGERED: lower_bound=${feasibility['lower_bound']:.0f} "
-                      f"> budget=${feasibility['budget']:.0f} "
-                      f"(gap +{feasibility['gap_pct']:.0f}%)", flush=True)
-                print(f"  Returning best-effort grounded response + question", flush=True)
-                return _build_gate_b_response(state, feasibility)
+                # Execute FIRST destination group, then let Supervisor observe
+                dest_groups = get_destination_groups(state.task_list)
+                task_map = split_tasks_by_destination(state.task_list)
 
-            # ── Step 4: Trip Synthesizer ────────────────────────────────
-            if not state.can_call_llm():
-                print("  LLM cap reached before Synthesizer -- returning best-effort", flush=True)
-                return _build_best_effort_response(state, "LLM call budget exhausted.")
-            t3 = time.time()
-            tight = _is_budget_tight(state)
-            pkg_mode = "1 (tight budget)" if tight else "2-3 (tiered)"
-            print(f"  [4/5] Synthesizer building {pkg_mode} package(s) ...", flush=True)
-            run_synthesizer(state, tight_budget=tight)
-            print(f"         -> {len(state.draft_plans)} packages ({time.time()-t3:.1f}s, calls: {state.llm_call_count})", flush=True)
+                if dest_groups:
+                    first_dest = dest_groups[0]
+                    first_batch = task_map.get(first_dest, [])
+                    general_tasks = task_map.get("_general", [])
+                    all_first = general_tasks + first_batch
 
-            # ── Step 5: Verifier ────────────────────────────────────────
-            if not state.can_call_llm():
-                print("  LLM cap reached before Verifier -- returning synthesized result as-is", flush=True)
-                return _build_final_response(state)
-            t4 = time.time()
-            print(f"  [5/5] Verifier auditing ...", flush=True)
-            verdict = run_verifier(state)
-            vdecision = verdict.get("decision", "REJECT")
-            print(f"         -> {vdecision} ({time.time()-t4:.1f}s, calls: {state.llm_call_count})", flush=True)
-            if verdict.get("issues"):
-                for iss in verdict["issues"]:
-                    print(f"           ! {iss}", flush=True)
+                    t2 = time.time()
+                    print(f"  Executor Phase 1: '{first_dest}' ({len(all_first)} tasks) ...", flush=True)
+                    run_executor(state, all_first)
+                    print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
+                    _print_data_summary(state)
 
-            if vdecision == "APPROVE":
-                print(f"\n  APPROVED in {time.time()-t0:.1f}s total", flush=True)
-                return _build_final_response(state)
+                    # Remove executed tasks from task_list so Supervisor sees remaining
+                    executed_ids = {id(t) for t in all_first}
+                    state.task_list = [t for t in state.task_list
+                                       if id(t) not in executed_ids
+                                       and t.get("destination_group") != "_general"]
+                else:
+                    # No destination groups -- run all tasks
+                    t2 = time.time()
+                    print(f"  Executor running all {len(state.task_list)} tasks ...", flush=True)
+                    run_executor(state)
+                    print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
+                    _print_data_summary(state)
+                    state.task_list = []
 
-            # ── Rejection handling ──────────────────────────────────────
-            if not state.can_call_llm():
-                print(f"  REJECTED but LLM cap reached -- returning best-effort + question", flush=True)
-                repair = _classify_rejection(verdict)
-                return _build_rejection_response(state, verdict, repair)
+                # Loop back to Supervisor to observe and decide next step
+                continue
 
-            if iteration == MAX_LOOP_ITERATIONS - 1:
-                print(f"  Max iterations reached -- returning best-effort + question", flush=True)
-                repair = _classify_rejection(verdict)
-                return _build_rejection_response(state, verdict, repair)
+            # ── continue (execute remaining destination groups) ─────────
+            if action == "continue":
+                dest_groups = get_destination_groups(state.task_list)
+                if dest_groups:
+                    next_dest = dest_groups[0]
+                    task_map = split_tasks_by_destination(state.task_list)
+                    batch = task_map.get(next_dest, [])
 
-            print(f"\n  REJECTED -- will delta-replan ...", flush=True)
+                    t2 = time.time()
+                    print(f"  Executor Phase N: '{next_dest}' ({len(batch)} tasks) ...", flush=True)
+                    run_executor(state, batch)
+                    print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
+                    _print_data_summary(state)
 
-        return _build_best_effort_response(state, "Loop exhausted.")
+                    state.task_list = [t for t in state.task_list
+                                       if t.get("destination_group") != next_dest]
+                else:
+                    print(f"  No remaining tasks -- forcing synthesize", flush=True)
+                    action = "synthesize"
+
+                if action != "synthesize":
+                    continue
+
+            # ── synthesize ─────────────────────────────────────────────
+            if action == "synthesize":
+                if not state.flight_options and not state.hotel_options:
+                    print(f"  NO PRICING DATA -- cannot synthesize", flush=True)
+                    return _build_no_data_response(state)
+
+                feasibility = _feasibility_check(state)
+                if feasibility:
+                    print(f"  GATE B: budget infeasible (${feasibility['lower_bound']:.0f} "
+                          f"> ${feasibility['budget']:.0f})", flush=True)
+                    return _build_gate_b_response(state, feasibility)
+
+                if not state.can_call_llm():
+                    return _build_best_effort_response(state, "LLM budget exhausted.")
+
+                t3 = time.time()
+                tight = _is_budget_tight(state)
+                pkg_mode = "1 (tight)" if tight else "2-3 (tiered)"
+                print(f"  Synthesizer building {pkg_mode} package(s) ...", flush=True)
+                run_synthesizer(state, tight_budget=tight)
+                print(f"    -> {len(state.draft_plans)} packages ({time.time()-t3:.1f}s)", flush=True)
+
+                # Verify
+                if not state.can_call_llm():
+                    print("  No budget for Verifier -- returning packages as-is", flush=True)
+                    return _build_final_response(state)
+
+                t4 = time.time()
+                print(f"  Verifier auditing ...", flush=True)
+                verdict = run_verifier(state)
+                vdecision = verdict.get("decision", "REJECT")
+                print(f"    -> {vdecision} ({time.time()-t4:.1f}s)", flush=True)
+                if verdict.get("issues"):
+                    for iss in verdict["issues"]:
+                        print(f"      ! {iss}", flush=True)
+                if verdict.get("warnings"):
+                    for w in verdict["warnings"]:
+                        print(f"      ~ {w}", flush=True)
+
+                if vdecision == "APPROVE":
+                    print(f"\n  APPROVED in {time.time()-t_start:.1f}s total", flush=True)
+                    return _build_final_response(state)
+
+                # Rejected -- loop back to Supervisor to decide replan
+                if not state.can_call_llm():
+                    print(f"  REJECTED, no LLM budget for replan -- best-effort", flush=True)
+                    repair = _classify_rejection(verdict)
+                    return _build_rejection_response(state, verdict, repair)
+
+                print(f"  REJECTED -- Supervisor will decide next step", flush=True)
+                continue
+
+        # Exhausted all rounds
+        print(f"  Max supervisor rounds reached -- returning best-effort", flush=True)
+        return _build_best_effort_response(state, "Agent loop exhausted.")
 
     except LLMCapReached as exc:
         print(f"\n  LLM CAP REACHED (safety net): {exc}", flush=True)
@@ -242,6 +373,12 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             response=None,
             steps=[Step(**s) for s in state.steps],
         )
+
+
+def _print_data_summary(state: SharedState) -> None:
+    print(f"    data: flights={len(state.flight_options)} "
+          f"hotels={len(state.hotel_options)} weather={len(state.weather_context)} "
+          f"POIs={len(state.poi_list)} RAG={len(state.destination_chunks)}", flush=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -302,7 +439,8 @@ def _feasibility_check(state: SharedState) -> dict | None:
     if cheapest_flight is None and cheapest_hotel is None:
         return None
 
-    flight_cost = (cheapest_flight or 0) * 2
+    # Flight prices are already roundtrip totals (price_is: "roundtrip_total")
+    flight_cost = cheapest_flight or 0
     hotel_cost = cheapest_hotel or 0
 
     duration = state.constraints.get("duration_days") or 4
@@ -317,7 +455,7 @@ def _feasibility_check(state: SharedState) -> dict | None:
     if lower_bound > budget_num * BUDGET_TOLERANCE:
         return {
             "lower_bound": lower_bound,
-            "flight_rt": flight_cost,
+            "cheapest_roundtrip_flight": flight_cost,
             "hotel_total": hotel_cost,
             "daily_expenses": daily_expenses,
             "duration": duration,
@@ -351,7 +489,7 @@ def _is_budget_tight(state: SharedState) -> bool:
 
     cheapest_flight = _cheapest_price(state.flight_options, "price")
     cheapest_hotel = _cheapest_price(state.hotel_options, "total_price")
-    flight_cost = (cheapest_flight or 0) * 2
+    flight_cost = cheapest_flight or 0
     hotel_cost = cheapest_hotel or 0
     duration = state.constraints.get("duration_days") or 4
     try:
@@ -389,7 +527,7 @@ def _build_gate_b_response(state: SharedState, feasibility: dict) -> ExecuteResp
             f"cost of ~${feasibility['lower_bound']:.0f} for a trip to {dest}."
         ),
         "cost_breakdown": {
-            "cheapest_roundtrip_flights": feasibility["flight_rt"],
+            "cheapest_roundtrip_flights": feasibility["cheapest_roundtrip_flight"],
             "cheapest_hotel_total": feasibility["hotel_total"],
             "estimated_daily_expenses": feasibility["daily_expenses"],
             "lower_bound_total": feasibility["lower_bound"],
@@ -479,6 +617,16 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
         "llm_calls_used": state.llm_call_count,
     }
 
+    if state.draft_plans:
+        save_trip(
+            prompt=state.raw_prompt,
+            constraints=state.constraints,
+            packages=state.draft_plans,
+            llm_calls_used=state.llm_call_count,
+            status="best_effort",
+            session_id=state.session_id,
+        )
+
     return ExecuteResponse(
         status="ok",
         error=None,
@@ -495,6 +643,23 @@ def _build_final_response(state: SharedState) -> ExecuteResponse:
     """Format the final approved (or best-effort) trip plan."""
     if state.draft_plans:
         formatted = json.dumps(state.draft_plans, indent=2, default=str)
+        save_trip(
+            prompt=state.raw_prompt,
+            constraints=state.constraints,
+            packages=state.draft_plans,
+            llm_calls_used=state.llm_call_count,
+            status="approved",
+            session_id=state.session_id,
+        )
+        save_session(
+            session_id=state.session_id,
+            prompt=state.raw_prompt,
+            state_snapshot={
+                "constraints": state.constraints,
+                "package_count": len(state.draft_plans),
+                "llm_calls_used": state.llm_call_count,
+            },
+        )
     elif state.final_response:
         formatted = state.final_response
     else:

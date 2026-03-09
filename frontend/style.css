@@ -575,5 +575,47 @@ body {
   margin-top: auto;
 }
 
+/* ── Warning banner ──────────────────────────────────────────────────── */
+.warning-banner {
+  display: flex;
+  gap: 0.75rem;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.warning-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  color: #f9a825;
+}
+.warning-body strong { color: #e65100; }
+.warning-issues {
+  margin: 0.5rem 0 0.5rem 1.25rem;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.warning-issues li { margin-bottom: 0.25rem; }
+.warning-question {
+  margin-top: 0.5rem;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* ── Flight leg labels ───────────────────────────────────────────────── */
+.flight-leg { margin-bottom: 0.5rem; }
+.flight-leg-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.1rem;
+}
+
 /* ── Utilities ────────────────────────────────────────────────────────── */
 .hidden { display: none !important; }

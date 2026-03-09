@@ -17,24 +17,45 @@ You are the Trip Synthesizer. You receive REAL pricing data from tool APIs.
 Build ONE package -- the cheapest that fits the user's request.
 
 The package MUST include ALL of these fields:
-1. "destination" and "date_window" (e.g. "2026-06-15 to 2026-06-19")
-2. "flights" with outbound/return details and prices FROM THE DATA PROVIDED
-3. "hotel" with name, per_night price, total FROM THE DATA PROVIDED
-4. "weather_summary"
-5. "itinerary" - day-by-day activities
-6. "cost_breakdown" with {{ "flights": N, "hotel": N, "daily_expenses_estimate": N, "total": N }}
-7. "rationale" - why this package fits the user (mention price trade-offs)
-8. "assumptions" - any caveats or limitations
+1. "label": "Best Value"
+2. "destination": "City Name"
+3. "date_window": "YYYY-MM-DD to YYYY-MM-DD" (MUST be a flat string, never an object)
+4. "flights": {{
+     "outbound": {{
+       "origin": "ABC", "destination": "XYZ", "routing": "ABC → XYZ",
+       "airline": "...", "departure": "ISO datetime", "arrival": "ISO datetime",
+       "stops": N, "booking_url": "copy from flight data if available"
+     }},
+     "return": {{
+       "origin": "XYZ", "destination": "ABC", "routing": "XYZ → ABC",
+       "airline": "...", "departure": "ISO datetime", "arrival": "ISO datetime",
+       "stops": N, "booking_url": "copy from flight data if available"
+     }},
+     "total_flight_cost": N,
+     "trip_type": "ROUNDTRIP" or "ONEWAY"
+   }}
+5. "hotel": {{
+     "name": "...", "address": "...", "rating": N,
+     "per_night": N, "nights": N, "total_cost": N,
+     "check_in": "YYYY-MM-DD", "check_out": "YYYY-MM-DD",
+     "booking_url": "copy from hotel data if available"
+   }}
+6. "weather_summary": "brief text"
+7. "itinerary": [{{ "day": 1, "date": "YYYY-MM-DD", "activities": ["strings"] }}]
+8. "cost_breakdown": {{ "flights": N, "hotel": N, "daily_expenses_estimate": N, "total": N }}
+9. "rationale": "why this package fits"
+10. "assumptions": ["list of caveats"]
 
 CRITICAL RULES:
 - Use ONLY real prices from the data provided. NEVER invent or fabricate prices.
-- If data for a field is missing, explicitly state "data not available" instead of making up values.
-- Pick the CHEAPEST flight+hotel from the data.
+- FLIGHT PRICING: Each flight's "price" field is the ROUNDTRIP TOTAL (both legs combined). The "price_is" field confirms this. Set "total_flight_cost" equal to the flight's "price" — do NOT double it.
+- ALWAYS include BOTH outbound AND return flight details if the data provides return info (return_departure, return_arrival, return_from, return_to fields).
+- Copy the "booking_url" from the selected flight/hotel data into the package.
+- "date_window" MUST be a plain string like "2026-06-10 to 2026-06-17", NEVER an object.
+- "assumptions" MUST be a JSON array of strings, e.g. ["note 1", "note 2"]. NEVER a single string.
 - Hotel check-in must match flight arrival date, check-out must match departure.
-- cost_breakdown.total must be an actual sum of its components.
-- If the cheapest combination exceeds the budget, explain the gap and the
-  dominant cost driver.
-- Label: "Best Value".
+- cost_breakdown.flights = total_flight_cost. cost_breakdown.total = flights + hotel + daily_expenses.
+- Day 1 activities must be realistic given the arrival time. If arriving late at night, say "late arrival, check in to hotel" -- don't suggest sightseeing.
 - Return {{ "packages": [ {{ ... }} ] }}
 - Return ONLY valid JSON, no markdown.
 """
@@ -48,21 +69,46 @@ Build 2-3 packages at different tiers:
 3. "Premium" (optional, only if data supports it)
 
 Each package MUST include ALL of these fields:
-1. "label" (e.g. "Budget Pick", "Best Value", "Premium")
-2. "destination" and "date_window"
-3. "flights" with outbound/return details and prices FROM THE DATA PROVIDED
-4. "hotel" with name, per_night price, total FROM THE DATA PROVIDED
-5. "weather_summary"
-6. "itinerary" - day-by-day activities
-7. "cost_breakdown" with {{ "flights": N, "hotel": N, "daily_expenses_estimate": N, "total": N }}
-8. "rationale" - why this package fits the user
-9. "assumptions" - any caveats
+1. "label": "Budget Pick" / "Best Value" / "Premium"
+2. "destination": "City Name"
+3. "date_window": "YYYY-MM-DD to YYYY-MM-DD" (MUST be a flat string, never an object)
+4. "flights": {{
+     "outbound": {{
+       "origin": "ABC", "destination": "XYZ", "routing": "ABC → XYZ",
+       "airline": "...", "departure": "ISO datetime", "arrival": "ISO datetime",
+       "stops": N, "booking_url": "copy from flight data if available"
+     }},
+     "return": {{
+       "origin": "XYZ", "destination": "ABC", "routing": "XYZ → ABC",
+       "airline": "...", "departure": "ISO datetime", "arrival": "ISO datetime",
+       "stops": N, "booking_url": "copy from flight data if available"
+     }},
+     "total_flight_cost": N,
+     "trip_type": "ROUNDTRIP" or "ONEWAY"
+   }}
+5. "hotel": {{
+     "name": "...", "address": "...", "rating": N,
+     "per_night": N, "nights": N, "total_cost": N,
+     "check_in": "YYYY-MM-DD", "check_out": "YYYY-MM-DD",
+     "booking_url": "copy from hotel data if available"
+   }}
+6. "weather_summary": "brief text"
+7. "itinerary": [{{ "day": 1, "date": "YYYY-MM-DD", "activities": ["strings"] }}]
+8. "cost_breakdown": {{ "flights": N, "hotel": N, "daily_expenses_estimate": N, "total": N }}
+9. "rationale": "why this package fits"
+10. "assumptions": ["list of caveats"]
 
 CRITICAL RULES:
 - Use ONLY real prices from the data provided. NEVER invent or fabricate prices.
-- If data for a field is missing, explicitly state "data not available" instead of making up values.
+- FLIGHT PRICING: Each flight's "price" field is the ROUNDTRIP TOTAL (both legs combined). The "price_is" field confirms this. Set "total_flight_cost" equal to the flight's "price" — do NOT double it.
+- ALWAYS include BOTH outbound AND return flight details if the data provides return info (return_departure, return_arrival, return_from, return_to fields).
+- Copy the "booking_url" from the selected flight/hotel data into the package.
+- "date_window" MUST be a plain string like "2026-06-10 to 2026-06-17", NEVER an object.
+- "assumptions" MUST be a JSON array of strings, e.g. ["note 1", "note 2"]. NEVER a single string.
 - Use DIFFERENT hotel/flight combos for each tier where possible.
-- cost_breakdown.total must be an actual sum of its components.
+- Hotel check-in must match flight arrival date, check-out must match departure.
+- cost_breakdown.flights = total_flight_cost. cost_breakdown.total = flights + hotel + daily_expenses.
+- Day 1 activities must be realistic given the arrival time. If arriving late at night, say "late arrival, check in to hotel" -- don't suggest sightseeing.
 - Return {{ "packages": [ {{ ... }}, {{ ... }} ] }}
 - Return ONLY valid JSON, no markdown.
 """
@@ -140,38 +186,61 @@ def _build_prompt(state: SharedState) -> str:
 
 
 def _ensure_booking_links(pkg: dict, state: SharedState) -> None:
-    """Generate booking links deterministically (zero LLM calls)."""
-    if pkg.get("booking_links"):
+    """Generate booking links deterministically (zero LLM calls).
+
+    Also pulls individual booking_url from the selected flight/hotel data
+    into the package so the frontend can link directly to those results.
+    """
+    existing = pkg.get("booking_links") or {}
+    has_flights_link = bool(existing.get("flights_search"))
+    has_hotels_link = bool(existing.get("hotels_search"))
+
+    if has_flights_link and has_hotels_link:
         return
 
     dest = pkg.get("destination", "")
     dates = pkg.get("date_window", "")
+    if isinstance(dates, dict):
+        depart = str(dates.get("start", dates.get("start_date", dates.get("from", ""))))
+        ret = str(dates.get("end", dates.get("end_date", dates.get("to", ""))))
+    else:
+        date_parts = str(dates).split(" to ") if " to " in str(dates) else [str(dates), ""]
+        depart = date_parts[0].strip()
+        ret = date_parts[1].strip() if len(date_parts) > 1 else ""
+
     constraints = state.constraints or {}
     origin = constraints.get("origin", "")
-    date_parts = dates.split(" to ") if " to " in dates else ["", ""]
-    depart = date_parts[0].strip()
-    ret = date_parts[1].strip() if len(date_parts) > 1 else ""
 
-    flights_url = ""
-    if origin and dest and depart:
-        flights_url = (
-            f"https://www.google.com/travel/flights?q=Flights+from+"
-            f"{urllib.parse.quote(origin)}+to+{urllib.parse.quote(dest)}"
-            f"+on+{depart}" + (f"+returning+{ret}" if ret else "")
-        )
+    if not has_flights_link:
+        flights_url = ""
+        flight_data = pkg.get("flights", {})
+        if isinstance(flight_data, dict):
+            outbound = flight_data.get("outbound", {})
+            flights_url = outbound.get("booking_url", "")
 
-    hotels_url = ""
-    if dest and depart and ret:
-        hotels_url = (
-            f"https://www.booking.com/searchresults.html?"
-            f"ss={urllib.parse.quote(dest)}&checkin={depart}&checkout={ret}"
-            f"&group_adults=1&no_rooms=1"
-        )
+        if not flights_url and origin and dest and depart:
+            flights_url = (
+                f"https://www.google.com/travel/flights?q=Flights+from+"
+                f"{urllib.parse.quote(origin)}+to+{urllib.parse.quote(dest)}"
+                f"+on+{depart}" + (f"+returning+{ret}" if ret else "")
+            )
+        existing["flights_search"] = flights_url
 
-    pkg["booking_links"] = {
-        "flights_search": flights_url,
-        "hotels_search": hotels_url,
-    }
+    if not has_hotels_link:
+        hotels_url = ""
+        hotel_data = pkg.get("hotel", {})
+        if isinstance(hotel_data, dict):
+            hotels_url = hotel_data.get("booking_url", "")
+
+        if not hotels_url and dest and depart and ret:
+            hotels_url = (
+                f"https://www.booking.com/searchresults.html?"
+                f"ss={urllib.parse.quote(dest)}&checkin={depart}&checkout={ret}"
+                f"&group_adults=1&no_rooms=1"
+            )
+        existing["hotels_search"] = hotels_url
+
+    pkg["booking_links"] = existing
 
 
 def _ensure_poi_links(pkg: dict, state: SharedState) -> None:

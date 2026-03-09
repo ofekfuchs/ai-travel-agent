@@ -6,6 +6,7 @@ searchDestination endpoint, so callers can pass "Paris" directly.
 
 from __future__ import annotations
 
+import urllib.parse
 from typing import Any
 
 import httpx
@@ -163,6 +164,8 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str) -> list[dict[
         if total_price:
             total_price = round(total_price, 2)
 
+        booking_url = _build_hotel_url(name, check_in, check_out)
+
         options.append(
             {
                 "name": name,
@@ -173,9 +176,20 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str) -> list[dict[
                 "currency": "USD",
                 "rating": rating,
                 "address": prop.get("wishlistName", ""),
+                "booking_url": booking_url,
             }
         )
     return options[:10]
+
+
+def _build_hotel_url(name: str, check_in: str, check_out: str) -> str:
+    """Construct a Booking.com search URL that leads to this hotel."""
+    return (
+        f"https://www.booking.com/searchresults.html?"
+        f"ss={urllib.parse.quote(name)}"
+        f"&checkin={check_in}&checkout={check_out}"
+        f"&group_adults=1&no_rooms=1"
+    )
 
 
 def _days_between(d1: str, d2: str) -> int:

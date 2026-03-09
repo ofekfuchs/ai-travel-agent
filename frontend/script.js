@@ -97,44 +97,85 @@ function renderResponse(responseStr) {
     return;
   }
 
-  // Try to parse as JSON (trip packages)
   let packages = null;
+  let warning = null;
   try {
     const parsed = JSON.parse(responseStr);
     if (Array.isArray(parsed)) {
       packages = parsed;
     } else if (parsed.packages && Array.isArray(parsed.packages)) {
       packages = parsed.packages;
+      if (parsed.status === "best_effort") {
+        const issues = parsed.verifier_issues || [];
+        const question = parsed.question || "";
+        warning = { issues, question, category: parsed.repair_category || "" };
+      }
     }
   } catch {
     // Not JSON -- show as text
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
-    renderPackages(packages);
+    renderPackages(packages, warning);
   } else {
     textResponseContent.textContent = responseStr;
     textResponseSection.classList.remove("hidden");
   }
 }
 
-function renderPackages(packages) {
+function renderPackages(packages, warning) {
   packagesContainer.innerHTML = "";
+
+  if (warning) {
+    const banner = document.createElement("div");
+    banner.className = "warning-banner";
+    let bannerHTML = `<div class="warning-icon">&#9888;</div>
+      <div class="warning-body">
+        <strong>Best-effort results</strong> — the quality checker flagged some issues:`;
+    if (warning.issues && warning.issues.length) {
+      bannerHTML += `<ul class="warning-issues">`;
+      warning.issues.forEach(i => { bannerHTML += `<li>${esc(i)}</li>`; });
+      bannerHTML += `</ul>`;
+    }
+    if (warning.question) {
+      bannerHTML += `<p class="warning-question">${esc(warning.question)}</p>`;
+    }
+    bannerHTML += `</div>`;
+    banner.innerHTML = bannerHTML;
+    packagesContainer.appendChild(banner);
+  }
 
   packages.forEach(pkg => {
     const card = document.createElement("div");
     card.className = "package-card";
-    card.innerHTML = buildPackageHTML(pkg);
+    try {
+      card.innerHTML = buildPackageHTML(pkg);
+    } catch (e) {
+      card.innerHTML = `<div class="package-header"><div><span class="package-label">${esc(pkg.label || pkg.destination || "Package")}</span></div></div>
+        <div class="package-body"><pre>${esc(JSON.stringify(pkg, null, 2))}</pre></div>`;
+    }
     packagesContainer.appendChild(card);
   });
 
   packagesSection.classList.remove("hidden");
 }
 
+function formatDateWindow(dw) {
+  if (!dw) return "";
+  if (typeof dw === "string") return dw;
+  if (typeof dw === "object") {
+    const start = dw.start || dw.start_date || dw.from || "";
+    const end = dw.end || dw.end_date || dw.to || "";
+    if (start && end) return `${start} to ${end}`;
+    return start || end || JSON.stringify(dw);
+  }
+  return String(dw);
+}
+
 function buildPackageHTML(pkg) {
   const label = pkg.label || "Trip Package";
   const dest = pkg.destination || "Unknown";
-  const dates = pkg.date_window || "";
+  const dates = formatDateWindow(pkg.date_window);
   const total = getTotal(pkg);
 
   let html = `
@@ -170,23 +211,30 @@ function buildPackageHTML(pkg) {
     html += `<div class="rationale"><strong>Why this package:</strong> ${esc(pkg.rationale)}</div>`;
   }
 
-  // Booking links
+  // Booking links -- try package-level first, then individual item URLs
   const links = pkg.booking_links || {};
-  if (links.flights_search || links.hotels_search) {
+  const flightLink = links.flights_search
+    || (pkg.flights && pkg.flights.outbound && pkg.flights.outbound.booking_url)
+    || "";
+  const hotelLink = links.hotels_search
+    || (pkg.hotel && pkg.hotel.booking_url)
+    || "";
+  if (flightLink || hotelLink) {
     html += `<div class="booking-links">`;
-    if (links.flights_search) {
-      html += `<a href="${esc(links.flights_search)}" target="_blank" rel="noopener" class="booking-btn flights-btn">Search Flights</a>`;
+    if (flightLink) {
+      html += `<a href="${esc(flightLink)}" target="_blank" rel="noopener" class="booking-btn flights-btn">Search Flights</a>`;
     }
-    if (links.hotels_search) {
-      html += `<a href="${esc(links.hotels_search)}" target="_blank" rel="noopener" class="booking-btn hotels-btn">Search Hotels</a>`;
+    if (hotelLink) {
+      html += `<a href="${esc(hotelLink)}" target="_blank" rel="noopener" class="booking-btn hotels-btn">Search Hotels</a>`;
     }
     html += `</div>`;
   }
 
   // Assumptions
-  if (pkg.assumptions && pkg.assumptions.length > 0) {
-    html += `<details class="assumptions"><summary>Notes & Assumptions (${pkg.assumptions.length})</summary><ul>`;
-    pkg.assumptions.forEach(a => { html += `<li>${esc(a)}</li>`; });
+  const assumptions = toArray(pkg.assumptions);
+  if (assumptions.length > 0) {
+    html += `<details class="assumptions"><summary>Notes & Assumptions (${assumptions.length})</summary><ul>`;
+    assumptions.forEach(a => { html += `<li>${esc(a)}</li>`; });
     html += `</ul></details>`;
   }
 
@@ -197,26 +245,45 @@ function buildPackageHTML(pkg) {
 function buildFlightBox(pkg) {
   const f = pkg.flights || {};
   const out = f.outbound || {};
-  const ret = f.return || {};
+  const ret = f.return || f.return_flight || {};
   const totalCost = f.total_flight_cost || f.total_cost || 0;
 
-  let main = "No flight data";
-  let sub = "";
-
-  if (out.origin || out.routing) {
-    main = out.routing || `${out.origin || "?"} → ${out.destination || "?"}`;
-    sub = out.airline ? `${out.airline}` : "";
-    if (out.departure) sub += sub ? ` · ${formatDateTime(out.departure)}` : formatDateTime(out.departure);
-    if (totalCost) sub += ` · $${Math.round(totalCost)} total`;
-  } else if (totalCost) {
-    main = `$${Math.round(totalCost)} estimated`;
-    sub = out.notes || "See assumptions for details";
+  if (!out.origin && !out.routing && !totalCost) {
+    return `<div class="detail-box"><h4>Flights</h4>
+      <div class="detail-main">No flight data</div></div>`;
   }
 
-  return `<div class="detail-box"><h4>Flights</h4>
-    <div class="detail-main">${esc(main)}</div>
-    <div class="detail-sub">${esc(sub)}</div>
-  </div>`;
+  let html = `<div class="detail-box"><h4>Flights</h4>`;
+
+  if (out.origin || out.routing) {
+    const outRoute = out.routing || `${out.origin || "?"} → ${out.destination || "?"}`;
+    let outSub = out.airline ? `${out.airline}` : "";
+    if (out.departure) outSub += outSub ? ` · ${formatDateTime(out.departure)}` : formatDateTime(out.departure);
+    if (out.stops !== undefined) outSub += ` · ${out.stops === 0 ? "Direct" : out.stops + " stop(s)"}`;
+    html += `<div class="flight-leg">
+      <div class="flight-leg-label">Outbound</div>
+      <div class="detail-main">${esc(outRoute)}</div>
+      <div class="detail-sub">${esc(outSub)}</div>
+    </div>`;
+  }
+
+  if (ret.origin || ret.routing || ret.departure) {
+    const retRoute = ret.routing || `${ret.origin || "?"} → ${ret.destination || "?"}`;
+    let retSub = ret.airline ? `${ret.airline}` : "";
+    if (ret.departure) retSub += retSub ? ` · ${formatDateTime(ret.departure)}` : formatDateTime(ret.departure);
+    if (ret.stops !== undefined) retSub += ` · ${ret.stops === 0 ? "Direct" : ret.stops + " stop(s)"}`;
+    html += `<div class="flight-leg">
+      <div class="flight-leg-label">Return</div>
+      <div class="detail-main">${esc(retRoute)}</div>
+      <div class="detail-sub">${esc(retSub)}</div>
+    </div>`;
+  }
+
+  if (totalCost) {
+    html += `<div class="detail-sub" style="margin-top:0.5rem;font-weight:600">$${Math.round(totalCost)} roundtrip</div>`;
+  }
+  html += `</div>`;
+  return html;
 }
 
 function buildHotelBox(pkg) {
@@ -225,16 +292,24 @@ function buildHotelBox(pkg) {
   const perNight = h.per_night || h.per_night_usd || h.price_per_night || 0;
   const totalCost = h.total_cost || h.total_cost_usd || h.total_price || 0;
   const nights = h.nights || "";
+  const address = h.address || "";
+  const checkIn = h.check_in || "";
+  const checkOut = h.check_out || "";
 
   let sub = "";
   if (perNight) sub += `$${Math.round(perNight)}/night`;
   if (nights) sub += sub ? ` · ${nights} nights` : `${nights} nights`;
   if (totalCost) sub += sub ? ` · $${Math.round(totalCost)} total` : `$${Math.round(totalCost)} total`;
-  if (h.rating) sub += sub ? ` · ${h.rating}/10` : `${h.rating}/10`;
+  if (h.rating && h.rating > 0) sub += sub ? ` · ${h.rating}/10` : `${h.rating}/10`;
+
+  let extra = "";
+  if (address) extra += `<div class="detail-sub">${esc(address)}</div>`;
+  if (checkIn && checkOut) extra += `<div class="detail-sub">Check-in: ${esc(checkIn)} · Check-out: ${esc(checkOut)}</div>`;
 
   return `<div class="detail-box"><h4>Hotel</h4>
     <div class="detail-main">${esc(name)}</div>
     <div class="detail-sub">${esc(sub)}</div>
+    ${extra}
   </div>`;
 }
 
@@ -261,14 +336,18 @@ function buildDataBox(pkg) {
 }
 
 function buildItinerary(days) {
+  const dayList = toArray(days);
+  if (!dayList.length) return "";
   let html = `<div class="itinerary"><h3>Day-by-Day Itinerary</h3>`;
-  days.forEach(day => {
-    const title = `Day ${day.day}` + (day.date ? ` — ${day.date}` : "");
+  dayList.forEach(day => {
+    if (!day || typeof day !== "object") return;
+    const title = `Day ${day.day || "?"}` + (day.date ? ` — ${day.date}` : "");
     html += `<div class="day-card">
       <div class="day-title">${esc(title)}</div>`;
-    if (day.activities && day.activities.length) {
+    const acts = toArray(day.activities);
+    if (acts.length) {
       html += `<ul>`;
-      day.activities.forEach(a => { html += `<li>${esc(a)}</li>`; });
+      acts.forEach(a => { html += `<li>${esc(typeof a === "object" ? (a.name || a.activity || JSON.stringify(a)) : a)}</li>`; });
       html += `</ul>`;
     }
     if (day.notes) {
@@ -349,6 +428,12 @@ function esc(str) {
   const el = document.createElement("span");
   el.textContent = str;
   return el.innerHTML;
+}
+
+function toArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string" && val) return [val];
+  return [];
 }
 
 function formatDateTime(dt) {

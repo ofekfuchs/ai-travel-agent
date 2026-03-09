@@ -2,12 +2,12 @@
 
 Two modes:
 
-1. **Initial plan** (no prior verdicts): builds a full plan from scratch.
-   Always starts with extract_constraints if constraints are empty.
+1. **Initial plan** (no prior verdicts): extracts constraints from the user
+   prompt AND produces a full task plan in a single LLM call.
+   Uses RAG knowledge (fetched before the LLM call) to ground destination choices.
 
 2. **Delta plan** (after Verifier rejection): receives a repair category from
-   the main loop. Generates ONLY the minimal corrective tasks. Never
-   re-runs tasks whose inputs did not change.
+   the main loop. Generates ONLY the minimal corrective tasks.
 
 SharedState is truth: whatever data exists in SharedState is reused.
 """
@@ -18,74 +18,103 @@ import json
 
 from app.llm.client import call_llm
 from app.models.shared_state import SharedState
+from app.tools.rag_tool import search_destinations
 
 _SYSTEM_PROMPT = """\
-You are the Planner of a travel-planning agent. Your job is to REASON about
-the user's request and produce CONCRETE, executable tasks.
+You are the Planner of an autonomous travel-planning agent.
 
-Given the user's constraints and what data has already been collected, produce
-an ordered JSON array of tasks the Executor should run next.
+You have TWO jobs in a single response:
+1. Extract structured constraints from the user's free-form request.
+2. Produce an ordered list of concrete, executable tasks.
 
-Each task is a JSON object:
-{
-  "task": "<task_type>",
-  "params": { ... }
-}
+Respond with a JSON object (no markdown):
+{{
+  "constraints": {{
+    "origin": "city or airport code (null if unknown)",
+    "destinations": ["candidate city names"],
+    "start_date": "YYYY-MM-DD or null",
+    "end_date": "YYYY-MM-DD or null",
+    "flexible_dates": true/false,
+    "season": "month or season or null",
+    "duration_days": number or null,
+    "budget_total": number or null,
+    "budget_currency": "USD",
+    "travelers": number or null,
+    "pace": "relaxed / moderate / active / null",
+    "interests": ["beaches", "culture", ...],
+    "other_preferences": "any extra notes"
+  }},
+  "tasks": [
+    {{ "task": "<task_type>", "params": {{ ... }}, "destination_group": "CityName" }}
+  ]
+}}
 
-Available task types and their expected params:
+Available task types and params:
 
-1. "extract_constraints"  -- params: {} (parse user prompt into structured fields)
-2. "rag_search"           -- params: {"query": "<semantic search query>"}
-3. "search_flights"       -- params: {"origin": "CityName", "destination": "CityName", "date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD or null"}
-4. "search_hotels"        -- params: {"destination": "CityName", "check_in": "YYYY-MM-DD", "check_out": "YYYY-MM-DD", "adults": N}
-5. "get_weather"          -- params: {"destination": "CityName", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD"}
-6. "search_pois"          -- params: {"destination": "CityName"}
+1. "rag_search"       -- {{"query": "<semantic search query>"}}
+2. "search_flights"   -- {{"origin": "CityName", "destination": "CityName", "date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD or null"}}
+3. "search_hotels"    -- {{"destination": "CityName", "check_in": "YYYY-MM-DD", "check_out": "YYYY-MM-DD", "adults": N}}
+4. "get_weather"      -- {{"destination": "CityName", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD"}}
+5. "search_pois"      -- {{"destination": "CityName"}}
+
+IMPORTANT: "destination_group" must be set to the city name for each task.
+This lets the system execute destination-by-destination and reason about
+intermediate results (e.g. skip expensive destinations, pivot to cheaper ones).
 
 KEY REASONING RULES:
 
-- Tools accept ANY city name worldwide. You do NOT need coordinates -- the
-  tools resolve city names to coordinates/IDs dynamically. Just pass the city
-  name as "destination".
+- Tools accept ANY city name worldwide. Just pass the city name.
 
 - When the user says a month/season + duration but no exact dates, YOU must
-  pick concrete dates. Example: "May, 4 days" → pick "2026-05-09" to
-  "2026-05-13" (a reasonable window in that month). Pick dates in the future.
+  pick concrete dates. Example: "May, 4 days" → "2026-05-09" to "2026-05-13".
   Today is {today}.
 
-- When the user says a vague region ("Europe", "Southeast Asia"), YOU must
-  pick 2-3 specific candidate cities that fit the user's interests/budget.
-  Example: "Europe, best value" → Prague, Budapest, Athens.
+- When the user says a vague region ("Europe", "Southeast Asia"), use the
+  RAG knowledge provided below to pick 2-3 specific cities that match.
+  If RAG knowledge doesn't cover the region, use your own knowledge.
 
-- For each candidate city, generate separate search_flights, search_hotels,
-  get_weather, and search_pois tasks with that city name and the dates you chose.
+- For each candidate city, generate search_flights, search_hotels,
+  get_weather, and search_pois tasks with that city name.
 
-- Start with "extract_constraints" ONLY if constraints dict is empty.
-- If it says rag_search was already done, you may use insights from RAG chunks
-  to pick destination cities.
-- Do NOT re-fetch data types already collected (see "Already collected" below).
-- If flights, hotels, weather, and POIs are already collected, return an EMPTY array [].
-- Keep the task list as SHORT as possible. Every task costs time.
-- Return ONLY a JSON array, no markdown, no extra text.
+- Do NOT re-fetch data types already collected (see "Already collected").
+- If all data is already collected, return an EMPTY tasks array [].
+- Keep the task list SHORT. Every task costs time and API quota.
+- Return ONLY valid JSON, no markdown.
 """
 
 
 def run_planner(state: SharedState, repair_category: str | None = None) -> list[dict]:
-    """Generate a task list. Avoids re-fetching data that already exists."""
+    """Generate constraints + task list. Uses RAG to ground destination choices."""
     from datetime import date as _date
     today_str = _date.today().isoformat()
     system = _SYSTEM_PROMPT.replace("{today}", today_str)
+
+    # Fetch RAG knowledge BEFORE calling the LLM (embedding call only, not an LLM call)
+    if not state.destination_chunks and not repair_category:
+        _prefetch_rag(state)
 
     context_parts = [f"User prompt: {state.raw_prompt}"]
 
     if state.constraints:
         context_parts.append(f"Current constraints: {json.dumps(state.constraints, default=str)}")
     else:
-        context_parts.append("No constraints extracted yet.")
+        context_parts.append(
+            "No constraints extracted yet. You MUST extract them from the user prompt "
+            "and return them in the 'constraints' field."
+        )
+
+    # RAG knowledge for grounded destination selection
+    if state.destination_chunks:
+        rag_summaries = [
+            f"- {c.get('article_title', '?')}: {c.get('content', '')[:200]}"
+            for c in state.destination_chunks[:5]
+        ]
+        context_parts.append(
+            "Destination knowledge from RAG (use to inform city choices):\n"
+            + "\n".join(rag_summaries)
+        )
 
     collected = []
-    if state.destination_chunks:
-        titles = list({c.get("article_title", "") for c in state.destination_chunks if c.get("article_title")})
-        collected.append(f"RAG chunks: {len(state.destination_chunks)} about: {titles[:5]} (DO NOT re-fetch)")
     if state.flight_options:
         routes = list({f"{f.get('origin','?')}->{f.get('destination','?')}" for f in state.flight_options})
         collected.append(f"Flight options: {len(state.flight_options)} routes={routes[:5]} (DO NOT re-fetch)")
@@ -108,27 +137,16 @@ def run_planner(state: SharedState, repair_category: str | None = None) -> list[
         context_parts.append(f"Verifier issues: {issues_json}")
         context_parts.append(
             "Only add tasks that directly fix the failing dimension. "
-            "The Synthesizer will be re-run automatically -- you do NOT need to add a synthesize task."
+            "The Synthesizer will be re-run automatically."
         )
 
         if repair_category == "BUDGET":
             context_parts.append(
-                "BUDGET repair: consider searching for cheaper dates/hotels/flights. "
-                "Only re-search if you change the search parameters (different dates, lower tier, etc)."
+                "BUDGET repair: consider searching for cheaper dates/hotels/flights."
             )
-        elif repair_category == "ALIGNMENT":
+        elif repair_category in ("ALIGNMENT", "MISSING_INFO", "GROUNDING"):
             context_parts.append(
-                "ALIGNMENT repair: hotel/flight dates are inconsistent. "
-                "This is likely fixable without new API calls -- return EMPTY array []."
-            )
-        elif repair_category == "MISSING_INFO":
-            context_parts.append(
-                "MISSING_INFO: return EMPTY array [] -- the main loop will ask the user."
-            )
-        elif repair_category == "GROUNDING":
-            context_parts.append(
-                "GROUNDING repair: claims are unsubstantiated. Return EMPTY array [] -- "
-                "the Synthesizer will be re-run with stricter instructions."
+                f"{repair_category} repair: likely fixable without new API calls -- return EMPTY tasks []."
             )
 
     user_prompt = "\n".join(context_parts)
@@ -136,11 +154,57 @@ def run_planner(state: SharedState, repair_category: str | None = None) -> list[
     raw = call_llm(state, module="Planner", system_prompt=system, user_prompt=user_prompt)
 
     try:
-        task_list = json.loads(raw)
-        if not isinstance(task_list, list):
-            task_list = [task_list]
+        result = json.loads(raw)
+        if isinstance(result, dict):
+            # New format: {"constraints": {...}, "tasks": [...]}
+            if result.get("constraints") and not state.constraints:
+                state.constraints = result["constraints"]
+            task_list = result.get("tasks", [])
+            if not isinstance(task_list, list):
+                task_list = [task_list]
+        elif isinstance(result, list):
+            # Legacy format: just a task array
+            task_list = result
+        else:
+            task_list = []
     except json.JSONDecodeError:
-        task_list = [{"task": "extract_constraints", "params": {}}] if not state.constraints else []
+        task_list = []
 
     state.task_list = task_list
     return task_list
+
+
+def _prefetch_rag(state: SharedState) -> None:
+    """Fetch RAG chunks before planning to ground destination choices.
+
+    Uses only an embedding call (not an LLM call), so it doesn't consume
+    the LLM budget.
+    """
+    try:
+        search_destinations(state, query=state.raw_prompt, top_k=5)
+    except Exception:
+        pass
+
+
+def get_destination_groups(task_list: list[dict]) -> list[str]:
+    """Extract the ordered list of unique destination groups from the task list."""
+    seen = set()
+    groups = []
+    for task in task_list:
+        group = task.get("destination_group", "")
+        if group and group not in seen:
+            seen.add(group)
+            groups.append(group)
+    return groups
+
+
+def split_tasks_by_destination(task_list: list[dict]) -> dict[str, list[dict]]:
+    """Split the task list into groups keyed by destination_group.
+
+    Tasks without a destination_group go into a "_general" bucket.
+    """
+    groups: dict[str, list[dict]] = {}
+    for task in task_list:
+        group = task.get("destination_group", "_general")
+        groups.setdefault(group, []).append(task)
+    return groups

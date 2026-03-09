@@ -183,6 +183,7 @@ def _parse_flight_results(
             "stops": len(out_leg.get("flightStops", [])),
             "airline": airline,
             "price": total_price,
+            "price_is": "roundtrip_total",
             "currency": currency,
             "trip_type": offer.get("tripType", "ROUNDTRIP"),
         }

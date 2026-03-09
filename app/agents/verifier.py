@@ -71,12 +71,15 @@ def run_verifier(state: SharedState) -> dict:
     # ── LLM qualitative check ──────────────────────────────────────────────
     llm_verdict = _llm_quality_check(state, issues)
 
-    all_issues = issues + llm_verdict.get("issues", [])
+    llm_issues = llm_verdict.get("issues", [])
+    llm_warnings = llm_verdict.get("warnings", [])
+    all_issues = issues + llm_issues
     decision = llm_verdict.get("decision", "REJECT" if all_issues else "APPROVE")
 
     verdict = {
         "decision": decision,
         "issues": all_issues,
+        "warnings": llm_warnings,
         "recommendation": "finalize" if decision == "APPROVE" else "replan",
     }
     state.verifier_verdicts.append(verdict)
@@ -84,22 +87,33 @@ def run_verifier(state: SharedState) -> dict:
 
 
 _VERIFIER_SYSTEM = """\
-You are a strict auditor of a travel-planning agent. You receive a draft trip
-package and must judge its quality honestly.
+You are a pragmatic quality auditor of a travel-planning agent. You receive
+draft trip packages and must judge whether they are good enough to show the user.
 
-Check:
-- Are the dates, flights, and hotel check-in/out internally consistent?
-- Does the itinerary make sense for the destination and duration?
-- Is the rationale grounded in actual data (not hallucinated)?
-- Are there any logical contradictions?
-- Does the cost breakdown add up correctly?
+Check for CRITICAL issues (these REQUIRE rejection):
+- Fabricated/invented prices not present in the source data
+- Missing core fields (no flights, no hotel, no destination)
+- Cost breakdown total is wildly wrong (off by >30%)
+- Itinerary for wrong destination or completely incoherent
 
-If rule-based issues were already found, factor them in.
+Check for MINOR issues (note them but still APPROVE):
+- Small rounding differences (< $5)
+- Different airports in the same metro area (e.g. EWR vs JFK for NYC)
+- Missing daily expense estimates (acceptable if noted in assumptions)
+- Booking links that are search URLs rather than direct deeplinks
+- Minor timing nuances (e.g. late-night arrival phrasing)
+- Unsubstantiated superlatives in rationale (e.g. "best value")
+
+Decision rules:
+- If there are ANY critical issues → "REJECT"
+- If there are ONLY minor issues → "APPROVE" (list them as warnings)
+- If no issues → "APPROVE"
 
 Respond with a JSON object:
 {
   "decision": "APPROVE" or "REJECT",
-  "issues": ["list of specific problems found, or empty if none"],
+  "issues": ["list of critical problems, or empty"],
+  "warnings": ["list of minor notes, or empty"],
   "quality_notes": "brief summary"
 }
 

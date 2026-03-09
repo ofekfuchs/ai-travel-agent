@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-LLM_CALL_CAP = 5
+LLM_CALL_CAP = 8
 
 
 @dataclass
@@ -19,6 +19,7 @@ class SharedState:
 
     # -- User input ----------------------------------------------------------
     raw_prompt: str = ""
+    session_id: str = ""
     conversation_history: list[dict] = field(default_factory=list)
 
     # -- Extracted constraints ------------------------------------------------

@@ -33,18 +33,19 @@
 
 ## Should Do (High Value, No Extra Cost)
 
-- [ ] Add unit tests (`tests/` folder) for:
-  - [ ] Planner JSON parsing (constraints + tasks extraction)
-  - [ ] Verifier rule-based checks (missing fields, budget overflow)
-  - [ ] Cache logic (make_cache_key, get/set)
-  - [ ] Feasibility check (_feasibility_check, _is_budget_tight)
-  - [ ] Response builders (_build_final_response, etc.)
-  - [ ] Destination grouping (split_tasks_by_destination)
-- [ ] Parallel tool execution (async within each destination group)
-- [ ] Better execution trace in UI (show "Round 1: Supervisor decided X because Y")
-- [ ] Frontend error handling for budget_infeasible and no_pricing_data statuses
+- [x] Add unit tests (`tests/test_deterministic.py`) — 27 tests covering:
+  - [x] Destination grouping (split_tasks_by_destination, get_destination_groups)
+  - [x] Cache logic (make_cache_key determinism, uniqueness, format)
+  - [x] Feasibility check (_feasibility_check, _is_budget_tight)
+  - [x] Rejection classification (_classify_rejection)
+  - [x] SharedState LLM budget management (can_call_llm, remaining_calls, cap)
+- [x] Parallel tool execution (ThreadPoolExecutor within each destination group)
+- [x] ReAct-style execution trace in UI (THOUGHT/PLAN/SYNTHESIS/REFLECTION badges)
+- [x] Frontend error handling for budget_infeasible and no_pricing_data statuses
+- [x] Updated architecture.png with Supervisor-driven ReAct loop diagram
+- [x] Per-destination observations in Supervisor context (richer reasoning)
 - [ ] Multi-turn conversation (follow-up like "make it cheaper")
-- [ ] Update architecture.png to reflect new Supervisor-driven loop
+- [ ] Per-destination hotel tagging (destination_city field for Supervisor reasoning)
 
 ---
 

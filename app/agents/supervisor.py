@@ -116,29 +116,14 @@ def run_supervisor(state: SharedState) -> dict:
     }
     user_context_parts.append(f"Data collected so far: {json.dumps(data_summary)}")
 
-    # Flight price summary for budget reasoning
-    if state.flight_options and state.constraints.get("budget_total"):
-        prices = [f.get("price", 0) for f in state.flight_options if f.get("price")]
-        if prices:
-            budget = state.constraints.get("budget_total", 0)
-            user_context_parts.append(
-                f"Flight prices: min=${min(prices):.0f}, max=${max(prices):.0f}, "
-                f"avg=${sum(prices)/len(prices):.0f} | User budget: ${budget}"
-            )
-
-    # Hotel price summary
-    if state.hotel_options:
-        hotel_prices = [h.get("total_price", 0) for h in state.hotel_options if h.get("total_price")]
-        if hotel_prices:
-            user_context_parts.append(
-                f"Hotel prices: min=${min(hotel_prices):.0f}, max=${max(hotel_prices):.0f}"
-            )
-
-    # Destinations already searched
-    if state.flight_options:
-        searched_dests = list({f.get("destination_city", f.get("destination", "?"))
-                              for f in state.flight_options})
-        user_context_parts.append(f"Destinations already searched: {searched_dests}")
+    # Per-destination observations (helps Supervisor reason about which destinations are viable)
+    if state.flight_options or state.hotel_options:
+        budget = state.constraints.get("budget_total") if state.constraints else None
+        dest_obs = _build_destination_observations(state, budget)
+        if dest_obs:
+            user_context_parts.append(f"Per-destination observations:\n{dest_obs}")
+        if budget:
+            user_context_parts.append(f"User budget: ${budget}")
 
     # Remaining tasks
     if state.task_list:
@@ -170,3 +155,57 @@ def run_supervisor(state: SharedState) -> dict:
         }
 
     return decision
+
+
+def _build_destination_observations(state: SharedState, budget) -> str:
+    """Build a compact per-destination summary for the Supervisor.
+
+    Groups flights and hotels by destination so the Supervisor can compare
+    destinations and reason about viability (e.g., pivot away from expensive ones).
+    """
+    dest_data: dict[str, dict] = {}
+
+    for f in state.flight_options:
+        dest = f.get("destination_city", f.get("destination", "?"))
+        entry = dest_data.setdefault(dest, {"flights": [], "hotels": [], "direct": False})
+        price = f.get("price", 0)
+        if price:
+            entry["flights"].append(price)
+        if f.get("stops", 99) == 0:
+            entry["direct"] = True
+
+    for h in state.hotel_options:
+        dest = h.get("destination_city", "?")
+        entry = dest_data.setdefault(dest, {"flights": [], "hotels": [], "direct": False})
+        tp = h.get("total_price", 0)
+        if tp:
+            entry["hotels"].append(tp)
+
+    if not dest_data:
+        return ""
+
+    lines = []
+    for dest, info in dest_data.items():
+        parts = [f"  {dest}:"]
+        fprices = info["flights"]
+        hprices = info["hotels"]
+        if fprices:
+            parts.append(f"flights=${min(fprices):.0f}-${max(fprices):.0f} ({len(fprices)} options)")
+            if info["direct"]:
+                parts.append("(direct available)")
+        else:
+            parts.append("no flights")
+        if hprices:
+            parts.append(f"hotels=${min(hprices):.0f}-${max(hprices):.0f} ({len(hprices)} options)")
+        else:
+            parts.append("no hotels")
+        if budget and fprices and hprices:
+            try:
+                lower = min(fprices) + min(hprices)
+                pct = lower / float(budget) * 100
+                parts.append(f"min total=${lower:.0f} ({pct:.0f}% of budget)")
+            except (ValueError, TypeError, ZeroDivisionError):
+                pass
+        lines.append(" ".join(parts))
+
+    return "\n".join(lines)

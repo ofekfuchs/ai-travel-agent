@@ -99,8 +99,22 @@ function renderResponse(responseStr) {
 
   let packages = null;
   let warning = null;
+  let parsed = null;
   try {
-    const parsed = JSON.parse(responseStr);
+    parsed = JSON.parse(responseStr);
+  } catch {
+    // Not JSON -- show as text
+  }
+
+  if (parsed) {
+    if (parsed.status === "budget_infeasible") {
+      renderBudgetInfeasible(parsed);
+      return;
+    }
+    if (parsed.status === "no_pricing_data") {
+      renderNoPricingData(parsed);
+      return;
+    }
     if (Array.isArray(parsed)) {
       packages = parsed;
     } else if (parsed.packages && Array.isArray(parsed.packages)) {
@@ -111,8 +125,6 @@ function renderResponse(responseStr) {
         warning = { issues, question, category: parsed.repair_category || "" };
       }
     }
-  } catch {
-    // Not JSON -- show as text
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
@@ -121,6 +133,80 @@ function renderResponse(responseStr) {
     textResponseContent.textContent = responseStr;
     textResponseSection.classList.remove("hidden");
   }
+}
+
+function renderBudgetInfeasible(data) {
+  const cb = data.cost_breakdown || {};
+  const cheapFlights = data.cheapest_flights_found || [];
+  const cheapHotels = data.cheapest_hotels_found || [];
+  const question = data.question || "";
+
+  let html = `<div class="status-card budget-card">
+    <div class="status-icon">&#x1F4B0;</div>
+    <h3>Budget Below Minimum</h3>
+    <p class="status-message">${esc(data.message || "")}</p>
+    <div class="cost-grid">
+      <div class="cost-item">
+        <span class="cost-label">Cheapest flights</span>
+        <span class="cost-value">$${Math.round(cb.cheapest_roundtrip_flights || 0)}</span>
+      </div>
+      <div class="cost-item">
+        <span class="cost-label">Cheapest hotel total</span>
+        <span class="cost-value">$${Math.round(cb.cheapest_hotel_total || 0)}</span>
+      </div>
+      <div class="cost-item">
+        <span class="cost-label">Daily expenses (est.)</span>
+        <span class="cost-value">$${Math.round(cb.estimated_daily_expenses || 0)}</span>
+      </div>
+      <div class="cost-item total">
+        <span class="cost-label">Minimum needed</span>
+        <span class="cost-value">$${Math.round(cb.lower_bound_total || 0)}</span>
+      </div>
+      <div class="cost-item">
+        <span class="cost-label">Your budget</span>
+        <span class="cost-value">$${Math.round(cb.user_budget || 0)}</span>
+      </div>
+      <div class="cost-item">
+        <span class="cost-label">Gap</span>
+        <span class="cost-value gap">${cb.gap_percentage || 0}% over</span>
+      </div>
+    </div>`;
+
+  if (cheapFlights.length) {
+    html += `<div class="cheap-options"><h4>Cheapest flights found</h4><ul>`;
+    cheapFlights.forEach(f => {
+      html += `<li>${esc(f.airline || "?")} ${esc(f.origin || "")} → ${esc(f.destination || "")} — $${Math.round(f.price || 0)} RT</li>`;
+    });
+    html += `</ul></div>`;
+  }
+
+  if (question) {
+    html += `<div class="status-question"><strong>What would you like to adjust?</strong><p>${esc(question).replace(/\n/g, "<br>")}</p></div>`;
+  }
+
+  html += `</div>`;
+  packagesContainer.innerHTML = html;
+  packagesSection.classList.remove("hidden");
+}
+
+function renderNoPricingData(data) {
+  const constraints = data.constraints_extracted || {};
+  const ragCount = data.rag_knowledge_found || 0;
+  const llmCalls = data.llm_calls_used || 0;
+
+  let html = `<div class="status-card nodata-card">
+    <div class="status-icon">&#x1F50D;</div>
+    <h3>No Pricing Data Found</h3>
+    <p class="status-message">${esc(data.message || "Could not find flight or hotel pricing.")}</p>
+    <div class="status-details">
+      <p>LLM calls used: ${llmCalls}/8</p>
+      ${ragCount ? `<p>Destination knowledge found: ${ragCount} chunks</p>` : ""}
+      ${constraints.destinations ? `<p>Searched destinations: ${esc(constraints.destinations.join(", "))}</p>` : ""}
+    </div>
+  </div>`;
+
+  packagesContainer.innerHTML = html;
+  packagesSection.classList.remove("hidden");
 }
 
 function renderPackages(packages, warning) {
@@ -384,32 +470,107 @@ function getTotal(pkg) {
   return t ? `$${Math.round(t).toLocaleString()}` : "";
 }
 
-// ── Steps rendering ─────────────────────────────────────────────────────
+// ── Steps rendering (ReAct-style trace) ──────────────────────────────────
+
+function classifyStep(step) {
+  const mod = (step.module || "").toLowerCase();
+  const parsed = tryParseJSON(step.response && step.response.content);
+
+  if (mod === "supervisor") {
+    const action = parsed ? parsed.next_action : "?";
+    const reason = parsed ? parsed.reason : "";
+    return {
+      role: "thought", roleLabel: "THOUGHT", module: "Supervisor",
+      summary: `${action}${reason ? " — " + reason : ""}`,
+    };
+  }
+  if (mod === "planner") {
+    const taskCount = parsed && parsed.tasks ? parsed.tasks.length : 0;
+    const dests = parsed && parsed.constraints && parsed.constraints.destinations
+      ? parsed.constraints.destinations.join(", ") : "";
+    return {
+      role: "plan", roleLabel: "PLAN", module: "Planner",
+      summary: `${taskCount} tasks${dests ? " for " + dests : ""}`,
+    };
+  }
+  if (mod.includes("synthesizer") || mod.includes("trip")) {
+    const pkgs = parsed && parsed.packages ? parsed.packages.length : (parsed ? 1 : 0);
+    return {
+      role: "action", roleLabel: "SYNTHESIS", module: "Trip Synthesizer",
+      summary: `${pkgs} package(s) assembled`,
+    };
+  }
+  if (mod === "verifier") {
+    const decision = parsed ? parsed.decision : "?";
+    const issueCount = parsed && parsed.issues ? parsed.issues.length : 0;
+    const warnCount = parsed && parsed.warnings ? parsed.warnings.length : 0;
+    let detail = decision;
+    if (issueCount) detail += `, ${issueCount} issue(s)`;
+    if (warnCount) detail += `, ${warnCount} warning(s)`;
+    return {
+      role: "reflection", roleLabel: "REFLECTION", module: "Verifier",
+      summary: detail,
+    };
+  }
+  return { role: "action", roleLabel: "ACTION", module: step.module || "Agent", summary: "" };
+}
+
+function extractObservation(step) {
+  if (!step.prompt || !step.prompt.user) return null;
+  const text = step.prompt.user;
+  const dataMatch = text.match(/Data collected so far:\s*(\{[^}]+\})/);
+  if (!dataMatch) return null;
+  try {
+    const data = JSON.parse(dataMatch[1]);
+    const parts = [];
+    if (data.flights) parts.push(`${data.flights} flights`);
+    if (data.hotels) parts.push(`${data.hotels} hotels`);
+    if (data.weather) parts.push(`${data.weather} weather`);
+    if (data.pois) parts.push(`${data.pois} POIs`);
+    if (data.rag_chunks) parts.push(`${data.rag_chunks} RAG chunks`);
+    return parts.length ? parts.join(", ") : null;
+  } catch { return null; }
+}
 
 function renderSteps(steps) {
   if (!steps || steps.length === 0) return;
 
   stepsContainer.innerHTML = "";
+  let supervisorCount = 0;
 
   steps.forEach((step, idx) => {
+    const info = classifyStep(step);
+    if (info.role === "thought") supervisorCount++;
+
     const card = document.createElement("div");
-    card.className = "step-card";
+    card.className = `step-card step-role-${info.role}`;
+
+    const observation = info.role === "thought" ? extractObservation(step) : null;
+    const obsHTML = observation
+      ? `<div class="step-observation">Observed: ${esc(observation)}</div>`
+      : "";
 
     const header = document.createElement("div");
     header.className = "step-header";
     header.innerHTML = `
-      <span><span class="module-name">${esc(step.module)}</span> — Step ${idx + 1}</span>
-      <span>&#9660;</span>
+      <span>
+        <span class="react-badge ${info.role}">${info.roleLabel}</span>
+        <span class="module-name">${esc(info.module)}</span>
+        ${info.summary ? `<span class="step-summary">${esc(info.summary)}</span>` : ""}
+      </span>
+      <span class="step-toggle-icon">&#9660;</span>
     `;
 
     const body = document.createElement("div");
     body.className = "step-body";
-    body.innerHTML = `
-      <h4>Prompt</h4>
-      <pre>${esc(JSON.stringify(step.prompt, null, 2))}</pre>
-      <h4>Response</h4>
-      <pre>${esc(JSON.stringify(step.response, null, 2))}</pre>
-    `;
+
+    let bodyHTML = "";
+    if (obsHTML) bodyHTML += obsHTML;
+    bodyHTML += `<h4>Prompt (sent to LLM)</h4>
+      <pre>${esc(typeof step.prompt === "object" ? JSON.stringify(step.prompt, null, 2) : String(step.prompt))}</pre>
+      <h4>Response (from LLM)</h4>
+      <pre>${esc(typeof step.response === "object" ? JSON.stringify(step.response, null, 2) : String(step.response))}</pre>`;
+    body.innerHTML = bodyHTML;
 
     header.addEventListener("click", () => body.classList.toggle("open"));
     card.appendChild(header);
@@ -417,8 +578,14 @@ function renderSteps(steps) {
     stepsContainer.appendChild(card);
   });
 
-  toggleStepsBtn.innerHTML = `Show Execution Trace (<span id="step-count">${steps.length}</span> steps)`;
+  const label = `Show Execution Trace — ReAct Loop (<span id="step-count">${steps.length}</span> steps, ${supervisorCount} reasoning cycles)`;
+  toggleStepsBtn.innerHTML = label;
   stepsSection.classList.remove("hidden");
+}
+
+function tryParseJSON(str) {
+  if (!str || typeof str !== "string") return null;
+  try { return JSON.parse(str); } catch { return null; }
 }
 
 // ── Utilities ────────────────────────────────────────────────────────────

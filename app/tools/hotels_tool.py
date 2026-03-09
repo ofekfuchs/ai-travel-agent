@@ -83,10 +83,13 @@ def search_hotels(
     ck = make_cache_key("hotels", params)
     cached = cache_get(ck)
     if cached is not None:
-        state.hotel_options.extend(cached.get("options", []))
+        options = cached.get("options", [])
+        for opt in options:
+            opt.setdefault("destination_city", destination)
+        state.hotel_options.extend(options)
         log_tool_call(state, "Executor", "hotels_search", params,
-                      {"source": "cache", "count": len(cached.get("options", []))})
-        return cached.get("options", [])
+                      {"source": "cache", "count": len(options)})
+        return options
 
     if not RAPIDAPI_KEY:
         log_tool_call(state, "Executor", "hotels_search", params,
@@ -119,7 +122,7 @@ def search_hotels(
         resp.raise_for_status()
         data = resp.json()
 
-        options = _parse_hotel_results(data, check_in, check_out)
+        options = _parse_hotel_results(data, check_in, check_out, destination)
         state.hotel_options.extend(options)
         cache_set(ck, {"options": options})
 
@@ -132,7 +135,7 @@ def search_hotels(
         return []
 
 
-def _parse_hotel_results(raw: dict, check_in: str, check_out: str) -> list[dict[str, Any]]:
+def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: str = "") -> list[dict[str, Any]]:
     """Flatten the API response into a list of hotel option dicts.
 
     The Booking.com API returns hotels under data.hotels (newer format)
@@ -169,6 +172,7 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str) -> list[dict[
         options.append(
             {
                 "name": name,
+                "destination_city": destination,
                 "check_in": check_in,
                 "check_out": check_out,
                 "price_per_night": round(total_price / nights, 2) if total_price else 0,

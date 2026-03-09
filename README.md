@@ -104,7 +104,7 @@ Return         (loop back to Supervisor)
 |-----------|------|-----------|
 | **Supervisor** | Brain — decides next action at every step | 1 per round (3+ rounds typical) |
 | **Planner** | Extracts constraints + generates task plan + RAG | 1 call |
-| **Executor** | Runs tools (flights, hotels, weather, POIs) | 0 (pure API calls) |
+| **Executor** | Runs tools in parallel (flights, hotels, weather, POIs) | 0 (pure API calls) |
 | **Synthesizer** | Builds tiered trip packages from data | 1 call |
 | **Verifier** | Quality audit (rule-based + LLM) | 1 call |
 
@@ -203,10 +203,15 @@ ai-travel-agent/
 ├── scripts/
 │   ├── ingest_wikivoyage.py    # Seed Pinecone with Wikivoyage data
 │   └── test_tools_dry.py       # Dry-run tool tests
+├── tests/
+│   ├── __init__.py
+│   └── test_deterministic.py   # 27 unit tests (zero-LLM)
 ├── .env                        # API keys (not committed)
 ├── requirements.txt            # Python dependencies
-├── architecture.png            # System diagram
+├── architecture.png            # System diagram (ReAct loop)
+├── generate_architecture.py    # Script to regenerate the diagram
 ├── TESTING.md                  # Test checklist
+├── TODO.md                     # Feature tracking
 └── README.md                   # This file
 ```
 
@@ -262,10 +267,25 @@ CREATE TABLE IF NOT EXISTS execution_logs (
 
 ## What Makes This an Agent (Not Just a Workflow)
 
-1. **Multi-round Supervisor**: Called 3+ times per request, observes and adapts
-2. **Phased execution**: Searches destinations one at a time, reasons about results
-3. **Adaptive decisions**: Can skip expensive destinations, pivot to cheaper ones
-4. **Scope guard**: Refuses non-travel requests politely
-5. **RAG grounding**: Uses Wikivoyage knowledge to inform destination choices
-6. **Budget-aware reasoning**: Compares prices to budget at every decision point
-7. **Self-healing**: On Verifier rejection, loops back for delta replanning
+1. **Multi-round Supervisor (ReAct)**: Called 3+ times per request — Thought -> Action -> Observation cycles
+2. **Phased execution**: Searches destinations one at a time, observes results between phases
+3. **Adaptive decisions**: Can skip expensive destinations, pivot to cheaper ones based on observations
+4. **Per-destination reasoning**: Supervisor compares prices across destinations to make informed decisions
+5. **Scope guard**: Refuses non-travel requests politely
+6. **RAG grounding**: Uses Wikivoyage knowledge to inform destination choices
+7. **Budget-aware reasoning**: Compares prices to budget at every decision point
+8. **Self-healing**: On Verifier rejection (Reflection), loops back for delta replanning
+9. **Parallel tool execution**: Flight/hotel/weather/POI searches run concurrently within each phase
+
+## Running Tests
+
+```bash
+python -m pytest tests/ -v
+```
+
+27 unit tests covering deterministic (zero-LLM) logic:
+- Feasibility checks (Gate B budget guard)
+- Rejection classification (maps issues to repair categories)
+- Destination grouping and task splitting
+- Cache key generation and determinism
+- SharedState LLM budget management

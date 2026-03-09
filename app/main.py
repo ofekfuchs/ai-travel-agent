@@ -146,6 +146,24 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
 
             if action == "finalize":
                 return _build_final_response(state)
+            
+            # 🛑 DEBUG STOP
+            if action in ["plan", "replan"]:
+                return ExecuteResponse(
+                    status="ok", 
+                    error=None, 
+                    # עכשיו המשתמש reason מוגדר ויעבוד
+                    response=f"🛑 DEBUG STOP: Supervisor decided to '{action}'.\nReason: {reason}\n(Execution halted here deliberately)",
+                    steps=[Step(**s) for s in state.steps],
+                )
+            
+            # 🛑 SAFETY NET
+            return ExecuteResponse(
+                status="ok", 
+                error=None, 
+                response=f"🛑 FALLBACK STOP: Unknown action '{action}'. Execution halted by safety net.",
+                steps=[Step(**s) for s in state.steps],
+            )
 
             # ── Step 2: Planner ─────────────────────────────────────────
             repair_cat = None

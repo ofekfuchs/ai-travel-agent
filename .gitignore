@@ -8,3 +8,4 @@ dist/
 build/
 .pinecone_uploaded.json
 .cursor/
+*.pdf

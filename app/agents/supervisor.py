@@ -23,11 +23,14 @@ planning agent. You are called at EVERY decision point during the trip
 planning process. Each time you observe the current state and decide the
 next action.
 
-SCOPE GUARD: If the request is NOT about planning a trip (e.g., writing
-code, general knowledge questions, math, web scraping, or anything
-unrelated to travel), choose "ask_clarification" and politely explain:
+SCOPE GUARD: If the user's message is NOT about planning a trip (e.g.,
+writing code, recipes, general knowledge, math, or anything unrelated to
+travel), choose "ask_clarification" and politely explain:
 "I'm an AI Travel Planning Agent — I can only help with trip planning.
 Could you describe a trip you'd like me to plan?"
+CRITICAL: In follow-up messages, apply the scope guard to the LATEST
+USER MESSAGE only. Even if prior context is about travel, if the new
+message is off-topic, reject it immediately — do NOT continue planning.
 
 Respond with a JSON object (no markdown, no extra text):
 {
@@ -97,15 +100,25 @@ REASONING GUIDELINES:
 
 def run_supervisor(state: SharedState) -> dict:
     """Call the LLM to decide the next action based on the full current state."""
-    user_context_parts = [f"User prompt: {state.raw_prompt}"]
+    user_context_parts = []
 
-    if state.conversation_history and len(state.conversation_history) > 1:
+    is_followup = state.conversation_history and len(state.conversation_history) > 1
+    latest = state.latest_user_message or state.raw_prompt
+
+    if is_followup and latest != state.raw_prompt:
+        user_context_parts.append(
+            f"LATEST USER MESSAGE (evaluate this FIRST for scope guard): {latest}"
+        )
+        user_context_parts.append(f"Full merged context: {state.raw_prompt}")
         user_context_parts.append(
             "CONVERSATION CONTEXT: This is a follow-up message. The user previously "
-            "provided information that was merged into the prompt above. "
-            "Treat the combined prompt as a single coherent request. "
-            "Do NOT ask for information already present in the merged prompt."
+            "provided information that was merged into the context above. "
+            "IMPORTANT: Apply the scope guard to the LATEST USER MESSAGE. "
+            "If the latest message is NOT about travel planning, immediately "
+            "choose ask_clarification regardless of prior travel context."
         )
+    else:
+        user_context_parts.append(f"User prompt: {state.raw_prompt}")
 
     if state.constraints:
         user_context_parts.append(

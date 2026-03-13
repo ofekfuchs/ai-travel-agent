@@ -569,7 +569,8 @@ class TestFlightDateSanity:
         _check_flight_dates(plan, state, "Pkg 1", issues)
         assert any("before outbound arrival" in i for i in issues)
 
-    def test_flight_outside_date_window_flagged(self):
+    def test_flight_outside_date_window_not_flagged(self):
+        """Date window mismatch is no longer flagged — the Planner picks dates."""
         from app.agents.verifier import _check_flight_dates
         state = SharedState()
         plan = {
@@ -583,7 +584,7 @@ class TestFlightDateSanity:
         }
         issues: list[str] = []
         _check_flight_dates(plan, state, "Pkg 1", issues)
-        assert any("outside date_window" in i for i in issues)
+        assert not any("outside date_window" in i for i in issues)
 
     def test_excessive_duration_flagged(self):
         from app.agents.verifier import _check_flight_dates
@@ -598,7 +599,7 @@ class TestFlightDateSanity:
         }
         issues: list[str] = []
         _check_flight_dates(plan, state, "Pkg 1", issues)
-        assert any("exceeds 30h" in i for i in issues)
+        assert any("exceeds 48h" in i for i in issues)
 
 
 class TestHotelDataIntegrity:

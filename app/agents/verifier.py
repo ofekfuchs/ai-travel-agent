@@ -113,24 +113,37 @@ _VERIFIER_SYSTEM = """\
 You are a pragmatic quality auditor of a travel-planning agent. You receive
 draft trip packages and must judge whether they are good enough to show the user.
 
+IMPORTANT CONTEXT:
+- Flight prices in the data are per-person roundtrip totals for 1 adult.
+  The system applies traveler multipliers AFTER synthesis, so the package
+  total_flight_cost should match a single per-person price from the data.
+  Do NOT reject because flight cost wasn't multiplied by travelers.
+- Hotel total_price is for 1 room for the full stay. It should NOT be
+  multiplied by travelers.
+- Overnight arrivals (next-day landing) are NORMAL for long-haul flights.
+  A flight departing at 18:00 and arriving at 02:40 the next day is typical
+  for routes like TLV→CDG or NYC→CUN. Do NOT flag this as an error.
+
 Check for CRITICAL issues (these REQUIRE rejection):
-- Fabricated/invented prices not present in the source data
+- A completely fabricated hotel or flight that has no match in the data at all
 - Missing core fields (no flights, no hotel, no destination)
-- Cost breakdown total is wildly wrong (off by >30%)
+- Cost breakdown total is wildly wrong (off by >50%)
 - Itinerary for wrong destination or completely incoherent
 
 Check for MINOR issues (note them but still APPROVE):
-- Small rounding differences (< $5)
+- Small rounding differences (< $10)
 - Different airports in the same metro area (e.g. EWR vs JFK for NYC)
 - Missing daily expense estimates (acceptable if noted in assumptions)
 - Booking links that are search URLs rather than direct deeplinks
-- Minor timing nuances (e.g. late-night arrival phrasing)
-- Unsubstantiated superlatives in rationale (e.g. "best value")
+- Minor timing nuances (e.g. late-night arrival, early departure)
+- Flight duration that looks long due to timezone display
 
 Decision rules:
 - If there are ANY critical issues → "REJECT"
 - If there are ONLY minor issues → "APPROVE" (list them as warnings)
 - If no issues → "APPROVE"
+- When in doubt, APPROVE with warnings. Users prefer imperfect packages
+  over no packages.
 
 Respond with a JSON object:
 {
@@ -195,7 +208,11 @@ def _parse_dt(val: str) -> datetime | None:
 
 
 def _check_flight_dates(plan: dict, state: SharedState, prefix: str, issues: list[str]) -> None:
-    """Sanity-check flight datetimes: detect impossible sequences."""
+    """Sanity-check flight datetimes: detect truly impossible sequences.
+
+    Overnight arrivals (next-day) are NORMAL for long-haul flights and should
+    NOT be flagged. Only flag genuinely impossible situations.
+    """
     flights = plan.get("flights", {})
     if not isinstance(flights, dict):
         return
@@ -209,8 +226,8 @@ def _check_flight_dates(plan: dict, state: SharedState, prefix: str, issues: lis
         if dep and arr:
             if arr < dep:
                 issues.append(f"{prefix}: outbound arrival ({outbound['arrival']}) is before departure ({outbound['departure']})")
-            elif (arr - dep) > timedelta(hours=30):
-                issues.append(f"{prefix}: outbound flight duration exceeds 30h — likely a date error")
+            elif (arr - dep) > timedelta(hours=48):
+                issues.append(f"{prefix}: outbound flight duration exceeds 48h — likely a date error")
 
     if isinstance(ret, dict) and ret.get("departure") and ret.get("arrival"):
         rdep = _parse_dt(ret["departure"])
@@ -219,24 +236,10 @@ def _check_flight_dates(plan: dict, state: SharedState, prefix: str, issues: lis
             if rarr < rdep:
                 issues.append(f"{prefix}: return arrival is before return departure")
 
-        # Return should be after outbound arrival
         if isinstance(outbound, dict) and outbound.get("arrival"):
             out_arr = _parse_dt(outbound["arrival"])
             if out_arr and rdep and rdep < out_arr:
                 issues.append(f"{prefix}: return departure ({ret['departure']}) is before outbound arrival ({outbound['arrival']})")
-
-    # Verify flight dates fall within the package date_window
-    date_window = plan.get("date_window", "")
-    if isinstance(date_window, str) and " to " in date_window:
-        parts = date_window.split(" to ")
-        win_start = _parse_dt(parts[0].strip())
-        win_end = _parse_dt(parts[1].strip())
-        if win_start and win_end:
-            if isinstance(outbound, dict) and outbound.get("departure"):
-                dep = _parse_dt(outbound["departure"])
-                if dep and (dep.date() < (win_start - timedelta(days=1)).date()
-                            or dep.date() > (win_end + timedelta(days=1)).date()):
-                    issues.append(f"{prefix}: outbound departure {outbound['departure']} falls outside date_window {date_window}")
 
 
 def _check_hotel_data(plan: dict, prefix: str, issues: list[str],

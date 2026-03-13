@@ -362,7 +362,12 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                 dest_groups = get_destination_groups(state.task_list)
                 task_map = split_tasks_by_destination(state.task_list)
 
-                if dest_groups:
+                if not state.task_list and action == "replan" and has_data:
+                    print(f"  REPLAN produced 0 tasks but data exists "
+                          f"-- retrying synthesize instead", flush=True)
+                    state.draft_plans = []
+                    action = "synthesize"
+                elif dest_groups:
                     first_dest = dest_groups[0]
                     first_batch = task_map.get(first_dest, [])
                     general_tasks = task_map.get("_general", [])
@@ -388,8 +393,11 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     _print_data_summary(state)
                     state.task_list = []
 
-                # Loop back to Supervisor to observe and decide next step
-                continue
+                if action == "synthesize":
+                    pass  # fall through to synthesize block below
+                else:
+                    # Loop back to Supervisor to observe and decide next step
+                    continue
 
             # ── continue (execute remaining destination groups) ─────────
             if action == "continue":

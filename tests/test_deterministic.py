@@ -659,6 +659,59 @@ class TestHotelDataIntegrity:
         assert any("not reflected in cost_breakdown" in i for i in issues)
 
 
+class TestRoomCalculation:
+    """Verify _rooms_for_adults computes correct room counts."""
+
+    def test_1_adult_needs_1_room(self):
+        from app.tools.hotels_tool import _rooms_for_adults
+        assert _rooms_for_adults(1) == 1
+
+    def test_2_adults_need_1_room(self):
+        from app.tools.hotels_tool import _rooms_for_adults
+        assert _rooms_for_adults(2) == 1
+
+    def test_3_adults_need_2_rooms(self):
+        from app.tools.hotels_tool import _rooms_for_adults
+        assert _rooms_for_adults(3) == 2
+
+    def test_4_adults_need_2_rooms(self):
+        from app.tools.hotels_tool import _rooms_for_adults
+        assert _rooms_for_adults(4) == 2
+
+    def test_5_adults_need_3_rooms(self):
+        from app.tools.hotels_tool import _rooms_for_adults
+        assert _rooms_for_adults(5) == 3
+
+    def test_7_adults_need_4_rooms(self):
+        from app.tools.hotels_tool import _rooms_for_adults
+        assert _rooms_for_adults(7) == 4
+
+    def test_booking_url_rooms_match_adults_1(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Hotel X", "2026-06-10", "2026-06-14", adults=1)
+        assert "no_rooms=1" in url
+
+    def test_booking_url_rooms_match_adults_2(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Hotel X", "2026-06-10", "2026-06-14", adults=2)
+        assert "no_rooms=1" in url
+
+    def test_booking_url_rooms_match_adults_3(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Hotel X", "2026-06-10", "2026-06-14", adults=3)
+        assert "no_rooms=2" in url
+
+    def test_booking_url_rooms_match_adults_5(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Hotel X", "2026-06-10", "2026-06-14", adults=5)
+        assert "no_rooms=3" in url
+
+    def test_booking_url_rooms_match_adults_7(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Hotel X", "2026-06-10", "2026-06-14", adults=7)
+        assert "no_rooms=4" in url
+
+
 class TestItineraryDateAlignment:
     """Contract B (cont.): Itinerary days match date_window."""
 

@@ -7,6 +7,7 @@ Booking links are generated deterministically (zero LLM).
 from __future__ import annotations
 
 import json
+import math
 import urllib.parse
 
 from app.config import RAG_DISPLAY_CHARS_SYNTH, RAG_MAX_CHUNKS_SYNTH
@@ -515,10 +516,11 @@ def _ensure_booking_links(pkg: dict, state: SharedState) -> None:
 
         if not hotels_url and dest and depart and ret:
             travelers = constraints.get("travelers") or 1
+            rooms = max(1, math.ceil(travelers / 2))
             hotels_url = (
                 f"https://www.booking.com/searchresults.html?"
                 f"ss={urllib.parse.quote(dest)}&checkin={depart}&checkout={ret}"
-                f"&group_adults={travelers}&no_rooms=1"
+                f"&group_adults={travelers}&no_rooms={rooms}"
             )
         existing["hotels_search"] = hotels_url
 

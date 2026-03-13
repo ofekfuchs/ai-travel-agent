@@ -6,6 +6,8 @@ searchDestination endpoint, so callers can pass "Paris" directly.
 
 from __future__ import annotations
 
+import math
+import time
 import urllib.parse
 from typing import Any
 
@@ -20,6 +22,13 @@ _BASE_URL = "https://booking-com15.p.rapidapi.com/api/v1/hotels"
 
 _dest_cache: dict[str, tuple[str, str]] = {}
 
+_MAX_ADULTS_PER_ROOM = 2
+
+
+def _rooms_for_adults(adults: int) -> int:
+    """Minimum rooms needed: 2 adults per room, at least 1 room."""
+    return max(1, math.ceil(adults / _MAX_ADULTS_PER_ROOM))
+
 
 def _get_headers() -> dict[str, str]:
     return {
@@ -28,34 +37,37 @@ def _get_headers() -> dict[str, str]:
     }
 
 
-def _resolve_dest_id(city_name: str) -> tuple[str, str]:
+def _resolve_dest_id(city_name: str, max_attempts: int = 3) -> tuple[str, str]:
     """Convert a city name to a Booking.com (dest_id, dest_type) pair.
 
-    Uses the searchDestination endpoint. Caches in-memory within one session.
+    Uses the searchDestination endpoint with retry on transient failures.
+    Caches in-memory within one session.
     Returns (dest_id, dest_type) or (city_name, "CITY") as fallback.
     """
     key = city_name.strip().lower()
     if key in _dest_cache:
         return _dest_cache[key]
 
-    try:
-        resp = httpx.get(
-            f"{_BASE_URL}/searchDestination",
-            headers=_get_headers(),
-            params={"query": city_name},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        destinations = data.get("data", data) if isinstance(data, dict) else data
-        if isinstance(destinations, list) and destinations:
-            first = destinations[0]
-            dest_id = str(first.get("dest_id", ""))
-            dest_type = first.get("dest_type", first.get("search_type", "CITY"))
-            _dest_cache[key] = (dest_id, dest_type.upper())
-            return _dest_cache[key]
-    except Exception:
-        pass
+    for attempt in range(max_attempts):
+        try:
+            resp = httpx.get(
+                f"{_BASE_URL}/searchDestination",
+                headers=_get_headers(),
+                params={"query": city_name},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            destinations = data.get("data", data) if isinstance(data, dict) else data
+            if isinstance(destinations, list) and destinations:
+                first = destinations[0]
+                dest_id = str(first.get("dest_id", ""))
+                dest_type = first.get("dest_type", first.get("search_type", "CITY"))
+                _dest_cache[key] = (dest_id, dest_type.upper())
+                return _dest_cache[key]
+        except Exception:
+            if attempt < max_attempts - 1:
+                time.sleep(0.5)
 
     _dest_cache[key] = (city_name, "CITY")
     return _dest_cache[key]
@@ -99,13 +111,15 @@ def search_hotels(
     try:
         dest_id, dest_type = _resolve_dest_id(destination)
 
+        rooms = _rooms_for_adults(adults)
+
         search_params = {
             "dest_id": dest_id,
             "search_type": dest_type,
             "arrival_date": check_in,
             "departure_date": check_out,
             "adults": str(adults),
-            "room_qty": "1",
+            "room_qty": str(rooms),
             "page_number": "1",
             "units": "metric",
             "temperature_unit": "c",
@@ -163,6 +177,7 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: 
 
         name = prop.get("name", hotel.get("hotel_name", "Unknown"))
         rating = prop.get("reviewScore", hotel.get("review_score", 0))
+        star_rating = prop.get("propertyClass", hotel.get("class", 0)) or 0
 
         if total_price:
             total_price = round(total_price, 2)
@@ -182,20 +197,23 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: 
                 "total_price": total_price,
                 "currency": "USD",
                 "rating": rating,
-                "address": prop.get("wishlistName", ""),
+                "star_rating": star_rating,
+                "address": prop.get("address", hotel.get("address", "")),
                 "booking_url": booking_url,
             }
         )
     return options[:10]
 
 
-def _build_hotel_url(name: str, check_in: str, check_out: str, adults: int = 1) -> str:
+def _build_hotel_url(name: str, check_in: str, check_out: str, adults: int = 1, rooms: int | None = None) -> str:
     """Construct a Booking.com search URL that leads to this hotel."""
+    if rooms is None:
+        rooms = _rooms_for_adults(adults)
     return (
         f"https://www.booking.com/searchresults.html?"
         f"ss={urllib.parse.quote(name)}"
         f"&checkin={check_in}&checkout={check_out}"
-        f"&group_adults={adults}&no_rooms=1"
+        f"&group_adults={adults}&no_rooms={rooms}"
     )
 
 

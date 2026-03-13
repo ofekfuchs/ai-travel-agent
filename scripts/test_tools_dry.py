@@ -77,17 +77,17 @@ def test_flights():
         report("Flights", FAIL, "RAPIDAPI_KEY not set")
         return
 
-    from app.tools.flights_tool import search_flights, _resolve_entity_id
+    from app.tools.flights_tool import search_flights, _resolve_flight_location
 
     # Test A: entity resolution
     try:
-        entity = _resolve_entity_id("New York")
+        entity = _resolve_flight_location("New York")
         report("Flights resolve 'New York'", PASS, f"-> '{entity}'")
     except Exception as e:
         report("Flights resolve", FAIL, str(e))
 
     try:
-        entity = _resolve_entity_id("Paris")
+        entity = _resolve_flight_location("Paris")
         report("Flights resolve 'Paris'", PASS, f"-> '{entity}'")
     except Exception as e:
         report("Flights resolve", FAIL, str(e))

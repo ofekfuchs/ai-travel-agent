@@ -81,7 +81,7 @@ def search_pois(
         raw = resp.json()
 
         raw_list = _normalize_response(raw, limit)
-        pois = _enrich_pois(raw_list)
+        pois = _enrich_pois(raw_list, destination_name)
         state.poi_list.extend(pois)
         cache_set(ck, {"pois": pois})
 
@@ -114,7 +114,7 @@ def _normalize_response(raw: Any, limit: int) -> list[dict]:
     return []
 
 
-def _enrich_pois(items: list[dict]) -> list[dict[str, Any]]:
+def _enrich_pois(items: list[dict], destination: str = "") -> list[dict[str, Any]]:
     """Extract a clean list of POI dicts from the raw API response."""
     pois: list[dict[str, Any]] = []
     for item in items:
@@ -128,6 +128,7 @@ def _enrich_pois(items: list[dict]) -> list[dict[str, Any]]:
                 "lat": item.get("point", {}).get("lat", 0),
                 "lon": item.get("point", {}).get("lon", 0),
                 "xid": item.get("xid", ""),
+                "destination": destination,
             }
         )
     return pois

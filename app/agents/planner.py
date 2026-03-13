@@ -70,8 +70,16 @@ KEY REASONING RULES:
   Today is {today}.
 
 - When the user says a vague region ("Europe", "Southeast Asia"), use the
-  RAG knowledge provided below to pick 2-3 specific cities that match.
+  RAG knowledge provided below to pick 3-4 specific cities that match.
+  More cities = more comparison options for the user at zero extra LLM cost.
+  Prefer a MIX of budget-friendly and popular destinations.
   If RAG knowledge doesn't cover the region, use your own knowledge.
+
+- IMPORTANT: Only pick cities served by MAJOR COMMERCIAL AIRPORTS with
+  scheduled airline service from the user's origin. Do NOT pick small towns
+  (e.g. Montauk, Nags Head, Provincetown) that lack commercial flights.
+  If the origin is New York, good beach destinations include: Miami, San Juan,
+  Cancun, Nassau, Aruba, Punta Cana, Fort Lauderdale, etc.
 
 - For each candidate city, generate search_flights, search_hotels,
   get_weather, and search_pois tasks with that city name.
@@ -79,6 +87,10 @@ KEY REASONING RULES:
 - Do NOT re-fetch data types already collected (see "Already collected").
 - If all data is already collected, return an EMPTY tasks array [].
 - Keep the task list SHORT. Every task costs time and API quota.
+- NEVER fabricate or guess prices, dates, or availability. Your job is only
+  to produce the task plan — the Executor will fetch real data.
+- For each destination, always include ALL 4 task types (search_flights,
+  search_hotels, get_weather, search_pois) so we have complete data.
 - Return ONLY valid JSON, no markdown.
 """
 
@@ -129,6 +141,15 @@ def run_planner(state: SharedState, repair_category: str | None = None) -> list[
         context_parts.append("Already collected:\n  " + "\n  ".join(collected))
     else:
         context_parts.append("Nothing collected yet.")
+
+    excluded = state.constraints.get("excluded_destinations", []) if state.constraints else []
+    if excluded:
+        context_parts.append(
+            f"EXCLUDED DESTINATIONS (user already saw these, wants alternatives): "
+            f"{', '.join(excluded)}.\n"
+            f"Pick COMPLETELY DIFFERENT cities. Choose only cities served by major "
+            f"commercial airports with scheduled flights from the origin."
+        )
 
     if repair_category and state.verifier_verdicts:
         last_verdict = state.verifier_verdicts[-1]

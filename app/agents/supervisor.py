@@ -73,9 +73,16 @@ REASONING GUIDELINES:
 
 - If at least 2 destinations have good flight + hotel data, "synthesize"
   is usually the right call — the Synthesizer can pick the best options.
+  More destinations = better packages for the user.
 
-- If only 1 destination was searched and results look good, "continue" to
-  search more destinations for comparison.
+- If only 1 destination was searched and remaining destinations exist in the
+  plan, "continue" to search more for comparison.
+
+- BUDGET AWARENESS: You have a limited LLM call budget. Each time YOU run
+  is 1 call. The Planner, Synthesizer, and Verifier each cost 1 call.
+  Typical successful flow uses 5-6 calls. If you see 4+ calls already used,
+  prefer "synthesize" over "continue" — having 2 destinations with data is
+  enough. Don't waste calls collecting data for a 4th city if budget is tight.
 
 - Be decisive. Don't ask for clarification if you can reasonably infer
   the missing info. "June" = summer dates, "cheap" = budget focus, etc.

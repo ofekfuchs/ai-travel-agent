@@ -48,6 +48,8 @@ The package MUST include ALL of these fields:
 
 CRITICAL RULES:
 - Use ONLY real prices from the data provided. NEVER invent or fabricate prices.
+- NEVER create packages for destinations that have NO FLIGHTS in the data. If a city only has hotels/weather but zero flights, SKIP that city entirely.
+- NEVER fabricate transport modes (drive, train, bus, ferry). If the data does not contain a real flight for a destination, do NOT include that destination.
 - FLIGHT PRICING: Each flight's "price" field is the ROUNDTRIP TOTAL (both legs combined). The "price_is" field confirms this. Set "total_flight_cost" equal to the flight's "price" — do NOT double it.
 - ALWAYS include BOTH outbound AND return flight details if the data provides return info (return_departure, return_arrival, return_from, return_to fields).
 - Copy the "booking_url" from the selected flight/hotel data into the package.
@@ -67,6 +69,11 @@ Build 2-3 packages at different tiers:
 1. "Budget Pick"  -- cheapest viable option
 2. "Best Value"   -- best balance of price and quality
 3. "Premium" (optional, only if data supports it)
+
+CROSS-DESTINATION RULE: When data for MULTIPLE DESTINATIONS is provided, you
+MUST create packages from DIFFERENT destinations to give the user variety.
+For example: Budget Pick from Budapest, Best Value from Berlin, Premium from
+Lisbon. Do NOT put all packages in the same city when alternatives exist!
 
 Each package MUST include ALL of these fields:
 1. "label": "Budget Pick" / "Best Value" / "Premium"
@@ -100,6 +107,8 @@ Each package MUST include ALL of these fields:
 
 CRITICAL RULES:
 - Use ONLY real prices from the data provided. NEVER invent or fabricate prices.
+- NEVER create packages for destinations that have NO FLIGHTS in the data. If a city only has hotels/weather but zero flights, SKIP that city entirely.
+- NEVER fabricate transport modes (drive, train, bus, ferry). If the data does not contain a real flight for a destination, do NOT include that destination.
 - FLIGHT PRICING: Each flight's "price" field is the ROUNDTRIP TOTAL (both legs combined). The "price_is" field confirms this. Set "total_flight_cost" equal to the flight's "price" — do NOT double it.
 - ALWAYS include BOTH outbound AND return flight details if the data provides return info (return_departure, return_arrival, return_from, return_to fields).
 - Copy the "booking_url" from the selected flight/hotel data into the package.
@@ -140,7 +149,11 @@ def run_synthesizer(state: SharedState, tight_budget: bool = False) -> None:
 
 
 def _build_prompt(state: SharedState) -> str:
-    """Build user prompt from flat tool-output lists in SharedState."""
+    """Build user prompt from tool-output lists in SharedState.
+
+    Groups data by destination so the LLM sees each city's flights, hotels,
+    weather, and POIs together — enabling proper cross-destination comparison.
+    """
     parts = [f"User request: {state.raw_prompt}"]
 
     if state.constraints:
@@ -153,27 +166,70 @@ def _build_prompt(state: SharedState) -> str:
         ]
         parts.append("Destination knowledge:\n" + "\n".join(summaries))
 
-    if state.flight_options:
-        sf = sorted(state.flight_options, key=lambda f: f.get("price", 9999))[:8]
-        parts.append(f"Flight options ({len(state.flight_options)} total, 8 cheapest): "
-                     f"{json.dumps(sf, default=str)}")
+    grouped = _group_data_by_destination(state)
+
+    if grouped:
+        dest_names = list(grouped.keys())
+        parts.append(f"Data available for {len(dest_names)} destination(s): {', '.join(dest_names)}")
+
+        for dest_name, dest_data in grouped.items():
+            section = [f"\n=== {dest_name} ==="]
+
+            flights = dest_data["flights"]
+            if flights:
+                top = sorted(flights, key=lambda f: f.get("price", 9999))[:5]
+                section.append(f"Flights ({len(flights)} options, top 5): {json.dumps(top, default=str)}")
+            else:
+                section.append("Flights: none found")
+
+            hotels = dest_data["hotels"]
+            if hotels:
+                top = sorted(hotels, key=lambda h: h.get("total_price", 9999))[:5]
+                section.append(f"Hotels ({len(hotels)} options, top 5): {json.dumps(top, default=str)}")
+            else:
+                section.append("Hotels: none found")
+
+            weather = dest_data["weather"]
+            if weather:
+                section.append(f"Weather: {json.dumps(weather[0], default=str)}")
+
+            pois = dest_data["pois"]
+            if pois:
+                named = [p for p in pois if p.get("name") and p["name"] != "Unnamed"][:5]
+                if named:
+                    section.append(f"POIs: {json.dumps(named, default=str)}")
+
+            parts.append("\n".join(section))
     else:
-        parts.append("Flight options: NONE FOUND (do not invent flight prices)")
+        if state.flight_options:
+            flight_dests = {f.get("destination_city") or f.get("destination", "") for f in state.flight_options}
+            sf = sorted(state.flight_options, key=lambda f: f.get("price", 9999))[:8]
+            parts.append(f"Flight options ({len(state.flight_options)} total, 8 cheapest): "
+                         f"{json.dumps(sf, default=str)}")
 
-    if state.hotel_options:
-        sh = sorted(state.hotel_options, key=lambda h: h.get("total_price", 9999))[:8]
-        parts.append(f"Hotel options ({len(state.hotel_options)} total, 8 cheapest): "
-                     f"{json.dumps(sh, default=str)}")
-    else:
-        parts.append("Hotel options: NONE FOUND (do not invent hotel prices)")
+            reachable_hotels = [h for h in state.hotel_options
+                                if h.get("destination_city", "") in flight_dests]
+            if reachable_hotels:
+                sh = sorted(reachable_hotels, key=lambda h: h.get("total_price", 9999))[:8]
+                parts.append(f"Hotel options ({len(reachable_hotels)} in flight-reachable cities, 8 cheapest): "
+                             f"{json.dumps(sh, default=str)}")
+            elif state.hotel_options:
+                sh = sorted(state.hotel_options, key=lambda h: h.get("total_price", 9999))[:8]
+                parts.append(f"Hotel options ({len(state.hotel_options)} total, 8 cheapest): "
+                             f"{json.dumps(sh, default=str)}")
+            else:
+                parts.append("Hotel options: NONE FOUND (do not invent hotel prices)")
+        else:
+            parts.append("Flight options: NONE FOUND (do not invent flight prices)")
+            parts.append("Hotel options: NONE FOUND (do not invent hotel prices)")
 
-    if state.weather_context:
-        parts.append(f"Weather: {json.dumps(state.weather_context[:3], default=str)}")
+        if state.weather_context:
+            parts.append(f"Weather: {json.dumps(state.weather_context[:3], default=str)}")
 
-    if state.poi_list:
-        named = [p for p in state.poi_list
-                 if p.get("name") and p["name"] != "Unnamed"][:10]
-        parts.append(f"POIs ({len(state.poi_list)} found): {json.dumps(named, default=str)}")
+        if state.poi_list:
+            named = [p for p in state.poi_list
+                     if p.get("name") and p["name"] != "Unnamed"][:10]
+            parts.append(f"POIs ({len(state.poi_list)} found): {json.dumps(named, default=str)}")
 
     if state.verifier_verdicts:
         last = state.verifier_verdicts[-1]
@@ -183,6 +239,46 @@ def _build_prompt(state: SharedState) -> str:
         )
 
     return "\n\n".join(parts)
+
+
+def _group_data_by_destination(state: SharedState) -> dict[str, dict]:
+    """Group flights/hotels/weather/POIs by destination city.
+
+    Returns {city_name: {"flights": [...], "hotels": [...], "weather": [...], "pois": [...]}}
+    ONLY includes destinations that have real flight data — destinations
+    with 0 flights are excluded to prevent fabricated drive/train packages.
+    """
+    grouped: dict[str, dict] = {}
+
+    for f in state.flight_options:
+        dest = f.get("destination_city") or f.get("destination", "")
+        if not dest:
+            continue
+        grouped.setdefault(dest, {"flights": [], "hotels": [], "weather": [], "pois": []})
+        grouped[dest]["flights"].append(f)
+
+    for h in state.hotel_options:
+        dest = h.get("destination_city", "")
+        if not dest or dest not in grouped:
+            continue
+        grouped[dest]["hotels"].append(h)
+
+    for w in state.weather_context:
+        dest = w.get("destination", "")
+        if dest in grouped:
+            grouped[dest]["weather"].append(w)
+
+    for p in state.poi_list:
+        dest = p.get("destination", "")
+        if dest in grouped:
+            grouped[dest]["pois"].append(p)
+
+    grouped = {d: v for d, v in grouped.items() if v["flights"]}
+
+    if not grouped:
+        return {}
+
+    return grouped
 
 
 def _ensure_booking_links(pkg: dict, state: SharedState) -> None:

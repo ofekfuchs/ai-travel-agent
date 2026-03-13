@@ -59,3 +59,6 @@ class ExecuteResponse(BaseModel):
     error: Optional[str] = None
     response: Optional[str] = None
     steps: List[Step] = Field(default_factory=list)
+    session_id: Optional[str] = None
+    llm_calls_used: Optional[int] = None
+    elapsed_seconds: Optional[float] = None

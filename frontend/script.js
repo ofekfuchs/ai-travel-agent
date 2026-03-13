@@ -58,15 +58,16 @@ sendBtn.addEventListener("click", async () => {
     const data = await res.json();
     removeTypingIndicator();
 
+    if (data.session_id) currentSessionId = data.session_id;
+
     if (data.status === "error") {
       addAgentMessage(`<div class="error-text">${esc(data.error || "Unknown error")}</div>`);
-      resetSession();
     } else {
       renderResponse(data.response);
     }
 
     if (data.steps && data.steps.length > 0) {
-      addStepsSection(data.steps);
+      addStepsSection(data.steps, data.llm_calls_used, data.elapsed_seconds);
     }
   } catch (err) {
     removeTypingIndicator();
@@ -209,7 +210,6 @@ function renderResponse(responseStr) {
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
-    resetSession();
     renderPackages(packages, warning);
   } else {
     addAgentMessage(`<p>${esc(responseStr)}</p>`);
@@ -573,16 +573,20 @@ function formatDateWindow(dw) {
    EXECUTION TRACE (ReAct-style)
    ═══════════════════════════════════════════════════════════════════════ */
 
-function addStepsSection(steps) {
+function addStepsSection(steps, llmCalls, elapsedSec) {
   const infos = steps.map(classifyStep);
   const supervisorCount = infos.filter(s => s.role === "thought").length;
+
+  const metaParts = [`${steps.length} steps`, `${supervisorCount} reasoning cycles`];
+  if (llmCalls != null) metaParts.push(`${llmCalls}/8 LLM calls`);
+  if (elapsedSec != null) metaParts.push(`${elapsedSec}s`);
 
   const wrapper = document.createElement("div");
   wrapper.className = "trace-wrapper";
 
   let html = `<button class="trace-toggle">
     <span class="trace-toggle-icon">&#9654;</span>
-    Execution Trace &mdash; ${steps.length} steps, ${supervisorCount} reasoning cycles
+    Execution Trace &mdash; ${metaParts.join(", ")}
   </button>`;
 
   html += `<div class="trace-body hidden">`;

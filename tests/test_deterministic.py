@@ -234,3 +234,182 @@ class TestSharedState:
         assert state.constraints == {}
         assert state.task_list == []
         assert state.draft_plans == []
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Verifier: price cross-check
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestPriceCrossCheck:
+    """Tests for _cross_check_prices — catches fabricated prices."""
+
+    def test_valid_prices_no_issues(self):
+        from app.agents.verifier import _cross_check_prices
+        state = SharedState()
+        state.flight_options = [{"price": 300}, {"price": 450}]
+        state.hotel_options = [{"total_price": 500}, {"total_price": 700}]
+        plan = {
+            "flights": {"total_flight_cost": 300},
+            "hotel": {"total_cost": 500},
+        }
+        issues: list[str] = []
+        _cross_check_prices(plan, state, "Pkg 1", issues)
+        assert issues == []
+
+    def test_fabricated_flight_price_detected(self):
+        from app.agents.verifier import _cross_check_prices
+        state = SharedState()
+        state.flight_options = [{"price": 300}, {"price": 450}]
+        state.hotel_options = [{"total_price": 500}]
+        plan = {
+            "flights": {"total_flight_cost": 150},
+            "hotel": {"total_cost": 500},
+        }
+        issues: list[str] = []
+        _cross_check_prices(plan, state, "Pkg 1", issues)
+        assert len(issues) == 1
+        assert "flight cost" in issues[0].lower()
+
+    def test_fabricated_hotel_price_detected(self):
+        from app.agents.verifier import _cross_check_prices
+        state = SharedState()
+        state.flight_options = [{"price": 300}]
+        state.hotel_options = [{"total_price": 500}, {"total_price": 700}]
+        plan = {
+            "flights": {"total_flight_cost": 300},
+            "hotel": {"total_cost": 99},
+        }
+        issues: list[str] = []
+        _cross_check_prices(plan, state, "Pkg 1", issues)
+        assert len(issues) == 1
+        assert "hotel cost" in issues[0].lower()
+
+    def test_close_price_within_tolerance(self):
+        from app.agents.verifier import _cross_check_prices
+        state = SharedState()
+        state.flight_options = [{"price": 300}]
+        state.hotel_options = [{"total_price": 500}]
+        plan = {
+            "flights": {"total_flight_cost": 303},
+            "hotel": {"total_cost": 505},
+        }
+        issues: list[str] = []
+        _cross_check_prices(plan, state, "Pkg 1", issues)
+        assert issues == []
+
+
+class TestGroupDataByDestination:
+    """Tests for _group_data_by_destination — ensures flightless destinations are excluded."""
+
+    def test_excludes_destinations_without_flights(self):
+        from app.agents.synthesizer import _group_data_by_destination
+        state = SharedState()
+        state.flight_options = [
+            {"destination_city": "Miami", "price": 300},
+            {"destination_city": "Miami", "price": 350},
+        ]
+        state.hotel_options = [
+            {"destination_city": "Miami", "total_price": 500},
+            {"destination_city": "Montauk", "total_price": 200},
+            {"destination_city": "Nags Head", "total_price": 150},
+        ]
+        state.weather_context = []
+        state.poi_list = []
+        result = _group_data_by_destination(state)
+        assert "Montauk" not in result
+        assert "Nags Head" not in result
+
+    def test_includes_destinations_with_flights(self):
+        from app.agents.synthesizer import _group_data_by_destination
+        state = SharedState()
+        state.flight_options = [
+            {"destination_city": "Miami", "price": 300},
+            {"destination_city": "Cancun", "price": 400},
+        ]
+        state.hotel_options = [
+            {"destination_city": "Miami", "total_price": 500},
+            {"destination_city": "Cancun", "total_price": 600},
+        ]
+        state.weather_context = []
+        state.poi_list = []
+        result = _group_data_by_destination(state)
+        assert "Miami" in result
+        assert "Cancun" in result
+        assert len(result["Miami"]["flights"]) == 1
+        assert len(result["Cancun"]["flights"]) == 1
+
+    def test_single_destination_with_flights_returns_grouped(self):
+        from app.agents.synthesizer import _group_data_by_destination
+        state = SharedState()
+        state.flight_options = [{"destination_city": "Miami", "price": 300}]
+        state.hotel_options = [
+            {"destination_city": "Miami", "total_price": 500},
+            {"destination_city": "Montauk", "total_price": 200},
+        ]
+        state.weather_context = []
+        state.poi_list = []
+        result = _group_data_by_destination(state)
+        assert "Miami" in result
+        assert "Montauk" not in result
+
+    def test_empty_flights_returns_empty(self):
+        from app.agents.synthesizer import _group_data_by_destination
+        state = SharedState()
+        state.flight_options = []
+        state.hotel_options = [{"destination_city": "Montauk", "total_price": 200}]
+        state.weather_context = []
+        state.poi_list = []
+        result = _group_data_by_destination(state)
+        assert result == {}
+
+
+class TestWantsDifferentDestinations:
+    """Tests for _wants_different_destinations — detects alternative requests."""
+
+    def test_detects_different(self):
+        from app.main import _wants_different_destinations
+        assert _wants_different_destinations("give me different locations") is True
+        assert _wants_different_destinations("show me other options") is True
+        assert _wants_different_destinations("alternative destinations") is True
+        assert _wants_different_destinations("new places please") is True
+
+    def test_ignores_unrelated(self):
+        from app.main import _wants_different_destinations
+        assert _wants_different_destinations("from tlv") is False
+        assert _wants_different_destinations("cheaper hotel") is False
+        assert _wants_different_destinations("budget 2000") is False
+
+
+class TestFabricatedTransportDetection:
+    """Verifier should catch fabricated drive/bus/train transport."""
+
+    def test_drive_detected(self):
+        state = SharedState()
+        state.flight_options = []
+        state.hotel_options = []
+        issues: list[str] = []
+        plan = {
+            "destination": "Montauk",
+            "flights": {
+                "outbound": {"airline": "Drive (self-drive)", "origin": "NYC", "destination": "Montauk"},
+                "total_flight_cost": 0,
+            },
+            "hotel": {},
+            "weather_summary": "warm",
+            "itinerary": [{"day": 1}],
+            "cost_breakdown": {"total": 1000},
+            "rationale": "test",
+        }
+        from app.agents.verifier import _REQUIRED_KEYS
+        missing = _REQUIRED_KEYS - set(plan.keys())
+        assert not missing
+
+        flights = plan.get("flights", {})
+        if isinstance(flights, dict):
+            outbound = flights.get("outbound", {})
+            if isinstance(outbound, dict):
+                airline = outbound.get("airline", "").lower()
+                if any(fake in airline for fake in ("drive", "self-drive", "bus", "train", "ferry", "car")):
+                    issues.append("fabricated transport detected")
+
+        assert len(issues) == 1

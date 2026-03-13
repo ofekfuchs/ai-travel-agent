@@ -65,8 +65,19 @@ def run_verifier(state: SharedState) -> dict:
         if isinstance(flights, dict):
             if not flights.get("outbound"):
                 issues.append(f"{prefix}: missing outbound flight details")
+            outbound = flights.get("outbound", {})
+            if isinstance(outbound, dict):
+                airline = outbound.get("airline", "").lower()
+                if any(fake in airline for fake in ("drive", "self-drive", "bus", "train", "ferry", "car")):
+                    issues.append(
+                        f"{prefix}: fabricated ground transport '{outbound.get('airline')}' "
+                        f"instead of real flight — destination has no commercial flights"
+                    )
         elif not flights:
             issues.append(f"{prefix}: flights data is empty")
+
+        # ── Price grounding check: verify package prices exist in tool data ──
+        _cross_check_prices(plan, state, prefix, issues)
 
     # ── LLM qualitative check ──────────────────────────────────────────────
     llm_verdict = _llm_quality_check(state, issues)
@@ -131,7 +142,17 @@ def _llm_quality_check(state: SharedState, rule_issues: list[str]) -> dict:
     user_parts.append(f"Draft plans: {json.dumps(state.draft_plans[:2], default=str)}")
 
     if state.constraints:
-        user_parts.append(f"User constraints: {json.dumps(state.constraints, default=str)}")
+        constraints_for_verifier = state.constraints.copy()
+        excluded = constraints_for_verifier.pop("excluded_destinations", None)
+        user_parts.append(f"User constraints: {json.dumps(constraints_for_verifier, default=str)}")
+        if excluded:
+            user_parts.append(
+                f"NOTE: The user explicitly asked for DIFFERENT/ALTERNATIVE destinations. "
+                f"The previous destinations were: {excluded}. The new packages SHOULD "
+                f"use different cities — this is NOT a destination mismatch error."
+            )
+    else:
+        user_parts.append("User constraints: none")
 
     user_prompt = "\n\n".join(user_parts)
 
@@ -146,3 +167,37 @@ def _llm_quality_check(state: SharedState, rule_issues: list[str]) -> dict:
             "issues": ["Verifier LLM output was not valid JSON -- fail-closed."],
             "quality_notes": "Parse failure.",
         }
+
+
+def _cross_check_prices(plan: dict, state: SharedState, prefix: str, issues: list[str]) -> None:
+    """Deterministic check: verify that flight/hotel prices in the package
+    actually exist in the tool data. Catches LLM-fabricated prices."""
+    flights = plan.get("flights", {})
+    if isinstance(flights, dict):
+        pkg_flight_cost = flights.get("total_flight_cost")
+        if pkg_flight_cost:
+            try:
+                pkg_price = float(pkg_flight_cost)
+                real_prices = {round(float(f.get("price", 0)), 2) for f in state.flight_options if f.get("price")}
+                if real_prices and not any(abs(pkg_price - rp) < 5 for rp in real_prices):
+                    issues.append(
+                        f"{prefix}: flight cost ${pkg_price:.0f} not found in tool data "
+                        f"(available: ${min(real_prices):.0f}-${max(real_prices):.0f})"
+                    )
+            except (ValueError, TypeError):
+                pass
+
+    hotel = plan.get("hotel", {})
+    if isinstance(hotel, dict):
+        pkg_hotel_cost = hotel.get("total_cost")
+        if pkg_hotel_cost:
+            try:
+                pkg_price = float(pkg_hotel_cost)
+                real_prices = {round(float(h.get("total_price", 0)), 2) for h in state.hotel_options if h.get("total_price")}
+                if real_prices and not any(abs(pkg_price - rp) < 10 for rp in real_prices):
+                    issues.append(
+                        f"{prefix}: hotel cost ${pkg_price:.0f} not found in tool data "
+                        f"(available: ${min(real_prices):.0f}-${max(real_prices):.0f})"
+                    )
+            except (ValueError, TypeError):
+                pass

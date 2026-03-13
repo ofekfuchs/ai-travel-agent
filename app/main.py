@@ -57,6 +57,7 @@ BUDGET_TOLERANCE = 1.05
 
 MAX_SUPERVISOR_ROUNDS = 6
 MAX_SESSIONS = 200
+MAX_PROMPT_LENGTH = 1000
 
 # In-memory session store for multi-turn conversation.
 # Keyed by session_id, stores constraints + prompt from previous turns.
@@ -173,10 +174,27 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
     decides what happens next.  This is the ReAct pattern:
       Reason → Act → Observe → Reason → Act → ...
     """
+    # ── Input validation ──────────────────────────────────────────────
+    prompt = request.prompt.strip() if request.prompt else ""
+    if not prompt:
+        return ExecuteResponse(
+            status="error",
+            error="Please describe your trip — where you want to go, when, and any preferences.",
+            response=None,
+            steps=[],
+        )
+    if len(prompt) > MAX_PROMPT_LENGTH:
+        return ExecuteResponse(
+            status="error",
+            error=f"Prompt too long ({len(prompt)} characters). Please keep it under {MAX_PROMPT_LENGTH}.",
+            response=None,
+            steps=[],
+        )
+
     try:
         session_id = request.session_id or str(uuid.uuid4())
         state = SharedState(
-            raw_prompt=request.prompt,
+            raw_prompt=prompt,
             session_id=session_id,
         )
 
@@ -186,15 +204,43 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             prev_prompt = prev_session.get("original_prompt", "")
             prev_constraints = prev_session.get("constraints", {})
             prev_history = prev_session.get("conversation_history", [])
+            prev_destinations = prev_session.get("destinations_searched", [])
+            prev_packages = prev_session.get("packages_offered", [])
 
-            state.raw_prompt = f"{prev_prompt}\n\nUser follow-up: {request.prompt}"
+            context_parts = [prev_prompt]
+            if prev_destinations:
+                context_parts.append(
+                    f"Previously searched destinations: {', '.join(prev_destinations)}"
+                )
+            if prev_packages:
+                pkg_desc = "; ".join(
+                    f"{p['label']} in {p['destination']} (${p['total']:.0f})"
+                    for p in prev_packages if p.get('destination')
+                )
+                context_parts.append(f"Packages already offered to user: {pkg_desc}")
+            context_parts.append(f"User follow-up: {request.prompt}")
+
+            state.raw_prompt = "\n\n".join(context_parts)
             if prev_constraints:
                 state.constraints = prev_constraints.copy()
+
+            wants_alternatives = _wants_different_destinations(request.prompt)
+            if wants_alternatives and "destinations" in state.constraints:
+                old_dests = state.constraints.pop("destinations", [])
+                state.constraints["excluded_destinations"] = old_dests
+                context_parts.insert(-1,
+                    f"USER WANTS DIFFERENT destinations. Do NOT reuse: {', '.join(old_dests)}. "
+                    f"Pick NEW cities with major commercial airports.")
+                state.raw_prompt = "\n\n".join(context_parts)
+                print(f"  -> Follow-up requests DIFFERENT destinations "
+                      f"(excluded: {old_dests})", flush=True)
+
             state.conversation_history = prev_history + [
                 {"role": "user", "content": request.prompt}
             ]
             print(f"\n  SESSION RESUMED: {session_id[:8]}... "
-                  f"(prior constraints: {list(prev_constraints.keys()) if prev_constraints else 'none'})", flush=True)
+                  f"(prior constraints: {list(prev_constraints.keys()) if prev_constraints else 'none'}, "
+                  f"prev destinations: {prev_destinations})", flush=True)
         else:
             state.conversation_history = [
                 {"role": "user", "content": request.prompt}
@@ -211,7 +257,9 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             # ── Supervisor decides ─────────────────────────────────────
             if not state.can_call_llm():
                 print("  LLM cap reached -- returning best-effort", flush=True)
-                return _build_best_effort_response(state, "LLM budget exhausted.")
+                return _with_metadata(
+                    _build_best_effort_response(state, "LLM budget exhausted."),
+                    state, t_start)
 
             decision = run_supervisor(state)
             action = decision.get("next_action", "plan")
@@ -250,19 +298,21 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     "message": question,
                     "session_id": state.session_id,
                 }, default=str)
-                return ExecuteResponse(
+                return _with_metadata(ExecuteResponse(
                     status="ok", error=None, response=clarification_response,
                     steps=[Step(**s) for s in state.steps],
-                )
+                ), state, t_start)
 
             # ── finalize ───────────────────────────────────────────────
             if action == "finalize":
-                return _build_final_response(state)
+                return _with_metadata(_build_final_response(state), state, t_start)
 
             # ── plan / replan ──────────────────────────────────────────
             if action in ("plan", "replan", "pivot"):
                 if not state.can_call_llm():
-                    return _build_best_effort_response(state, "LLM budget exhausted.")
+                    return _with_metadata(
+                        _build_best_effort_response(state, "LLM budget exhausted."),
+                        state, t_start)
 
                 repair_cat = None
                 if action == "replan" and state.verifier_verdicts:
@@ -344,16 +394,20 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             if action == "synthesize":
                 if not state.flight_options and not state.hotel_options:
                     print(f"  NO PRICING DATA -- cannot synthesize", flush=True)
-                    return _build_no_data_response(state)
+                    return _with_metadata(
+                        _build_no_data_response(state), state, t_start)
 
                 feasibility = _feasibility_check(state)
                 if feasibility:
                     print(f"  GATE B: budget infeasible (${feasibility['lower_bound']:.0f} "
                           f"> ${feasibility['budget']:.0f})", flush=True)
-                    return _build_gate_b_response(state, feasibility)
+                    return _with_metadata(
+                        _build_gate_b_response(state, feasibility), state, t_start)
 
                 if not state.can_call_llm():
-                    return _build_best_effort_response(state, "LLM budget exhausted.")
+                    return _with_metadata(
+                        _build_best_effort_response(state, "LLM budget exhausted."),
+                        state, t_start)
 
                 t3 = time.time()
                 tight = _is_budget_tight(state)
@@ -365,7 +419,8 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                 # Verify
                 if not state.can_call_llm():
                     print("  No budget for Verifier -- returning packages as-is", flush=True)
-                    return _build_final_response(state)
+                    return _with_metadata(
+                        _build_final_response(state), state, t_start)
 
                 t4 = time.time()
                 print(f"  Verifier auditing ...", flush=True)
@@ -381,24 +436,30 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
 
                 if vdecision == "APPROVE":
                     print(f"\n  APPROVED in {time.time()-t_start:.1f}s total", flush=True)
-                    return _build_final_response(state)
+                    return _with_metadata(
+                        _build_final_response(state), state, t_start)
 
                 # Rejected -- loop back to Supervisor to decide replan
                 if not state.can_call_llm():
                     print(f"  REJECTED, no LLM budget for replan -- best-effort", flush=True)
                     repair = _classify_rejection(verdict)
-                    return _build_rejection_response(state, verdict, repair)
+                    return _with_metadata(
+                        _build_rejection_response(state, verdict, repair),
+                        state, t_start)
 
                 print(f"  REJECTED -- Supervisor will decide next step", flush=True)
                 continue
 
         # Exhausted all rounds
         print(f"  Max supervisor rounds reached -- returning best-effort", flush=True)
-        return _build_best_effort_response(state, "Agent loop exhausted.")
+        return _with_metadata(
+            _build_best_effort_response(state, "Agent loop exhausted."),
+            state, t_start)
 
     except LLMCapReached as exc:
         print(f"\n  LLM CAP REACHED (safety net): {exc}", flush=True)
-        return _build_best_effort_response(state, str(exc))
+        return _with_metadata(
+            _build_best_effort_response(state, str(exc)), state, t_start)
 
     except Exception as exc:
         print(f"\n  ERROR: {type(exc).__name__}: {exc}", flush=True)
@@ -409,6 +470,28 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             response=None,
             steps=[Step(**s) for s in state.steps],
         )
+
+
+_ALTERNATIVE_KEYWORDS = {
+    "different", "other", "alternative", "new", "else", "more",
+    "another", "elsewhere", "somewhere", "instead",
+}
+
+def _wants_different_destinations(prompt: str) -> bool:
+    """Detect if a follow-up prompt asks for alternative destinations."""
+    lower = prompt.lower()
+    for kw in _ALTERNATIVE_KEYWORDS:
+        if kw in lower:
+            return True
+    return False
+
+
+def _with_metadata(resp: ExecuteResponse, state: SharedState, t_start: float) -> ExecuteResponse:
+    """Attach session_id, LLM call count and elapsed time to any response."""
+    resp.session_id = state.session_id
+    resp.llm_calls_used = state.llm_call_count
+    resp.elapsed_seconds = round(time.time() - t_start, 1)
+    return resp
 
 
 def _print_data_summary(state: SharedState) -> None:
@@ -744,18 +827,33 @@ def _build_best_effort_response(state: SharedState, reason: str) -> ExecuteRespo
 def _save_session_memory(state: SharedState) -> None:
     """Save current session state so follow-up requests can resume context.
 
-    Stores: original prompt, extracted constraints, and conversation history.
-    The next request with the same session_id will inherit this context,
-    enabling multi-turn conversation like a real assistant.
+    Stores: original prompt, constraints, conversation history, plus
+    a summary of what was already searched/offered so follow-ups like
+    'give me different destinations' or 'cheaper hotel' are understood.
     """
     if len(_session_memory) >= MAX_SESSIONS:
         oldest = next(iter(_session_memory))
         del _session_memory[oldest]
 
+    destinations_searched = list({
+        f.get("destination_city", f.get("destination", ""))
+        for f in state.flight_options if f.get("destination_city") or f.get("destination")
+    })
+
+    packages_summary = []
+    for pkg in state.draft_plans:
+        packages_summary.append({
+            "destination": pkg.get("destination", ""),
+            "label": pkg.get("label", ""),
+            "total": pkg.get("cost_breakdown", {}).get("total", 0),
+        })
+
     _session_memory[state.session_id] = {
         "original_prompt": state.raw_prompt,
         "constraints": state.constraints.copy() if state.constraints else {},
         "conversation_history": state.conversation_history.copy(),
+        "destinations_searched": destinations_searched,
+        "packages_offered": packages_summary,
     }
 
 

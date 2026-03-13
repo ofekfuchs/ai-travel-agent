@@ -197,6 +197,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
         state = SharedState(
             raw_prompt=prompt,
             session_id=session_id,
+            latest_user_message=prompt,
         )
 
         # ── Multi-turn: load previous session context ─────────────────

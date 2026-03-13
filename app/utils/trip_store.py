@@ -35,7 +35,7 @@ def _headers() -> dict[str, str]:
     }
 
 
-def _safe_post(table: str, row: dict) -> bool:
+def _safe_post(table: str, row: dict, *, upsert: bool = False) -> bool:
     global _supabase_warned
     if not SUPABASE_URL or not SUPABASE_ANON_KEY:
         if not _supabase_warned:
@@ -44,9 +44,12 @@ def _safe_post(table: str, row: dict) -> bool:
             _supabase_warned = True
         return False
     try:
+        hdrs = _headers()
+        if upsert:
+            hdrs["Prefer"] = "resolution=merge-duplicates,return=minimal"
         resp = httpx.post(
             f"{SUPABASE_URL}/rest/v1/{table}",
-            headers=_headers(),
+            headers=hdrs,
             json=row,
             timeout=5,
         )
@@ -85,13 +88,17 @@ def save_trip(
 
 
 def save_session(session_id: str, prompt: str, state_snapshot: dict) -> bool:
-    """Persist session state so users can follow up on plans."""
+    """Persist session state so users can follow up on plans.
+
+    Uses upsert so repeated saves for the same session_id update the
+    existing row instead of failing with HTTP 409.
+    """
     row = {
         "session_id": session_id,
         "prompt": prompt,
         "state_snapshot": json.loads(json.dumps(state_snapshot, default=str)),
     }
-    return _safe_post("sessions", row)
+    return _safe_post("sessions", row, upsert=True)
 
 
 def log_execution(

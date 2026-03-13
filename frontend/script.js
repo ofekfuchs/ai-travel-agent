@@ -6,6 +6,7 @@ const newTripBtn = document.getElementById("new-trip-btn");
 
 /* ── Session state ────────────────────────────────────────────────────── */
 let currentSessionId = null;
+let progressTimer = null;
 
 /* ── Init ─────────────────────────────────────────────────────────────── */
 showWelcome();
@@ -43,7 +44,7 @@ sendBtn.addEventListener("click", async () => {
   promptEl.value = "";
   promptEl.style.height = "auto";
   sendBtn.disabled = true;
-  addTypingIndicator();
+  startProgress(prompt);
 
   try {
     const body = { prompt };
@@ -56,7 +57,7 @@ sendBtn.addEventListener("click", async () => {
     });
 
     const data = await res.json();
-    removeTypingIndicator();
+    stopProgress();
 
     if (data.session_id) currentSessionId = data.session_id;
 
@@ -70,7 +71,7 @@ sendBtn.addEventListener("click", async () => {
       addStepsSection(data.steps, data.llm_calls_used, data.elapsed_seconds);
     }
   } catch (err) {
-    removeTypingIndicator();
+    stopProgress();
     addAgentMessage(`<div class="error-text">Network error: ${esc(err.message)}</div>`);
   } finally {
     sendBtn.disabled = false;
@@ -83,12 +84,13 @@ sendBtn.addEventListener("click", async () => {
 
 function showWelcome() {
   const msg = addAgentMessage(
-    `<div class="welcome-title">Welcome!</div>
-     <p class="welcome-sub">I'm your AI Travel Agent. Tell me about your dream trip — where you want to go, when, your budget, and what you enjoy — and I'll plan everything.</p>
+    `<div class="welcome-title">Where to next?</div>
+     <p class="welcome-sub">Tell me about your dream trip — destination, dates, budget, interests — and I'll find the best flights, hotels, and build a complete itinerary for you.</p>
      <div class="quick-actions">
-       <button class="quick-chip" data-prompt="4 days in Paris in June, budget $1500, flying from New York. I love museums and good food.">Paris trip</button>
-       <button class="quick-chip" data-prompt="A week in London in September, moderate budget around $2000. I'm interested in history and pubs.">London week</button>
-       <button class="quick-chip" data-prompt="Romantic getaway to Berlin for 3 days, budget $1000 flying from Paris. We like art and nightlife.">Berlin romantic</button>
+       <button class="quick-chip" data-prompt="4 days in Paris in June, budget $1500, flying from New York. I love museums and good food.">🗼 Paris trip</button>
+       <button class="quick-chip" data-prompt="A week in London in September, moderate budget around $2000. I'm interested in history and pubs.">🇬🇧 London week</button>
+       <button class="quick-chip" data-prompt="Romantic getaway to Berlin for 3 days, budget $1000 flying from Paris. We like art and nightlife.">🎨 Berlin romantic</button>
+       <button class="quick-chip" data-prompt="Beach vacation in June from New York, 1 week, best value for money">🏖️ Beach getaway</button>
      </div>`,
     "welcome-msg"
   );
@@ -104,7 +106,7 @@ function showWelcome() {
 
 function resetSession() {
   currentSessionId = null;
-  promptEl.placeholder = "Describe your dream trip...";
+  promptEl.placeholder = "Where do you want to go? Tell me everything...";
 }
 
 function addUserMessage(text) {
@@ -129,27 +131,113 @@ function addAgentMessage(html, extraClass) {
   return msg;
 }
 
-function addTypingIndicator() {
-  removeTypingIndicator();
-  const msg = document.createElement("div");
-  msg.className = "msg agent-msg typing-msg";
-  msg.id = "typing-indicator";
-  msg.innerHTML = `
-    <div class="msg-avatar">&#9992;</div>
-    <div class="msg-content">
-      <div class="typing-indicator">
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="typing-label">Planning your trip...</span>
-      </div>
-    </div>`;
-  chatArea.appendChild(msg);
-  scrollToBottom();
+/* ═══════════════════════════════════════════════════════════════════════
+   LIVE PROGRESS INDICATOR
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function extractDestinationHint(prompt) {
+  const lower = prompt.toLowerCase();
+  const patterns = [
+    /(?:to|in|visit|for)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/,
+    /(paris|london|berlin|rome|tokyo|barcelona|amsterdam|prague|vienna|lisbon|cancun|miami|bali|dubai|bangkok|new york|los angeles|san francisco)/i,
+    /(europe|asia|caribbean|south america|africa|middle east|southeast asia)/i,
+  ];
+  for (const p of patterns) {
+    const m = prompt.match(p);
+    if (m) return m[1];
+  }
+  if (/beach|island|tropical/i.test(lower)) return "beach destinations";
+  if (/mountain|hiking|ski/i.test(lower)) return "mountain destinations";
+  if (/city|urban|culture/i.test(lower)) return "cities";
+  return null;
 }
 
-function removeTypingIndicator() {
-  const el = document.getElementById("typing-indicator");
+function buildProgressPhases(prompt) {
+  const dest = extractDestinationHint(prompt);
+  const destLabel = dest ? ` for ${dest}` : "";
+  return [
+    { text: "Understanding your request...", phase: "Analyzing", pct: 5, delay: 0 },
+    { text: `Searching destinations${destLabel}`, phase: "Planning", pct: 12, delay: 3000 },
+    { text: `Looking up flights${destLabel}`, phase: "Flights", pct: 25, delay: 8000 },
+    { text: "Comparing hotel options", phase: "Hotels", pct: 40, delay: 16000 },
+    { text: "Checking weather forecasts", phase: "Weather", pct: 52, delay: 24000 },
+    { text: "Finding points of interest", phase: "Attractions", pct: 60, delay: 32000 },
+    { text: "Building trip packages", phase: "Assembling", pct: 75, delay: 50000 },
+    { text: "Running quality checks", phase: "Verifying", pct: 88, delay: 70000 },
+    { text: "Almost there...", phase: "Finishing", pct: 95, delay: 100000 },
+  ];
+}
+
+function startProgress(prompt) {
+  stopProgress();
+
+  const phases = buildProgressPhases(prompt);
+  let phaseIdx = 0;
+  const startTime = Date.now();
+  const completedSteps = [];
+
+  const el = document.createElement("div");
+  el.className = "msg agent-msg progress-msg";
+  el.id = "progress-indicator";
+  el.innerHTML = `
+    <div class="msg-avatar">&#9992;</div>
+    <div class="msg-content">
+      <div class="progress-container">
+        <div class="progress-status">
+          <div class="progress-spinner"></div>
+          <div>
+            <div class="progress-text">${phases[0].text}</div>
+            <div class="progress-phase">${phases[0].phase}</div>
+          </div>
+        </div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${phases[0].pct}%"></div></div>
+        <div class="progress-steps"></div>
+      </div>
+    </div>`;
+  chatArea.appendChild(el);
+  scrollToBottom();
+
+  const textEl = el.querySelector(".progress-text");
+  const phaseEl = el.querySelector(".progress-phase");
+  const barEl = el.querySelector(".progress-bar-fill");
+  const stepsEl = el.querySelector(".progress-steps");
+
+  progressTimer = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const nextIdx = phaseIdx + 1;
+
+    if (nextIdx < phases.length && elapsed >= phases[nextIdx].delay) {
+      if (phaseIdx > 0) {
+        completedSteps.push(phases[phaseIdx].phase);
+      }
+      phaseIdx = nextIdx;
+      const p = phases[phaseIdx];
+
+      textEl.style.opacity = "0";
+      setTimeout(() => {
+        textEl.textContent = p.text;
+        phaseEl.textContent = p.phase;
+        textEl.style.opacity = "1";
+      }, 200);
+
+      barEl.style.width = p.pct + "%";
+
+      stepsEl.innerHTML = completedSteps.map(s =>
+        `<span class="progress-step done"><span class="step-icon">✓</span> ${s}</span>`
+      ).join("") +
+        `<span class="progress-step active"><span class="step-icon">●</span> ${p.phase}</span>`;
+
+      scrollToBottom();
+    }
+  }, 500);
+}
+
+function stopProgress() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  const el = document.getElementById("progress-indicator");
   if (el) el.remove();
 }
 
@@ -267,7 +355,7 @@ function renderBudgetInfeasible(data) {
   const question = data.question || "";
 
   let html = `<div class="status-card budget-card">
-    <div class="status-icon">&#x1F4B0;</div>
+    <div class="status-icon">💰</div>
     <h3>Budget Below Minimum</h3>
     <p class="status-message">${esc(data.message || "")}</p>
     <div class="cost-grid">
@@ -321,7 +409,7 @@ function renderNoPricingData(data) {
   const llmCalls = data.llm_calls_used || 0;
 
   let html = `<div class="status-card nodata-card">
-    <div class="status-icon">&#x1F50D;</div>
+    <div class="status-icon">🔍</div>
     <h3>No Pricing Data Found</h3>
     <p class="status-message">${esc(data.message || "Could not find flight or hotel pricing.")}</p>
     <div class="status-details">
@@ -345,7 +433,7 @@ function renderPackages(packages, warning) {
   wrapper.className = "packages-wrapper";
 
   if (warning) {
-    let wh = `<div class="warning-banner"><div class="warning-icon">&#9888;</div><div class="warning-body"><strong>Best-effort results</strong> — the quality checker flagged some issues:`;
+    let wh = `<div class="warning-banner"><div class="warning-icon">⚠️</div><div class="warning-body"><strong>Best-effort results</strong> — the quality checker flagged some issues:`;
     if (warning.issues && warning.issues.length) {
       wh += `<ul class="warning-issues">`;
       warning.issues.forEach(i => { wh += `<li>${esc(i)}</li>`; });
@@ -360,7 +448,7 @@ function renderPackages(packages, warning) {
 
   packages.forEach(pkg => {
     const card = document.createElement("div");
-    card.className = "package-card";
+    card.className = "package-card " + getPackageTypeClass(pkg.label);
     try {
       card.innerHTML = buildPackageHTML(pkg);
     } catch (e) {
@@ -378,16 +466,35 @@ function renderPackages(packages, warning) {
    PACKAGE CARD BUILDERS
    ═══════════════════════════════════════════════════════════════════════ */
 
+function getPackageTypeClass(label) {
+  if (!label) return "";
+  const lower = label.toLowerCase();
+  if (lower.includes("budget") || lower.includes("cheap")) return "budget";
+  if (lower.includes("best value") || lower.includes("value")) return "best-value";
+  if (lower.includes("premium") || lower.includes("luxury")) return "premium";
+  return "";
+}
+
+function getPackageLabelIcon(label) {
+  if (!label) return "✈️";
+  const lower = label.toLowerCase();
+  if (lower.includes("budget") || lower.includes("cheap")) return "💰";
+  if (lower.includes("best value") || lower.includes("value")) return "⭐";
+  if (lower.includes("premium") || lower.includes("luxury")) return "👑";
+  return "✈️";
+}
+
 function buildPackageHTML(pkg) {
   const label = pkg.label || "Trip Package";
   const dest  = pkg.destination || "Unknown";
   const dates = formatDateWindow(pkg.date_window);
   const total = getTotal(pkg);
+  const icon = getPackageLabelIcon(label);
 
   let html = `
     <div class="package-header">
       <div>
-        <span class="package-label">${esc(label)}</span>
+        <span class="package-label">${icon} ${esc(label)}</span>
         <div class="package-dest">${esc(dest)}</div>
         <div class="package-dates">${esc(dates)}</div>
       </div>
@@ -413,8 +520,8 @@ function buildPackageHTML(pkg) {
   const hotelLink  = links.hotels_search  || (pkg.hotel && pkg.hotel.booking_url) || "";
   if (flightLink || hotelLink) {
     html += `<div class="booking-links">`;
-    if (flightLink) html += `<a href="${esc(flightLink)}" target="_blank" rel="noopener" class="booking-btn flights-btn">Search Flights</a>`;
-    if (hotelLink)  html += `<a href="${esc(hotelLink)}" target="_blank" rel="noopener" class="booking-btn hotels-btn">Search Hotels</a>`;
+    if (flightLink) html += `<a href="${esc(flightLink)}" target="_blank" rel="noopener" class="booking-btn flights-btn">✈ Search Flights</a>`;
+    if (hotelLink)  html += `<a href="${esc(hotelLink)}" target="_blank" rel="noopener" class="booking-btn hotels-btn">🏨 Search Hotels</a>`;
     html += `</div>`;
   }
 
@@ -436,9 +543,9 @@ function buildFlightBox(pkg) {
   const totalCost = f.total_flight_cost || f.total_cost || 0;
 
   if (!out.origin && !out.routing && !totalCost)
-    return `<div class="detail-box"><h4>Flights</h4><div class="detail-main">No flight data</div></div>`;
+    return `<div class="detail-box"><h4>✈ Flights</h4><div class="detail-main">No flight data</div></div>`;
 
-  let html = `<div class="detail-box"><h4>Flights</h4>`;
+  let html = `<div class="detail-box"><h4>✈ Flights</h4>`;
 
   if (out.origin || out.routing) {
     const outRoute = out.routing || `${out.origin || "?"} → ${out.destination || "?"}`;
@@ -489,7 +596,7 @@ function buildHotelBox(pkg) {
   if (address) extra += `<div class="detail-sub">${esc(address)}</div>`;
   if (checkIn && checkOut) extra += `<div class="detail-sub">Check-in: ${esc(checkIn)} · Check-out: ${esc(checkOut)}</div>`;
 
-  return `<div class="detail-box"><h4>Hotel</h4>
+  return `<div class="detail-box"><h4>🏨 Hotel</h4>
     <div class="detail-main">${esc(name)}</div>
     <div class="detail-sub">${esc(sub)}</div>${extra}</div>`;
 }
@@ -497,7 +604,7 @@ function buildHotelBox(pkg) {
 function buildWeatherBox(pkg) {
   const w = pkg.weather_summary || "No weather data";
   const short = typeof w === "string" ? w.slice(0, 120) + (w.length > 120 ? "..." : "") : "";
-  return `<div class="detail-box"><h4>Weather</h4><div class="detail-main">${esc(short)}</div></div>`;
+  return `<div class="detail-box"><h4>🌤 Weather</h4><div class="detail-main">${esc(short)}</div></div>`;
 }
 
 function buildDataBox(pkg) {
@@ -506,7 +613,7 @@ function buildDataBox(pkg) {
   if (pkg.hotel && pkg.hotel.name) sources.push("Hotels");
   if (pkg.weather_summary) sources.push("Weather");
   if (pkg.itinerary && pkg.itinerary.length) sources.push("Itinerary");
-  return `<div class="detail-box"><h4>Data Sources</h4>
+  return `<div class="detail-box"><h4>📊 Data Sources</h4>
     <div class="detail-main">${sources.length} sources used</div>
     <div class="detail-sub">${sources.join(", ") || "None"}</div></div>`;
 }
@@ -542,9 +649,9 @@ function buildCostBreakdown(pkg) {
   if (!total && !flights && !hotel) return "";
 
   let html = `<div class="cost-breakdown"><h4>Cost Breakdown</h4>`;
-  if (flights) html += `<div class="cost-row"><span>Flights</span><span>$${Math.round(flights)}</span></div>`;
-  if (hotel)   html += `<div class="cost-row"><span>Hotel</span><span>$${Math.round(hotel)}</span></div>`;
-  if (daily)   html += `<div class="cost-row"><span>Daily expenses (est.)</span><span>$${Math.round(daily)}</span></div>`;
+  if (flights) html += `<div class="cost-row"><span>✈ Flights</span><span>$${Math.round(flights)}</span></div>`;
+  if (hotel)   html += `<div class="cost-row"><span>🏨 Hotel</span><span>$${Math.round(hotel)}</span></div>`;
+  if (daily)   html += `<div class="cost-row"><span>🍽 Daily expenses (est.)</span><span>$${Math.round(daily)}</span></div>`;
   if (total)   html += `<div class="cost-row total"><span>Total</span><span>$${Math.round(total)}</span></div>`;
   if (c.daily_expenses_notes) html += `<div class="detail-sub" style="margin-top:0.5rem">${esc(c.daily_expenses_notes)}</div>`;
   html += `</div>`;

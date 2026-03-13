@@ -20,6 +20,7 @@ class SharedState:
     # -- User input ----------------------------------------------------------
     raw_prompt: str = ""
     session_id: str = ""
+    latest_user_message: str = ""
     conversation_history: list[dict] = field(default_factory=list)
 
     # -- Extracted constraints ------------------------------------------------

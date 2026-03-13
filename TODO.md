@@ -68,6 +68,20 @@
 - [x] Verifier: detect fabricated ground transport (drive/bus/train) and reject
 - [x] Verifier: don't flag destination mismatch when user explicitly asks for alternatives
 - [x] Unit tests for destination grouping, alternative detection, transport fabrication (38 total)
+- [x] Deterministic post-processing: ground hotel + flight prices from tool data after Synthesizer
+- [x] Simplified Synthesizer pricing prompts (copy prices, let system handle traveler math)
+- [x] Fix replan→0 tasks loop (retry synthesize instead of wasting LLM call)
+- [x] Verifier: tuned flight date thresholds (48h duration, overnight arrivals OK)
+- [x] Verifier: updated LLM prompt with pricing context and pragmatic approval guidance
+- [x] Fix Supabase 409 conflict: sessions table now uses upsert instead of insert
+- [x] Scope guard for follow-up messages: Supervisor sees latest message prominently to catch off-topic
+- [x] Fixed 2 stale unit tests (verifier threshold changes: 30h→48h, date_window check removed)
+- [x] Removed Course Project.pdf from git tracking, added *.pdf to .gitignore
+- [x] RAG config centralized in app/config.py (all hyperparameters in one place)
+- [x] Unit tests expanded to 61 total (pricing semantics, flight dates, hotel integrity, session continuity)
+- [x] UI: Package cards now color-coded by type (Budget=green, Best Value=blue, Premium=purple)
+- [x] UI: Package labels now include icons (💰 Budget, ⭐ Best Value, 👑 Premium)
+- [x] UI: Staggered card entry animation for smoother visual flow
 
 ---
 

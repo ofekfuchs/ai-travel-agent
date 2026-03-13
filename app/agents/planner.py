@@ -179,8 +179,12 @@ def run_planner(state: SharedState, repair_category: str | None = None) -> list[
         result = json.loads(raw)
         if isinstance(result, dict):
             # New format: {"constraints": {...}, "tasks": [...]}
-            if result.get("constraints") and not state.constraints:
-                state.constraints = result["constraints"]
+            new_constraints = result.get("constraints")
+            if new_constraints:
+                if state.constraints:
+                    state.constraints.update(new_constraints)
+                else:
+                    state.constraints = new_constraints
             task_list = result.get("tasks", [])
             if not isinstance(task_list, list):
                 task_list = [task_list]

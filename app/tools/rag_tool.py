@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.config import RAG_TOP_K
 from app.models.shared_state import SharedState
 from app.rag.retriever import retrieve_chunks
 from app.utils.step_logger import log_tool_call
 
 
-def search_destinations(state: SharedState, query: str, top_k: int = 5) -> list[dict[str, Any]]:
+def search_destinations(state: SharedState, query: str, top_k: int | None = None) -> list[dict[str, Any]]:
     """Search Wikivoyage chunks for *query* and store results in Shared State."""
+    if top_k is None:
+        top_k = RAG_TOP_K
     chunks = retrieve_chunks(query, top_k=top_k)
     state.destination_chunks.extend(chunks)
 

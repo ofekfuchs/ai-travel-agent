@@ -122,7 +122,7 @@ def search_hotels(
         resp.raise_for_status()
         data = resp.json()
 
-        options = _parse_hotel_results(data, check_in, check_out, destination)
+        options = _parse_hotel_results(data, check_in, check_out, destination, adults=adults)
         state.hotel_options.extend(options)
         cache_set(ck, {"options": options})
 
@@ -135,7 +135,7 @@ def search_hotels(
         return []
 
 
-def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: str = "") -> list[dict[str, Any]]:
+def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: str = "", adults: int = 1) -> list[dict[str, Any]]:
     """Flatten the API response into a list of hotel option dicts.
 
     The Booking.com API returns hotels under data.hotels (newer format)
@@ -167,7 +167,10 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: 
         if total_price:
             total_price = round(total_price, 2)
 
-        booking_url = _build_hotel_url(name, check_in, check_out)
+        booking_url = _build_hotel_url(name, check_in, check_out, adults=adults)
+
+        if not total_price or total_price <= 0:
+            continue
 
         options.append(
             {
@@ -175,7 +178,7 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: 
                 "destination_city": destination,
                 "check_in": check_in,
                 "check_out": check_out,
-                "price_per_night": round(total_price / nights, 2) if total_price else 0,
+                "price_per_night": round(total_price / nights, 2),
                 "total_price": total_price,
                 "currency": "USD",
                 "rating": rating,
@@ -186,13 +189,13 @@ def _parse_hotel_results(raw: dict, check_in: str, check_out: str, destination: 
     return options[:10]
 
 
-def _build_hotel_url(name: str, check_in: str, check_out: str) -> str:
+def _build_hotel_url(name: str, check_in: str, check_out: str, adults: int = 1) -> str:
     """Construct a Booking.com search URL that leads to this hotel."""
     return (
         f"https://www.booking.com/searchresults.html?"
         f"ss={urllib.parse.quote(name)}"
         f"&checkin={check_in}&checkout={check_out}"
-        f"&group_adults=1&no_rooms=1"
+        f"&group_adults={adults}&no_rooms=1"
     )
 
 

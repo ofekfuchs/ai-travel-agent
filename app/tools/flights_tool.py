@@ -183,7 +183,8 @@ def _parse_flight_results(
             "stops": len(out_leg.get("flightStops", [])),
             "airline": airline,
             "price": total_price,
-            "price_is": "roundtrip_total",
+            "price_is": "roundtrip_total_per_person",
+            "price_note": "This price is for 1 adult roundtrip. Multiply by number of travelers for group total.",
             "currency": currency,
             "trip_type": offer.get("tripType", "ROUNDTRIP"),
         }

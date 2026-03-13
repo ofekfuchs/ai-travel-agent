@@ -12,12 +12,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Generator
 
-# Section headings we care about for travel-planning RAG
-RELEVANT_SECTIONS = {
-    "understand", "get in", "get around", "see", "do", "eat", "drink",
-    "sleep", "buy", "stay safe", "cope", "respect", "connect",
-    "budget", "climate", "when to go",
-}
+from app.config import RAG_RELEVANT_SECTIONS, RAG_MIN_SECTION_CHARS
+
+RELEVANT_SECTIONS = RAG_RELEVANT_SECTIONS
 
 
 def _strip_wiki_markup(text: str) -> str:
@@ -77,7 +74,7 @@ def _split_sections(raw_text: str) -> list[dict]:
 
         if heading in RELEVANT_SECTIONS:
             clean = _strip_wiki_markup(body)
-            if len(clean) > 30:
+            if len(clean) > RAG_MIN_SECTION_CHARS:
                 sections.append({"name": heading, "content": clean})
 
     return sections

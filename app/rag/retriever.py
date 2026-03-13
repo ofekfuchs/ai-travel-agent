@@ -6,18 +6,27 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.config import PINECONE_API_KEY, PINECONE_INDEX_NAME
+from app.config import (
+    PINECONE_API_KEY, PINECONE_INDEX_NAME,
+    RAG_TOP_K, RAG_SCORE_THRESHOLD,
+)
 
 
-def retrieve_chunks(query: str, top_k: int = 5) -> list[dict[str, Any]]:
+def retrieve_chunks(query: str, top_k: int | None = None) -> list[dict[str, Any]]:
     """Semantic search over Wikivoyage chunks in Pinecone.
 
     Returns a list of dicts with keys:
       ``chunk_id``, ``article_title``, ``section_name``, ``content``, ``score``
 
+    Chunks with score below RAG_SCORE_THRESHOLD are filtered out to avoid
+    passing irrelevant content to the LLM.
+
     If Pinecone is not configured, returns an empty list so the rest of the
     system can still run (useful during local development).
     """
+    if top_k is None:
+        top_k = RAG_TOP_K
+
     if not PINECONE_API_KEY:
         return []
 
@@ -41,6 +50,9 @@ def retrieve_chunks(query: str, top_k: int = 5) -> list[dict[str, Any]]:
 
         chunks: list[dict[str, Any]] = []
         for match in results.get("matches", []):
+            score = match.get("score", 0.0)
+            if score < RAG_SCORE_THRESHOLD:
+                continue
             meta = match.get("metadata", {})
             chunks.append(
                 {
@@ -48,7 +60,7 @@ def retrieve_chunks(query: str, top_k: int = 5) -> list[dict[str, Any]]:
                     "article_title": meta.get("article_title", ""),
                     "section_name": meta.get("section_name", ""),
                     "content": meta.get("content", ""),
-                    "score": match.get("score", 0.0),
+                    "score": score,
                 }
             )
         return chunks

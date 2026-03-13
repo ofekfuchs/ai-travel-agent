@@ -182,14 +182,14 @@ function renderResponse(responseStr) {
   }
 
   if (parsed.status === "budget_infeasible") {
-    resetSession();
     renderBudgetInfeasible(parsed);
+    promptEl.placeholder = "Adjust your preferences to continue...";
     return;
   }
 
   if (parsed.status === "no_pricing_data") {
-    resetSession();
     renderNoPricingData(parsed);
+    promptEl.placeholder = "Try different dates or destinations...";
     return;
   }
 

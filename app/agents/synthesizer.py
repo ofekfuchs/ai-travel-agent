@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import urllib.parse
 
+from app.config import RAG_DISPLAY_CHARS_SYNTH, RAG_MAX_CHUNKS_SYNTH
 from app.llm.client import call_llm
 from app.models.shared_state import SharedState
 
@@ -50,13 +51,26 @@ CRITICAL RULES:
 - Use ONLY real prices from the data provided. NEVER invent or fabricate prices.
 - NEVER create packages for destinations that have NO FLIGHTS in the data. If a city only has hotels/weather but zero flights, SKIP that city entirely.
 - NEVER fabricate transport modes (drive, train, bus, ferry). If the data does not contain a real flight for a destination, do NOT include that destination.
-- FLIGHT PRICING: Each flight's "price" field is the ROUNDTRIP TOTAL (both legs combined). The "price_is" field confirms this. Set "total_flight_cost" equal to the flight's "price" — do NOT double it.
+- FLIGHT PRICING POLICY:
+  * Each flight's "price" is the ROUNDTRIP TOTAL for ONE person (both legs combined).
+  * The "price_is" field confirms this is per-person.
+  * If the user has multiple travelers, "total_flight_cost" = price × number_of_travelers.
+  * If the user has 1 traveler (or unspecified), "total_flight_cost" = price as-is.
+  * Always state in assumptions: "Flight prices are per person; total reflects N traveler(s)."
+- HOTEL PRICING POLICY:
+  * Hotel "total_price" is the total for the entire stay (1 room). Use it directly as hotel total_cost.
+  * per_night = total_price / number_of_nights. NEVER leave per_night or total_cost as 0.
+  * Do NOT multiply hotel cost by travelers — it is per room.
+  * CRITICAL: hotel total_cost and per_night MUST be positive numbers copied from the data.
 - ALWAYS include BOTH outbound AND return flight details if the data provides return info (return_departure, return_arrival, return_from, return_to fields).
 - Copy the "booking_url" from the selected flight/hotel data into the package.
 - "date_window" MUST be a plain string like "2026-06-10 to 2026-06-17", NEVER an object.
 - "assumptions" MUST be a JSON array of strings, e.g. ["note 1", "note 2"]. NEVER a single string.
 - Hotel check-in must match flight arrival date, check-out must match departure.
-- cost_breakdown.flights = total_flight_cost. cost_breakdown.total = flights + hotel + daily_expenses.
+- cost_breakdown.flights = total_flight_cost (already multiplied by travelers).
+- cost_breakdown.hotel = hotel total_cost (per room, used directly).
+- cost_breakdown.daily_expenses_estimate = estimated daily expenses for ALL travelers combined.
+- cost_breakdown.total = flights + hotel + daily_expenses.
 - Day 1 activities must be realistic given the arrival time. If arriving late at night, say "late arrival, check in to hotel" -- don't suggest sightseeing.
 - Return {{ "packages": [ {{ ... }} ] }}
 - Return ONLY valid JSON, no markdown.
@@ -109,14 +123,27 @@ CRITICAL RULES:
 - Use ONLY real prices from the data provided. NEVER invent or fabricate prices.
 - NEVER create packages for destinations that have NO FLIGHTS in the data. If a city only has hotels/weather but zero flights, SKIP that city entirely.
 - NEVER fabricate transport modes (drive, train, bus, ferry). If the data does not contain a real flight for a destination, do NOT include that destination.
-- FLIGHT PRICING: Each flight's "price" field is the ROUNDTRIP TOTAL (both legs combined). The "price_is" field confirms this. Set "total_flight_cost" equal to the flight's "price" — do NOT double it.
+- FLIGHT PRICING POLICY:
+  * Each flight's "price" is the ROUNDTRIP TOTAL for ONE person (both legs combined).
+  * The "price_is" field confirms this is per-person.
+  * If the user has multiple travelers, "total_flight_cost" = price × number_of_travelers.
+  * If the user has 1 traveler (or unspecified), "total_flight_cost" = price as-is.
+  * Always state in assumptions: "Flight prices are per person; total reflects N traveler(s)."
+- HOTEL PRICING POLICY:
+  * Hotel "total_price" is the total for the entire stay (1 room). Use it directly as hotel total_cost.
+  * per_night = total_price / number_of_nights. NEVER leave per_night or total_cost as 0.
+  * Do NOT multiply hotel cost by travelers — it is per room.
+  * CRITICAL: hotel total_cost and per_night MUST be positive numbers copied from the data.
 - ALWAYS include BOTH outbound AND return flight details if the data provides return info (return_departure, return_arrival, return_from, return_to fields).
 - Copy the "booking_url" from the selected flight/hotel data into the package.
 - "date_window" MUST be a plain string like "2026-06-10 to 2026-06-17", NEVER an object.
 - "assumptions" MUST be a JSON array of strings, e.g. ["note 1", "note 2"]. NEVER a single string.
 - Use DIFFERENT hotel/flight combos for each tier where possible.
 - Hotel check-in must match flight arrival date, check-out must match departure.
-- cost_breakdown.flights = total_flight_cost. cost_breakdown.total = flights + hotel + daily_expenses.
+- cost_breakdown.flights = total_flight_cost (already multiplied by travelers).
+- cost_breakdown.hotel = hotel total_cost (per room, used directly).
+- cost_breakdown.daily_expenses_estimate = estimated daily expenses for ALL travelers combined.
+- cost_breakdown.total = flights + hotel + daily_expenses.
 - Day 1 activities must be realistic given the arrival time. If arriving late at night, say "late arrival, check in to hotel" -- don't suggest sightseeing.
 - Return {{ "packages": [ {{ ... }}, {{ ... }} ] }}
 - Return ONLY valid JSON, no markdown.
@@ -142,6 +169,7 @@ def run_synthesizer(state: SharedState, tight_budget: bool = False) -> None:
         packages = [{"raw_text": raw, "parse_error": True}]
 
     for pkg in packages:
+        _patch_hotel_costs(pkg, state)
         _ensure_booking_links(pkg, state)
         _ensure_poi_links(pkg, state)
 
@@ -160,11 +188,21 @@ def _build_prompt(state: SharedState) -> str:
         parts.append(f"Constraints: {json.dumps(state.constraints, default=str)}")
 
     if state.destination_chunks:
-        summaries = [
-            f"- {c.get('article_title', '?')}: {c.get('content', '')[:150]}"
-            for c in state.destination_chunks[:5]
-        ]
-        parts.append("Destination knowledge:\n" + "\n".join(summaries))
+        dest_rag = _group_rag_by_destination(state)
+        if dest_rag:
+            rag_parts = ["Destination knowledge from Wikivoyage (use for itinerary grounding):"]
+            for dest_name, chunks in dest_rag.items():
+                rag_parts.append(f"\n  [{dest_name}]")
+                for c in chunks[:RAG_MAX_CHUNKS_SYNTH]:
+                    section = c.get("section_name", "general")
+                    rag_parts.append(f"  - ({section}) {c.get('content', '')[:RAG_DISPLAY_CHARS_SYNTH]}")
+            parts.append("\n".join(rag_parts))
+        else:
+            summaries = [
+                f"- {c.get('article_title', '?')}: {c.get('content', '')[:RAG_DISPLAY_CHARS_SYNTH]}"
+                for c in state.destination_chunks[:RAG_MAX_CHUNKS_SYNTH]
+            ]
+            parts.append("Destination knowledge:\n" + "\n".join(summaries))
 
     grouped = _group_data_by_destination(state)
 
@@ -241,6 +279,25 @@ def _build_prompt(state: SharedState) -> str:
     return "\n\n".join(parts)
 
 
+def _group_rag_by_destination(state: SharedState) -> dict[str, list[dict]]:
+    """Group RAG chunks by their article_title, matching against destinations
+    that have flight data. Returns only destination-relevant chunks so the
+    Synthesizer gets specific Wikivoyage knowledge per city."""
+    flight_dests = {
+        (f.get("destination_city") or f.get("destination", "")).lower()
+        for f in state.flight_options
+        if f.get("destination_city") or f.get("destination")
+    }
+
+    grouped: dict[str, list[dict]] = {}
+    for chunk in state.destination_chunks:
+        title = chunk.get("article_title", "")
+        if title.lower() in flight_dests:
+            grouped.setdefault(title, []).append(chunk)
+
+    return grouped
+
+
 def _group_data_by_destination(state: SharedState) -> dict[str, dict]:
     """Group flights/hotels/weather/POIs by destination city.
 
@@ -279,6 +336,65 @@ def _group_data_by_destination(state: SharedState) -> dict[str, dict]:
         return {}
 
     return grouped
+
+
+def _patch_hotel_costs(pkg: dict, state: SharedState) -> None:
+    """Deterministic fix: if the LLM left hotel costs at 0 or missing, look up
+    the matching hotel in state.hotel_options and fill in the real price."""
+    hotel = pkg.get("hotel")
+    if not isinstance(hotel, dict) or not hotel.get("name"):
+        return
+
+    try:
+        total = float(hotel.get("total_cost") or 0)
+    except (ValueError, TypeError):
+        total = 0
+
+    if total > 0:
+        return
+
+    hotel_name = hotel["name"].lower().strip()
+    dest = (pkg.get("destination") or "").lower().strip()
+
+    best_match = None
+    for h in state.hotel_options:
+        h_name = (h.get("name") or "").lower().strip()
+        h_dest = (h.get("destination_city") or "").lower().strip()
+        h_price = h.get("total_price", 0)
+        try:
+            h_price = float(h_price)
+        except (ValueError, TypeError):
+            continue
+        if h_price <= 0:
+            continue
+
+        if h_name == hotel_name:
+            best_match = h
+            break
+        if dest and h_dest == dest and best_match is None:
+            best_match = h
+
+    if best_match:
+        real_total = float(best_match.get("total_price", 0))
+        nights = hotel.get("nights") or 1
+        try:
+            nights = int(nights) if int(nights) > 0 else 1
+        except (ValueError, TypeError):
+            nights = 1
+
+        hotel["total_cost"] = round(real_total, 2)
+        per_night = real_total / nights
+        hotel["per_night"] = round(per_night, 2)
+
+        cost = pkg.get("cost_breakdown")
+        if isinstance(cost, dict):
+            cost["hotel"] = round(real_total, 2)
+            flights_cost = cost.get("flights", 0)
+            daily = cost.get("daily_expenses_estimate", 0)
+            try:
+                cost["total"] = round(float(flights_cost) + real_total + float(daily), 2)
+            except (ValueError, TypeError):
+                pass
 
 
 def _ensure_booking_links(pkg: dict, state: SharedState) -> None:
@@ -329,10 +445,11 @@ def _ensure_booking_links(pkg: dict, state: SharedState) -> None:
             hotels_url = hotel_data.get("booking_url", "")
 
         if not hotels_url and dest and depart and ret:
+            travelers = constraints.get("travelers") or 1
             hotels_url = (
                 f"https://www.booking.com/searchresults.html?"
                 f"ss={urllib.parse.quote(dest)}&checkin={depart}&checkout={ret}"
-                f"&group_adults=1&no_rooms=1"
+                f"&group_adults={travelers}&no_rooms=1"
             )
         existing["hotels_search"] = hotels_url
 

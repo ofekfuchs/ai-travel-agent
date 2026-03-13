@@ -80,9 +80,14 @@ REASONING GUIDELINES:
 
 - BUDGET AWARENESS: You have a limited LLM call budget. Each time YOU run
   is 1 call. The Planner, Synthesizer, and Verifier each cost 1 call.
-  Typical successful flow uses 5-6 calls. If you see 4+ calls already used,
-  prefer "synthesize" over "continue" — having 2 destinations with data is
-  enough. Don't waste calls collecting data for a 4th city if budget is tight.
+  Typical successful flow uses 5-6 calls total.
+  * If 4+ calls are already used, prefer "synthesize" over "plan" or "continue".
+  * NEVER choose "plan" if flights and hotels already exist — choose "synthesize".
+  * Choosing "plan" when the Planner has nothing new to search wastes 2 calls.
+
+- SINGLE DESTINATION: If only one destination was requested (e.g., "trip to
+  London"), and flights + hotels for that destination are already collected,
+  immediately choose "synthesize". Do NOT plan again.
 
 - Be decisive. Don't ask for clarification if you can reasonably infer
   the missing info. "June" = summer dates, "cheap" = budget focus, etc.

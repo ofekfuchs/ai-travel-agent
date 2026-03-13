@@ -413,3 +413,322 @@ class TestFabricatedTransportDetection:
                     issues.append("fabricated transport detected")
 
         assert len(issues) == 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Verification tests for recent changes (contracts A-F)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestFlightPricingSemantics:
+    """Contract A: Flight prices are per-person; totals account for travelers."""
+
+    def test_feasibility_multiplies_by_travelers(self):
+        """2 travelers -> flight cost doubled in feasibility check."""
+        from app.main import _feasibility_check
+        state = SharedState()
+        state.constraints = {
+            "budget_total": 1000,
+            "duration_days": 3,
+            "travelers": 2,
+        }
+        state.flight_options = [{"price": 300}]
+        state.hotel_options = [{"total_price": 200}]
+        result = _feasibility_check(state)
+        # Lower bound: 300*2 + 200 + 50*3*2 = 600+200+300 = 1100 > 1000*1.05
+        assert result is not None
+        assert result["cheapest_roundtrip_flight"] == 600  # 300 * 2 travelers
+        assert result["cheapest_flight_per_person"] == 300
+        assert result["travelers"] == 2
+
+    def test_feasibility_single_traveler_no_multiply(self):
+        """1 traveler -> flight cost used as-is."""
+        from app.main import _feasibility_check
+        state = SharedState()
+        state.constraints = {
+            "budget_total": 2000,
+            "duration_days": 3,
+            "travelers": 1,
+        }
+        state.flight_options = [{"price": 300}]
+        state.hotel_options = [{"total_price": 200}]
+        result = _feasibility_check(state)
+        assert result is None
+
+    def test_feasibility_no_travelers_defaults_to_one(self):
+        """No travelers field -> defaults to 1, not doubled."""
+        from app.main import _feasibility_check
+        state = SharedState()
+        state.constraints = {
+            "budget_total": 2000,
+            "duration_days": 3,
+        }
+        state.flight_options = [{"price": 300}]
+        state.hotel_options = [{"total_price": 200}]
+        result = _feasibility_check(state)
+        assert result is None
+
+    def test_budget_tight_respects_travelers(self):
+        from app.main import _is_budget_tight
+        state = SharedState()
+        state.constraints = {
+            "budget_total": 1000,
+            "duration_days": 4,
+            "travelers": 2,
+        }
+        state.flight_options = [{"price": 200}]
+        state.hotel_options = [{"total_price": 300}]
+        # Lower bound: 200*2 + 300 + 50*4*2 = 400+300+400 = 1100 > 850
+        assert _is_budget_tight(state) is True
+
+    def test_price_cross_check_allows_traveler_multiples(self):
+        """Price grounding should allow 2x of per-person price."""
+        from app.agents.verifier import _cross_check_prices
+        state = SharedState()
+        state.flight_options = [{"price": 300}]
+        state.hotel_options = [{"total_price": 500}]
+        plan = {
+            "flights": {"total_flight_cost": 600},  # 300 * 2 travelers
+            "hotel": {"total_cost": 500},
+        }
+        issues: list[str] = []
+        _cross_check_prices(plan, state, "Pkg 1", issues)
+        assert issues == []
+
+
+class TestFlightDateSanity:
+    """Contract B: Flight datetime sanity checks."""
+
+    def test_valid_flight_dates_no_issues(self):
+        from app.agents.verifier import _check_flight_dates
+        state = SharedState()
+        plan = {
+            "flights": {
+                "outbound": {
+                    "departure": "2026-06-10T08:00:00",
+                    "arrival": "2026-06-10T14:00:00",
+                },
+                "return": {
+                    "departure": "2026-06-17T10:00:00",
+                    "arrival": "2026-06-17T16:00:00",
+                },
+            },
+            "date_window": "2026-06-10 to 2026-06-17",
+        }
+        issues: list[str] = []
+        _check_flight_dates(plan, state, "Pkg 1", issues)
+        assert issues == []
+
+    def test_arrival_before_departure_flagged(self):
+        from app.agents.verifier import _check_flight_dates
+        state = SharedState()
+        plan = {
+            "flights": {
+                "outbound": {
+                    "departure": "2026-06-10T14:00:00",
+                    "arrival": "2026-06-10T08:00:00",
+                },
+            },
+        }
+        issues: list[str] = []
+        _check_flight_dates(plan, state, "Pkg 1", issues)
+        assert any("before departure" in i for i in issues)
+
+    def test_next_day_arrival_is_valid(self):
+        """Long-haul flight arriving next day should NOT be flagged."""
+        from app.agents.verifier import _check_flight_dates
+        state = SharedState()
+        plan = {
+            "flights": {
+                "outbound": {
+                    "departure": "2026-06-10T22:00:00",
+                    "arrival": "2026-06-11T06:00:00",
+                },
+            },
+            "date_window": "2026-06-10 to 2026-06-17",
+        }
+        issues: list[str] = []
+        _check_flight_dates(plan, state, "Pkg 1", issues)
+        assert issues == []
+
+    def test_return_before_outbound_flagged(self):
+        from app.agents.verifier import _check_flight_dates
+        state = SharedState()
+        plan = {
+            "flights": {
+                "outbound": {
+                    "departure": "2026-06-10T08:00:00",
+                    "arrival": "2026-06-10T14:00:00",
+                },
+                "return": {
+                    "departure": "2026-06-09T10:00:00",
+                    "arrival": "2026-06-09T16:00:00",
+                },
+            },
+        }
+        issues: list[str] = []
+        _check_flight_dates(plan, state, "Pkg 1", issues)
+        assert any("before outbound arrival" in i for i in issues)
+
+    def test_flight_outside_date_window_flagged(self):
+        from app.agents.verifier import _check_flight_dates
+        state = SharedState()
+        plan = {
+            "flights": {
+                "outbound": {
+                    "departure": "2026-07-15T08:00:00",
+                    "arrival": "2026-07-15T14:00:00",
+                },
+            },
+            "date_window": "2026-06-10 to 2026-06-17",
+        }
+        issues: list[str] = []
+        _check_flight_dates(plan, state, "Pkg 1", issues)
+        assert any("outside date_window" in i for i in issues)
+
+    def test_excessive_duration_flagged(self):
+        from app.agents.verifier import _check_flight_dates
+        state = SharedState()
+        plan = {
+            "flights": {
+                "outbound": {
+                    "departure": "2026-06-10T08:00:00",
+                    "arrival": "2026-06-12T16:00:00",
+                },
+            },
+        }
+        issues: list[str] = []
+        _check_flight_dates(plan, state, "Pkg 1", issues)
+        assert any("exceeds 30h" in i for i in issues)
+
+
+class TestHotelDataIntegrity:
+    """Contract C: Hotel data quality checks."""
+
+    def test_zero_price_hotel_filtered(self):
+        from app.tools.hotels_tool import _parse_hotel_results
+        raw = {
+            "data": {
+                "hotels": [
+                    {"property": {"name": "Good Hotel", "priceBreakdown": {"grossPrice": {"value": 500}}, "reviewScore": 8}},
+                    {"property": {"name": "Zero Hotel", "priceBreakdown": {"grossPrice": {"value": 0}}, "reviewScore": 7}},
+                ]
+            }
+        }
+        options = _parse_hotel_results(raw, "2026-06-10", "2026-06-14", "Paris", adults=2)
+        assert len(options) == 1
+        assert options[0]["name"] == "Good Hotel"
+
+    def test_booking_url_has_correct_adults(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Test Hotel", "2026-06-10", "2026-06-14", adults=2)
+        assert "group_adults=2" in url
+
+    def test_booking_url_defaults_to_one(self):
+        from app.tools.hotels_tool import _build_hotel_url
+        url = _build_hotel_url("Test Hotel", "2026-06-10", "2026-06-14")
+        assert "group_adults=1" in url
+
+    def test_verifier_flags_zero_hotel_cost(self):
+        from app.agents.verifier import _check_hotel_data
+        plan = {
+            "hotel": {"name": "Bad Hotel", "total_cost": 0, "per_night": 0},
+            "cost_breakdown": {"hotel": 0},
+        }
+        issues: list[str] = []
+        _check_hotel_data(plan, "Pkg 1", issues)
+        assert any("zero or missing" in i for i in issues)
+
+    def test_verifier_passes_valid_hotel(self):
+        from app.agents.verifier import _check_hotel_data
+        plan = {
+            "hotel": {"name": "Good Hotel", "total_cost": 500, "per_night": 100},
+            "cost_breakdown": {"hotel": 500},
+        }
+        issues: list[str] = []
+        _check_hotel_data(plan, "Pkg 1", issues)
+        assert issues == []
+
+    def test_verifier_flags_hotel_not_in_cost_breakdown(self):
+        from app.agents.verifier import _check_hotel_data
+        plan = {
+            "hotel": {"name": "Nice Hotel", "total_cost": 500, "per_night": 100},
+            "cost_breakdown": {"hotel": 0},
+        }
+        issues: list[str] = []
+        _check_hotel_data(plan, "Pkg 1", issues)
+        assert any("not reflected in cost_breakdown" in i for i in issues)
+
+
+class TestItineraryDateAlignment:
+    """Contract B (cont.): Itinerary days match date_window."""
+
+    def test_matching_days_no_issues(self):
+        from app.agents.verifier import _check_itinerary_date_alignment
+        plan = {
+            "itinerary": [{"day": 1}, {"day": 2}, {"day": 3}, {"day": 4}],
+            "date_window": "2026-06-10 to 2026-06-13",
+        }
+        issues: list[str] = []
+        _check_itinerary_date_alignment(plan, "Pkg 1", issues)
+        assert issues == []
+
+    def test_missing_days_flagged(self):
+        from app.agents.verifier import _check_itinerary_date_alignment
+        plan = {
+            "itinerary": [{"day": 1}, {"day": 2}],
+            "date_window": "2026-06-10 to 2026-06-16",
+        }
+        issues: list[str] = []
+        _check_itinerary_date_alignment(plan, "Pkg 1", issues)
+        assert any("missing" in i for i in issues)
+
+    def test_off_by_one_tolerated(self):
+        from app.agents.verifier import _check_itinerary_date_alignment
+        plan = {
+            "itinerary": [{"day": 1}, {"day": 2}, {"day": 3}],
+            "date_window": "2026-06-10 to 2026-06-13",
+        }
+        issues: list[str] = []
+        _check_itinerary_date_alignment(plan, "Pkg 1", issues)
+        assert issues == []
+
+
+class TestSessionContinuity:
+    """Contract D: session_id preserved across all response paths."""
+
+    def test_with_metadata_always_sets_session_id(self):
+        import time
+        from app.main import _with_metadata
+        from app.models.schemas import ExecuteResponse
+        state = SharedState()
+        state.session_id = "test-session-123"
+        state.llm_call_count = 3
+        resp = ExecuteResponse(status="ok", error=None, response="test", steps=[])
+        result = _with_metadata(resp, state, time.time())
+        assert result.session_id == "test-session-123"
+        assert result.llm_calls_used == 3
+
+    def test_no_data_response_preserves_session(self):
+        from app.main import _build_no_data_response, _session_memory
+        state = SharedState()
+        state.session_id = "no-data-session"
+        state.constraints = {"origin": "NYC"}
+        _build_no_data_response(state)
+        assert "no-data-session" in _session_memory
+        del _session_memory["no-data-session"]
+
+    def test_gate_b_response_preserves_session(self):
+        from app.main import _build_gate_b_response, _session_memory
+        state = SharedState()
+        state.session_id = "gate-b-session"
+        state.constraints = {"origin": "NYC", "destinations": ["Paris"]}
+        feasibility = {
+            "lower_bound": 2000, "cheapest_roundtrip_flight": 800,
+            "cheapest_flight_per_person": 400, "travelers": 2,
+            "hotel_total": 600, "daily_expenses": 600,
+            "duration": 7, "budget": 1000, "gap_pct": 100,
+            "dominant_cost": "flights",
+        }
+        _build_gate_b_response(state, feasibility)
+        assert "gate-b-session" in _session_memory
+        del _session_memory["gate-b-session"]

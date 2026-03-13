@@ -22,6 +22,9 @@ import httpx
 
 from app.config import SUPABASE_URL, SUPABASE_ANON_KEY
 
+_supabase_warned = False
+_table_warnings: set[str] = set()
+
 
 def _headers() -> dict[str, str]:
     return {
@@ -33,7 +36,12 @@ def _headers() -> dict[str, str]:
 
 
 def _safe_post(table: str, row: dict) -> bool:
+    global _supabase_warned
     if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        if not _supabase_warned:
+            print("[Supabase] Not configured — using in-memory fallback. "
+                  "Set SUPABASE_URL and SUPABASE_ANON_KEY to enable persistence.", flush=True)
+            _supabase_warned = True
         return False
     try:
         resp = httpx.post(
@@ -42,8 +50,17 @@ def _safe_post(table: str, row: dict) -> bool:
             json=row,
             timeout=5,
         )
-        return resp.status_code in (200, 201)
-    except Exception:
+        if resp.status_code not in (200, 201):
+            if table not in _table_warnings:
+                print(f"[Supabase] Write to '{table}' failed: HTTP {resp.status_code} "
+                      f"(further errors for this table will be suppressed)", flush=True)
+                _table_warnings.add(table)
+            return False
+        return True
+    except Exception as exc:
+        if table not in _table_warnings:
+            print(f"[Supabase] Write to '{table}' error: {exc}", flush=True)
+            _table_warnings.add(table)
         return False
 
 

@@ -27,6 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from typing import Dict
 
+from app.config import RAG_DISPLAY_CHARS_PLANNER, RAG_MAX_CHUNKS_GATE_B
 from app.models.schemas import (
     AgentInfoPromptExample,
     AgentInfoPromptTemplate,
@@ -254,16 +255,39 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                   f"(LLM calls: {state.llm_call_count}/{state.llm_call_cap})", flush=True)
             print(f"{'='*60}", flush=True)
 
-            # ── Supervisor decides ─────────────────────────────────────
-            if not state.can_call_llm():
+            # ── Budget guard: force synthesis if running low on LLM calls ─
+            # Synthesizer needs 1 call, Verifier needs 1 more. Reserve at
+            # least 2 calls. If we already have flight+hotel data, skip the
+            # Supervisor and go straight to synthesis.
+            remaining = state.remaining_llm_calls()
+            has_data = bool(state.flight_options and state.hotel_options)
+            if remaining <= 2 and has_data and not state.draft_plans:
+                print(f"  BUDGET GUARD: {remaining} calls left with data ready "
+                      f"-- forcing synthesize", flush=True)
+                action = "synthesize"
+                reason = f"Deterministic: only {remaining} LLM calls remain, data is available."
+                decision = {"next_action": action, "reason": reason}
+            elif remaining <= 0:
                 print("  LLM cap reached -- returning best-effort", flush=True)
                 return _with_metadata(
                     _build_best_effort_response(state, "LLM budget exhausted."),
                     state, t_start)
+            else:
+                decision = run_supervisor(state)
+                action = decision.get("next_action", "plan")
+                reason = decision.get("reason", "")
 
-            decision = run_supervisor(state)
-            action = decision.get("next_action", "plan")
-            reason = decision.get("reason", "")
+                # Override: if Supervisor says "plan" but we already have
+                # flight+hotel data and no remaining tasks, force synthesize.
+                # This prevents the wasteful "plan → 0 tasks → plan → 0 tasks" loop.
+                if (action == "plan"
+                        and has_data
+                        and not state.task_list
+                        and round_num > 0):
+                    print(f"  OVERRIDE: Supervisor chose 'plan' but data is ready "
+                          f"and no tasks remain -- forcing synthesize", flush=True)
+                    action = "synthesize"
+                    reason += " [overridden: data ready, no remaining tasks]"
             print(f"  Supervisor -> {action} (calls: {state.llm_call_count})", flush=True)
             print(f"    reason: {reason}", flush=True)
 
@@ -506,6 +530,7 @@ def _print_data_summary(state: SharedState) -> None:
 
 def _build_no_data_response(state: SharedState) -> ExecuteResponse:
     """Return when pricing tools returned no results."""
+    _save_session_memory(state)
     dests = state.constraints.get("destinations", []) if state.constraints else []
     dest_str = ", ".join(dests) if dests else "your destination"
 
@@ -558,8 +583,14 @@ def _feasibility_check(state: SharedState) -> dict | None:
     if cheapest_flight is None and cheapest_hotel is None:
         return None
 
-    # Flight prices are already roundtrip totals (price_is: "roundtrip_total")
-    flight_cost = cheapest_flight or 0
+    travelers = state.constraints.get("travelers") or 1
+    try:
+        travelers = max(1, int(travelers))
+    except (ValueError, TypeError):
+        travelers = 1
+
+    # Flight prices are per-person roundtrip — multiply by travelers
+    flight_cost = (cheapest_flight or 0) * travelers
     hotel_cost = cheapest_hotel or 0
 
     duration = state.constraints.get("duration_days") or 4
@@ -568,13 +599,15 @@ def _feasibility_check(state: SharedState) -> dict | None:
     except (ValueError, TypeError):
         duration = 4
 
-    daily_expenses = DAILY_EXPENSES_ESTIMATE * duration
+    daily_expenses = DAILY_EXPENSES_ESTIMATE * duration * travelers
     lower_bound = flight_cost + hotel_cost + daily_expenses
 
     if lower_bound > budget_num * BUDGET_TOLERANCE:
         return {
             "lower_bound": lower_bound,
             "cheapest_roundtrip_flight": flight_cost,
+            "cheapest_flight_per_person": cheapest_flight or 0,
+            "travelers": travelers,
             "hotel_total": hotel_cost,
             "daily_expenses": daily_expenses,
             "duration": duration,
@@ -606,22 +639,29 @@ def _is_budget_tight(state: SharedState) -> bool:
     except (ValueError, TypeError):
         return False
 
+    travelers = state.constraints.get("travelers") or 1
+    try:
+        travelers = max(1, int(travelers))
+    except (ValueError, TypeError):
+        travelers = 1
+
     cheapest_flight = _cheapest_price(state.flight_options, "price")
     cheapest_hotel = _cheapest_price(state.hotel_options, "total_price")
-    flight_cost = cheapest_flight or 0
+    flight_cost = (cheapest_flight or 0) * travelers
     hotel_cost = cheapest_hotel or 0
     duration = state.constraints.get("duration_days") or 4
     try:
         duration = int(duration)
     except (ValueError, TypeError):
         duration = 4
-    lower_bound = flight_cost + hotel_cost + (DAILY_EXPENSES_ESTIMATE * duration)
+    lower_bound = flight_cost + hotel_cost + (DAILY_EXPENSES_ESTIMATE * duration * travelers)
 
     return lower_bound > budget_num * 0.85
 
 
 def _build_gate_b_response(state: SharedState, feasibility: dict) -> ExecuteResponse:
     """Build a grounded best-effort response when budget is provably infeasible."""
+    _save_session_memory(state)
     dest = state.constraints.get("destinations", ["your destination"])[0] \
         if state.constraints.get("destinations") else "your destination"
 
@@ -665,7 +705,8 @@ def _build_gate_b_response(state: SharedState, feasibility: dict) -> ExecuteResp
             f"  4. Hotel tier ({suggestion})"
         ),
         "destination_knowledge": [
-            c.get("content", "")[:200] for c in state.destination_chunks[:3]
+            c.get("content", "")[:RAG_DISPLAY_CHARS_PLANNER]
+            for c in state.destination_chunks[:RAG_MAX_CHUNKS_GATE_B]
         ],
     }
 
@@ -727,6 +768,7 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
         ),
     }
 
+    _save_session_memory(state)
     response_data = {
         "status": "best_effort",
         "packages": state.draft_plans if state.draft_plans else [],

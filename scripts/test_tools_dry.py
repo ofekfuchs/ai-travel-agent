@@ -68,6 +68,28 @@ def test_pinecone_rag():
     except Exception as e:
         report("RAG tool", FAIL, str(e))
 
+    # Smoke queries to check retrieval relevance
+    smoke_queries = [
+        "Europe in May best value",
+        "Beach vacation June NYC",
+        "Cheap destinations Asia backpacking",
+    ]
+    for sq in smoke_queries:
+        try:
+            state2 = SharedState(raw_prompt="test")
+            chunks2 = search_destinations(state2, query=sq, top_k=3)
+            if chunks2:
+                summary = "; ".join(
+                    f"{c.get('article_title', '?')}/{c.get('section_name', '?')} "
+                    f"(score={c.get('score', 0):.3f})"
+                    for c in chunks2
+                )
+                report(f"RAG smoke: '{sq}'", PASS, summary)
+            else:
+                report(f"RAG smoke: '{sq}'", FAIL, "0 chunks")
+        except Exception as e:
+            report(f"RAG smoke: '{sq}'", FAIL, str(e))
+
 
 # ── 2. Flights tool ────────────────────────────────────────────────────────
 def test_flights():
@@ -192,21 +214,37 @@ def test_supabase():
                f"URL={'set' if SUPABASE_URL else 'NOT SET'}, KEY={'set' if SUPABASE_ANON_KEY else 'NOT SET'}")
         return
 
+    headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+    }
+
     try:
-        resp = httpx.get(
-            f"{SUPABASE_URL}/rest/v1/",
-            headers={
-                "apikey": SUPABASE_ANON_KEY,
-                "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-            },
-            timeout=10,
-        )
+        resp = httpx.get(f"{SUPABASE_URL}/rest/v1/", headers=headers, timeout=10)
         if resp.status_code == 200:
             report("Supabase connect", PASS, "Connected OK")
         else:
             report("Supabase connect", FAIL, f"Status {resp.status_code}: {resp.text[:200]}")
+            return
     except Exception as e:
         report("Supabase connect", FAIL, str(e))
+        return
+
+    required_tables = ["cache", "trips", "sessions", "execution_logs"]
+    for table in required_tables:
+        try:
+            resp = httpx.get(
+                f"{SUPABASE_URL}/rest/v1/{table}?select=id&limit=1",
+                headers=headers,
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                report(f"Supabase table '{table}'", PASS, "exists")
+            else:
+                report(f"Supabase table '{table}'", FAIL,
+                       f"HTTP {resp.status_code} — table may not exist")
+        except Exception as e:
+            report(f"Supabase table '{table}'", FAIL, str(e))
 
 
 # ── Run all ────────────────────────────────────────────────────────────────

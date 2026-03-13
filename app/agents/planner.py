@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 
+from app.config import RAG_DISPLAY_CHARS_PLANNER, RAG_MAX_CHUNKS_PLANNER, RAG_TOP_K
 from app.llm.client import call_llm
 from app.models.shared_state import SharedState
 from app.tools.rag_tool import search_destinations
@@ -118,8 +119,8 @@ def run_planner(state: SharedState, repair_category: str | None = None) -> list[
     # RAG knowledge for grounded destination selection
     if state.destination_chunks:
         rag_summaries = [
-            f"- {c.get('article_title', '?')}: {c.get('content', '')[:200]}"
-            for c in state.destination_chunks[:5]
+            f"- {c.get('article_title', '?')}: {c.get('content', '')[:RAG_DISPLAY_CHARS_PLANNER]}"
+            for c in state.destination_chunks[:RAG_MAX_CHUNKS_PLANNER]
         ]
         context_parts.append(
             "Destination knowledge from RAG (use to inform city choices):\n"
@@ -202,7 +203,7 @@ def _prefetch_rag(state: SharedState) -> None:
     the LLM budget.
     """
     try:
-        search_destinations(state, query=state.raw_prompt, top_k=5)
+        search_destinations(state, query=state.raw_prompt, top_k=RAG_TOP_K)
     except Exception:
         pass
 

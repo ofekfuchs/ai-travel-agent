@@ -64,11 +64,12 @@ CRITICAL RULES:
 - Copy the "booking_url" from the selected flight/hotel data into the package.
 - "date_window" MUST be a plain string like "2026-06-10 to 2026-06-17", NEVER an object.
 - "assumptions" MUST be a JSON array of strings, e.g. ["note 1", "note 2"]. NEVER a single string.
+- ASSUMPTIONS CONSISTENCY: If you mention flight prices, hotel prices, or costs in assumptions, use the EXACT same numbers as in cost_breakdown, flights.total_flight_cost, and hotel.total_cost. Never write a different figure in assumptions than what appears in the structured data.
 - Hotel check-in must match flight arrival date, check-out must match departure.
 - cost_breakdown.flights = total_flight_cost (the per-person price you copied).
 - cost_breakdown.hotel = hotel total_cost (copied from data).
-- cost_breakdown.daily_expenses_estimate = rough daily estimate, or 0 if unknown.
-- cost_breakdown.total = flights + hotel + daily_expenses.
+- cost_breakdown.daily_expenses_estimate = TOTAL estimated daily expenses for the trip (daily_rate × number of days). E.g. $50/day × 5 days = $250. Use 0 if unknown.
+- cost_breakdown.total = flights + hotel + daily_expenses_estimate.
 - Day 1 activities must be realistic given the arrival time. If arriving late at night, say "late arrival, check in to hotel" -- don't suggest sightseeing.
 - Return {{ "packages": [ {{ ... }} ] }}
 - Return ONLY valid JSON, no markdown.
@@ -133,12 +134,13 @@ CRITICAL RULES:
 - Copy the "booking_url" from the selected flight/hotel data into the package.
 - "date_window" MUST be a plain string like "2026-06-10 to 2026-06-17", NEVER an object.
 - "assumptions" MUST be a JSON array of strings, e.g. ["note 1", "note 2"]. NEVER a single string.
+- ASSUMPTIONS CONSISTENCY: If you mention flight prices, hotel prices, or costs in assumptions, use the EXACT same numbers as in cost_breakdown, flights.total_flight_cost, and hotel.total_cost. Never write a different figure in assumptions than what appears in the structured data.
 - Use DIFFERENT hotel/flight combos for each tier where possible.
 - Hotel check-in must match flight arrival date, check-out must match departure.
 - cost_breakdown.flights = total_flight_cost (the per-person price you copied).
 - cost_breakdown.hotel = hotel total_cost (copied from data).
-- cost_breakdown.daily_expenses_estimate = rough daily estimate, or 0 if unknown.
-- cost_breakdown.total = flights + hotel + daily_expenses.
+- cost_breakdown.daily_expenses_estimate = TOTAL estimated daily expenses for the trip (daily_rate × number of days). E.g. $50/day × 5 days = $250. Use 0 if unknown.
+- cost_breakdown.total = flights + hotel + daily_expenses_estimate.
 - Day 1 activities must be realistic given the arrival time. If arriving late at night, say "late arrival, check in to hotel" -- don't suggest sightseeing.
 - Return {{ "packages": [ {{ ... }}, {{ ... }} ] }}
 - Return ONLY valid JSON, no markdown.

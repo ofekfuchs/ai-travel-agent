@@ -9,3 +9,4 @@ build/
 .pinecone_uploaded.json
 .cursor/
 *.pdf
+verifier_tests_result.txt

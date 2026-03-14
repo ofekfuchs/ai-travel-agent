@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import httpx
 
 DEFAULT_BASE_URL = "http://localhost:8000"
-TIMEOUT = 120  # seconds per request (LLM calls can be slow)
+TIMEOUT = 300  # seconds per request (LLM calls can be slow, complex requests ~150-250s)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

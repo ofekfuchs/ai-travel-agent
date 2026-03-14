@@ -921,7 +921,7 @@ async def health() -> Dict[str, str]:
 async def serve_frontend() -> HTMLResponse:
     index_path = FRONTEND_DIR / "index.html"
     if index_path.is_file():
-        return HTMLResponse(content=index_path.read_text(), status_code=200)
+        return HTMLResponse(content=index_path.read_text(encoding="utf-8"), status_code=200)
     return HTMLResponse(
         content="<h1>AI Travel Agent</h1><p>Frontend not found.</p>",
         status_code=200,

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-LLM_CALL_CAP = 8
+LLM_CALL_CAP = 12
 
 
 @dataclass

@@ -215,17 +215,17 @@ class TestSharedState:
 
     def test_cannot_call_after_cap(self):
         state = SharedState()
-        state.llm_call_count = 8
+        state.llm_call_count = 12
         assert state.can_call_llm() is False
 
     def test_remaining_calls(self):
         state = SharedState()
         state.llm_call_count = 5
-        assert state.remaining_llm_calls() == 3
+        assert state.remaining_llm_calls() == 7
 
     def test_cap_is_eight(self):
         state = SharedState()
-        assert state.llm_call_cap == 8
+        assert state.llm_call_cap == 12
 
     def test_default_state_empty(self):
         state = SharedState()

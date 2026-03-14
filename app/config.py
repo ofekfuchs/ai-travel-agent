@@ -65,5 +65,5 @@ RAG_RELEVANT_SECTIONS: set[str] = {
 # Agent behaviour constants
 # ---------------------------------------------------------------------------
 # The Supervisor-driven agentic loop is configured in main.py:
-#   MAX_SUPERVISOR_ROUNDS = 6  (max decision points per request)
-#   LLM_CALL_CAP = 8          (hard cap, defined in shared_state.py)
+#   MAX_SUPERVISOR_ROUNDS = 8  (max decision points per request)
+#   LLM_CALL_CAP = 12         (hard cap, defined in shared_state.py)

@@ -380,6 +380,15 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
                     _print_data_summary(state)
 
+                    # Early feasibility check to avoid wasting LLM calls
+                    early_feasibility = _feasibility_check(state)
+                    if early_feasibility:
+                        print(f"  EARLY GATE B: budget infeasible after Phase 1 "
+                              f"(${early_feasibility['lower_bound']:.0f} > "
+                              f"${early_feasibility['budget']:.0f})", flush=True)
+                        return _with_metadata(
+                            _build_gate_b_response(state, early_feasibility), state, t_start)
+
                     # Remove executed tasks from task_list so Supervisor sees remaining
                     executed_ids = {id(t) for t in all_first}
                     state.task_list = [t for t in state.task_list
@@ -393,6 +402,15 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
                     _print_data_summary(state)
                     state.task_list = []
+
+                    # Early feasibility check to avoid wasting LLM calls
+                    early_feasibility = _feasibility_check(state)
+                    if early_feasibility:
+                        print(f"  EARLY GATE B: budget infeasible "
+                              f"(${early_feasibility['lower_bound']:.0f} > "
+                              f"${early_feasibility['budget']:.0f})", flush=True)
+                        return _with_metadata(
+                            _build_gate_b_response(state, early_feasibility), state, t_start)
 
                 if action == "synthesize":
                     pass  # fall through to synthesize block below
@@ -413,6 +431,15 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     run_executor(state, batch)
                     print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
                     _print_data_summary(state)
+
+                    # Early feasibility check to avoid wasting LLM calls
+                    early_feasibility = _feasibility_check(state)
+                    if early_feasibility:
+                        print(f"  EARLY GATE B: budget infeasible after Phase N "
+                              f"(${early_feasibility['lower_bound']:.0f} > "
+                              f"${early_feasibility['budget']:.0f})", flush=True)
+                        return _with_metadata(
+                            _build_gate_b_response(state, early_feasibility), state, t_start)
 
                     state.task_list = [t for t in state.task_list
                                        if t.get("destination_group") != next_dest]
@@ -436,6 +463,15 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                           f"> ${feasibility['budget']:.0f})", flush=True)
                     return _with_metadata(
                         _build_gate_b_response(state, feasibility), state, t_start)
+
+                # GATE C: Pre-synthesis data consistency check
+                consistency_issues = _pre_synthesis_consistency_check(state)
+                if consistency_issues:
+                    print(f"  GATE C: data consistency issues", flush=True)
+                    for iss in consistency_issues:
+                        print(f"    ! {iss}", flush=True)
+                    return _with_metadata(
+                        _build_no_data_response(state), state, t_start)
 
                 if not state.can_call_llm():
                     return _with_metadata(
@@ -666,6 +702,50 @@ def _is_budget_tight(state: SharedState) -> bool:
     lower_bound = flight_cost + hotel_cost + (DAILY_EXPENSES_ESTIMATE * duration * travelers)
 
     return lower_bound > budget_num * 0.85
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#   GATE C: Pre-synthesis data consistency check (deterministic, zero LLM)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _pre_synthesis_consistency_check(state: SharedState) -> list[str]:
+    """Check data consistency before synthesis. Returns list of issues.
+
+    Only checks high-signal conditions that would cause synthesis to fail:
+    - No overlapping destinations between flights and hotels
+    - Hotels missing names (unusable records)
+    - Flight arrival after hotel check-in for same destination
+    """
+    issues: list[str] = []
+
+    if not state.flight_options or not state.hotel_options:
+        return issues
+
+    flight_dests = {
+        (f.get("destination_city") or f.get("destination", "")).lower().strip()
+        for f in state.flight_options
+        if f.get("destination_city") or f.get("destination")
+    }
+    hotel_dests = {
+        (h.get("destination_city") or h.get("city") or "").lower().strip()
+        for h in state.hotel_options
+        if h.get("destination_city") or h.get("city")
+    }
+
+    overlapping = flight_dests & hotel_dests
+    if flight_dests and hotel_dests and not overlapping:
+        issues.append(
+            f"No overlapping destinations: flights go to {sorted(flight_dests)[:3]}, "
+            f"hotels are in {sorted(hotel_dests)[:3]}"
+        )
+
+    hotels_without_name = sum(
+        1 for h in state.hotel_options if not h.get("name")
+    )
+    if hotels_without_name == len(state.hotel_options) and state.hotel_options:
+        issues.append("All hotel records missing names -- unusable")
+
+    return issues
 
 
 def _build_gate_b_response(state: SharedState, feasibility: dict) -> ExecuteResponse:

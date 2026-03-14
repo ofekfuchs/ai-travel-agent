@@ -786,3 +786,260 @@ class TestSessionContinuity:
         _build_gate_b_response(state, feasibility)
         assert "gate-b-session" in _session_memory
         del _session_memory["gate-b-session"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Flight sanity filtering (P1 repair)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestFlightSanityFilter:
+    """Tests for _is_valid_flight filter in flights_tool."""
+
+    def test_valid_flight_passes(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T08:00:00",
+            "arrival": "2026-06-10T12:00:00",
+            "duration_minutes": 240,
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is True
+
+    def test_missing_departure_rejected(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "",
+            "arrival": "2026-06-10T12:00:00",
+            "duration_minutes": 240,
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is False
+
+    def test_missing_arrival_rejected(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T08:00:00",
+            "arrival": "",
+            "duration_minutes": 240,
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is False
+
+    def test_zero_duration_rejected(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T08:00:00",
+            "arrival": "2026-06-10T12:00:00",
+            "duration_minutes": 0,
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is False
+
+    def test_negative_duration_rejected(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T08:00:00",
+            "arrival": "2026-06-10T12:00:00",
+            "duration_minutes": -60,
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is False
+
+    def test_nonstop_over_20_hours_rejected(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T08:00:00",
+            "arrival": "2026-06-11T10:00:00",
+            "duration_minutes": 1500,  # 25 hours
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is False
+
+    def test_connecting_over_20_hours_accepted(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T08:00:00",
+            "arrival": "2026-06-11T10:00:00",
+            "duration_minutes": 1500,  # 25 hours
+            "stops": 1,
+        }
+        assert _is_valid_flight(flight) is True
+
+    def test_arrival_before_departure_rejected(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T14:00:00",
+            "arrival": "2026-06-10T10:00:00",
+            "duration_minutes": 240,
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is False
+
+    def test_overnight_flight_accepted(self):
+        from app.tools.flights_tool import _is_valid_flight
+        flight = {
+            "departure": "2026-06-10T22:00:00",
+            "arrival": "2026-06-11T06:00:00",
+            "duration_minutes": 480,  # 8 hours
+            "stops": 0,
+        }
+        assert _is_valid_flight(flight) is True
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Verifier hard failure non-override (P1 repair)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestVerifierHardFailures:
+    """Tests ensuring deterministic issues cannot be overridden by LLM."""
+
+    def test_budget_violation_forces_reject(self):
+        """Budget >15% over must REJECT regardless of LLM opinion."""
+        state = SharedState()
+        state.constraints = {"budget_total": 1000}
+        state.draft_plans = [{
+            "destination": "Paris",
+            "flights": {"outbound": {"airline": "Air France", "departure": "2026-06-10T08:00", "arrival": "2026-06-10T12:00"}},
+            "hotel": {"name": "Hotel Paris", "total_cost": 400, "per_night": 100},
+            "weather_summary": "Sunny",
+            "itinerary": [{"day": 1}],
+            "cost_breakdown": {"total": 1500, "flights": 800, "hotel": 400},  # 50% over budget
+            "rationale": "Nice trip",
+        }]
+        state.flight_options = [{"price": 800}]
+        state.hotel_options = [{"total_price": 400}]
+
+        from app.agents.verifier import run_verifier
+
+        # Mock the LLM call to return APPROVE
+        import app.agents.verifier as verifier_module
+        original_llm_check = verifier_module._llm_quality_check
+
+        def mock_llm_approve(state, issues):
+            return {"decision": "APPROVE", "issues": [], "warnings": []}
+
+        verifier_module._llm_quality_check = mock_llm_approve
+        try:
+            verdict = run_verifier(state)
+            assert verdict["decision"] == "REJECT", "Deterministic budget issue must force REJECT"
+            assert any("exceeds budget" in i for i in verdict["issues"])
+        finally:
+            verifier_module._llm_quality_check = original_llm_check
+
+    def test_missing_fields_forces_reject(self):
+        """Missing required fields must REJECT regardless of LLM opinion."""
+        state = SharedState()
+        state.draft_plans = [{
+            "destination": "Paris",
+            # Missing: flights, hotel, weather_summary, itinerary, cost_breakdown, rationale
+        }]
+
+        from app.agents.verifier import run_verifier
+        import app.agents.verifier as verifier_module
+        original_llm_check = verifier_module._llm_quality_check
+
+        def mock_llm_approve(state, issues):
+            return {"decision": "APPROVE", "issues": [], "warnings": []}
+
+        verifier_module._llm_quality_check = mock_llm_approve
+        try:
+            verdict = run_verifier(state)
+            assert verdict["decision"] == "REJECT", "Missing fields must force REJECT"
+            assert any("missing fields" in i for i in verdict["issues"])
+        finally:
+            verifier_module._llm_quality_check = original_llm_check
+
+    def test_no_deterministic_issues_uses_llm_decision(self):
+        """When no deterministic issues, LLM decision should be used."""
+        state = SharedState()
+        state.constraints = {"budget_total": 2000}
+        state.draft_plans = [{
+            "destination": "Paris",
+            "flights": {"outbound": {"airline": "Air France", "departure": "2026-06-10T08:00", "arrival": "2026-06-10T12:00"}},
+            "hotel": {"name": "Hotel Paris", "total_cost": 400, "per_night": 100},
+            "weather_summary": "Sunny",
+            "itinerary": [{"day": 1}],
+            "cost_breakdown": {"total": 1200, "flights": 800, "hotel": 400},
+            "rationale": "Nice trip",
+        }]
+        state.flight_options = [{"price": 800}]
+        state.hotel_options = [{"total_price": 400}]
+
+        from app.agents.verifier import run_verifier
+        import app.agents.verifier as verifier_module
+        original_llm_check = verifier_module._llm_quality_check
+
+        def mock_llm_approve(state, issues):
+            return {"decision": "APPROVE", "issues": [], "warnings": ["minor note"]}
+
+        verifier_module._llm_quality_check = mock_llm_approve
+        try:
+            verdict = run_verifier(state)
+            assert verdict["decision"] == "APPROVE", "LLM APPROVE should be used when no hard issues"
+        finally:
+            verifier_module._llm_quality_check = original_llm_check
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Pre-synthesis consistency check (P1 repair)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestPreSynthesisConsistency:
+    """Tests for _pre_synthesis_consistency_check (Gate C)."""
+
+    def test_overlapping_destinations_passes(self):
+        from app.main import _pre_synthesis_consistency_check
+        state = SharedState()
+        state.flight_options = [
+            {"destination_city": "Paris", "price": 500},
+            {"destination_city": "Rome", "price": 600},
+        ]
+        state.hotel_options = [
+            {"destination_city": "Paris", "name": "Hotel A", "total_price": 300},
+        ]
+        issues = _pre_synthesis_consistency_check(state)
+        assert issues == []
+
+    def test_no_overlapping_destinations_fails(self):
+        from app.main import _pre_synthesis_consistency_check
+        state = SharedState()
+        state.flight_options = [
+            {"destination_city": "Paris", "price": 500},
+        ]
+        state.hotel_options = [
+            {"destination_city": "Tokyo", "name": "Hotel A", "total_price": 300},
+        ]
+        issues = _pre_synthesis_consistency_check(state)
+        assert len(issues) == 1
+        assert "No overlapping destinations" in issues[0]
+
+    def test_all_hotels_without_names_fails(self):
+        from app.main import _pre_synthesis_consistency_check
+        state = SharedState()
+        state.flight_options = [
+            {"destination_city": "Paris", "price": 500},
+        ]
+        state.hotel_options = [
+            {"destination_city": "Paris", "name": "", "total_price": 300},
+            {"destination_city": "Paris", "total_price": 400},
+        ]
+        issues = _pre_synthesis_consistency_check(state)
+        assert any("missing names" in i for i in issues)
+
+    def test_empty_data_passes(self):
+        from app.main import _pre_synthesis_consistency_check
+        state = SharedState()
+        issues = _pre_synthesis_consistency_check(state)
+        assert issues == []
+
+    def test_case_insensitive_matching(self):
+        from app.main import _pre_synthesis_consistency_check
+        state = SharedState()
+        state.flight_options = [
+            {"destination_city": "PARIS", "price": 500},
+        ]
+        state.hotel_options = [
+            {"destination_city": "paris", "name": "Hotel A", "total_price": 300},
+        ]
+        issues = _pre_synthesis_consistency_check(state)
+        assert issues == []

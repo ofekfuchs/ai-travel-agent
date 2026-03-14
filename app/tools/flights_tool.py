@@ -7,9 +7,14 @@ Any city name worldwide is resolved automatically -- no hardcoded lookup tables.
 from __future__ import annotations
 
 import time
+from datetime import datetime
 from typing import Any
 
 import httpx
+
+# Maximum plausible nonstop flight duration (hours).
+# Longest commercial nonstop is ~19h (Singapore-NYC). Use 20h as safe ceiling.
+_MAX_NONSTOP_HOURS = 20
 
 from app.config import RAPIDAPI_KEY
 from app.models.shared_state import SharedState
@@ -132,6 +137,49 @@ def search_flights(
         return []
 
 
+def _is_valid_flight(flight: dict[str, Any]) -> bool:
+    """Filter out obviously invalid flight records.
+
+    Catches:
+    - Missing departure/arrival timestamps
+    - Zero or negative duration
+    - Nonstop flights with impossibly long durations (> 20 hours)
+    - Arrival before departure when both parse cleanly
+    """
+    dep_str = flight.get("departure", "")
+    arr_str = flight.get("arrival", "")
+
+    if not dep_str or not arr_str:
+        return False
+
+    duration = flight.get("duration_minutes", 0)
+    if duration <= 0:
+        return False
+
+    stops = flight.get("stops", 0)
+    if stops == 0 and duration > _MAX_NONSTOP_HOURS * 60:
+        return False
+
+    dep_dt = _parse_iso_dt(dep_str)
+    arr_dt = _parse_iso_dt(arr_str)
+    if dep_dt and arr_dt and arr_dt < dep_dt:
+        return False
+
+    return True
+
+
+def _parse_iso_dt(val: str) -> datetime | None:
+    """Best-effort parse of ISO datetime strings from API."""
+    if not val:
+        return None
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M"):
+        try:
+            return datetime.strptime(val.strip()[:19], fmt)
+        except ValueError:
+            continue
+    return None
+
+
 def _parse_flight_results(
     raw: dict,
     origin_name: str,
@@ -205,6 +253,8 @@ def _parse_flight_results(
             url += "?sort=bestflight_a"
             flight["booking_url"] = url
 
-        options.append(flight)
+        # Filter out invalid flights before adding to results
+        if _is_valid_flight(flight):
+            options.append(flight)
 
     return options

@@ -51,11 +51,28 @@ def run_executor(state: SharedState, tasks: list[dict] | None = None) -> None:
     print(f"           Executor: all {total} tasks done ({time.time()-t_start:.1f}s total)", flush=True)
 
 
+def _get_state_counts(state: SharedState, task_type: str) -> int:
+    """Get relevant state list count for a task type."""
+    if task_type == "search_flights":
+        return len(state.flight_options)
+    elif task_type == "search_hotels":
+        return len(state.hotel_options)
+    elif task_type == "get_weather":
+        return len(state.weather_context)
+    elif task_type == "search_pois":
+        return len(state.poi_list)
+    elif task_type == "rag_search":
+        return len(state.destination_chunks)
+    return 0
+
+
 def _execute_single(state: SharedState, task: dict) -> None:
     """Execute a single task (runs inside a thread)."""
     task_type = task.get("task", "")
     params = task.get("params", {})
     dest = task.get("destination_group", "")
+
+    before_count = _get_state_counts(state, task_type)
     t = time.time()
 
     if task_type == "rag_search":
@@ -93,4 +110,14 @@ def _execute_single(state: SharedState, task: dict) -> None:
             destination_name=params.get("destination", ""),
         )
 
-    print(f"             {task_type}({dest}) done ({time.time()-t:.1f}s)", flush=True)
+    elapsed = time.time() - t
+    after_count = _get_state_counts(state, task_type)
+    delta = after_count - before_count
+
+    # Determine result status for observability
+    if delta > 0:
+        status = "cache" if elapsed < 0.3 else f"+{delta}"
+    else:
+        status = "empty"
+
+    print(f"             {task_type}({dest}) {status} ({elapsed:.1f}s)", flush=True)

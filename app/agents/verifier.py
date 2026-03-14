@@ -97,7 +97,15 @@ def run_verifier(state: SharedState) -> dict:
     llm_warnings = llm_verdict.get("warnings", [])
     all_issues = issues + llm_issues
     all_warnings = det_warnings + llm_warnings
-    decision = llm_verdict.get("decision", "REJECT" if all_issues else "APPROVE")
+
+    # Deterministic hard failures are NON-OVERRIDABLE.
+    # If rule-based checks found issues, we REJECT regardless of LLM opinion.
+    # This prevents the LLM from approving packages with budget violations,
+    # missing fields, fabricated transport, or impossible flight dates.
+    if issues:
+        decision = "REJECT"
+    else:
+        decision = llm_verdict.get("decision", "REJECT" if llm_issues else "APPROVE")
 
     verdict = {
         "decision": decision,

@@ -1,418 +1,238 @@
 # AI Travel Agent
 
-Autonomous full-package travel planning agent built for the **AI Agents course (Technion)**.
-Given a free-form travel request, the agent reasons at every decision point, searches
-real flights/hotels/weather/POIs, and returns complete priced trip packages.
+Autonomous full-package travel planning agent. Give it a free-form travel request; it reasons at every step, searches real flights, hotels, weather, and POIs, and returns complete priced trip packages.
 
-**Team:** Ofek Fuchs & Omri Lazover | **Group:** 3_11
-
----
-
-## Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Architecture](#architecture)
-3. [Key Features](#key-features)
-4. [API Endpoints](#api-endpoints)
-5. [Project Structure](#project-structure)
-6. [Testing](#testing)
-7. [Supabase Setup](#supabase-setup)
-8. [Configuration](#configuration)
-9. [What Makes This an Agent](#what-makes-this-an-agent-not-just-a-workflow)
+**Team:** Ofek Fuchs & Omri Lazover
 
 ---
 
 ## Quick Start
 
-### 1. Prerequisites
+### Prerequisites
 
-- Python 3.11+ (tested with 3.14)
-- API keys (see [Configuration](#configuration) section below)
+- Python 3.11+
+- API keys (see [Configuration](#configuration))
 
-### 2. Install dependencies
+### Install and run
 
 ```bash
 cd ai-travel-agent
 python -m venv .venv
-source .venv/bin/activate      # macOS/Linux
-# .venv\Scripts\activate       # Windows
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment
-
-Create a `.env` file in the project root (see [Configuration](#configuration) for details).
-
-### 4. Seed RAG knowledge base (optional but recommended)
+Create a `.env` file (see [Configuration](#configuration)), then:
 
 ```bash
+# Optional: seed RAG with Wikivoyage data (~350 cities)
 python scripts/seed_test_data.py
-```
 
-This populates Pinecone with Wikivoyage destination knowledge (~350 cities).
-
-### 5. Run the server
-
-```bash
-source .venv/bin/activate
+# Run the server
 uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-### 6. Use the agent
+Open http://127.0.0.1:8001 in your browser, or call the API:
 
-- **UI:** Open http://127.0.0.1:8001 in your browser
-- **API:** `POST http://127.0.0.1:8001/api/execute` with `{"prompt": "your travel request"}`
+```bash
+curl -X POST http://127.0.0.1:8001/api/execute -H "Content-Type: application/json" -d '{"prompt": "Beach vacation in June from New York"}'
+```
+
+---
+
+## How it works
+
+### What you need to have running
+
+1. **Python environment** – venv activated, `pip install -r requirements.txt` done.
+2. **Environment variables** – `.env` in the project root with at least:
+   - `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` (required for the agent to run).
+   - `RAPIDAPI_KEY` (for flights/hotels; optional but recommended).
+   - `PINECONE_*` (for RAG; optional – agent works without it, but destination suggestions are less grounded).
+   - `SUPABASE_*` (for cache and persistence; optional – in-memory fallback if missing).
+   - `OPENTRIPMAP_API_KEY` (for POIs; optional).
+3. **Server** – run `uvicorn app.main:app --host 127.0.0.1 --port 8001`. Only this process serves the API and frontend; no separate frontend build.
+4. **Optional: RAG data** – run `python scripts/seed_test_data.py` once to fill Pinecone with Wikivoyage content for ~350 cities. If you skip it, the agent still runs but plans without that knowledge.
+5. **Optional: Supabase tables** – if you use Supabase, create `cache`, `trips`, `sessions`, `execution_logs` (see [Configuration](#configuration)). If you don’t, the app uses in-memory cache and no persistence.
+
+### What happens when you send a prompt
+
+1. **Request** – You POST `{"prompt": "Beach vacation in June from New York"}` to `/api/execute` (or use the UI).
+2. **Supervisor (1st time)** – The Supervisor LLM call decides the first action: e.g. "plan" if there’s enough info, or "ask_clarification" if origin/dates are missing.
+3. **Planner** – If the decision was "plan", the Planner runs once: it extracts constraints (origin, dates, budget, etc.) and produces a list of tasks (search_flights, search_hotels, get_weather, search_pois). It can use RAG (Pinecone) to choose destinations.
+4. **Executor** – Tools run in parallel (no LLM): Booking.com for flights/hotels, Open-Meteo for weather, OpenTripMap for POIs. Results are written into shared state; Supabase can cache them.
+5. **Supervisor (again)** – After the first destination’s data is in, the Supervisor is called again. It sees the current state (e.g. flight/hotel counts per city) and decides: "continue" (run the next destination), "synthesize" (enough data, build packages), or "pivot" (change strategy).
+6. **Loop** – Steps 4–5 repeat until the Supervisor chooses "synthesize" or hits the max round limit.
+7. **Gate B** – Before synthesis, a deterministic check verifies that the cheapest possible trip fits the budget. If not, the API returns a budget-infeasible message and suggestions (no extra LLM).
+8. **Trip Synthesizer** – One LLM call builds 1–3 packages (e.g. Budget Pick, Best Value, Premium) from the collected flights/hotels/weather/POIs.
+9. **Verifier** – One LLM call plus rules (e.g. budget, required fields) to approve or reject. If rejected, the Supervisor can decide to "replan" and the loop continues if LLM budget allows.
+10. **Response** – The API returns `status`, `response` (e.g. JSON of packages), and `steps` (every LLM call: module name, prompt, response).
+
+So: **only the server (uvicorn) must be running**; the rest is config and optional seeding. The diagram below summarizes this flow.
 
 ---
 
 ## Architecture
 
-### Supervisor-Driven Agentic Loop (ReAct Pattern)
+### Diagram (Mermaid)
 
-The system is a **true agent**, not a static workflow. The Supervisor is called at
-every decision point — it observes intermediate results and adapts:
+View this README on **GitHub** (or any Markdown viewer that renders Mermaid) to see the diagram rendered. The same diagram is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-```
-User Request
-    │
-    ▼
-┌─────────────┐
-│  Supervisor  │◄──────────────────────────────┐
-│  (decision)  │                               │
-└──────┬──────┘                               │
-       │                                      │
-  ┌────┴────┬──────────┬───────────┐          │
-  ▼         ▼          ▼           ▼          │
-clarify   plan      continue    synthesize    │
-  │         │          │           │          │
-  │    ┌────▼────┐  ┌──▼───┐  ┌───▼────┐     │
-  │    │ Planner │  │Exec. │  │Synth.  │     │
-  │    │+RAG     │  │Phase │  │+Verify │     │
-  │    └────┬────┘  └──┬───┘  └───┬────┘     │
-  │         │          │          │           │
-  │    ┌────▼────┐     │     ┌────▼────┐      │
-  │    │Executor │     │     │APPROVE? │──────┘
-  │    │Phase 1  │     │     │ or loop │
-  │    └────┬────┘     │     └─────────┘
-  │         │          │
-  ▼         └──────────┘
-Return         (loop back to Supervisor)
+```mermaid
+flowchart TB
+    User([User]) --> Prompt[/"Free-form travel request"/]
+    Prompt --> Supervisor{{"Supervisor"}}
+    Supervisor -->|plan/replan| Planner["Planner"]
+    Supervisor -->|clarify| User
+    Supervisor -->|synthesize| GateB["Gate B\nBudget Check"]
+    Planner --> RAG["RAG\nPinecone"]
+    Planner -->|tasks| Executor["Executor"]
+    Executor --> Flights["Flights API"]
+    Executor --> Hotels["Hotels API"]
+    Executor --> Weather["Weather API"]
+    Executor --> POI["POI API"]
+    Executor -->|observe| Supervisor
+    GateB -->|feasible| Synthesizer["Trip Synthesizer"]
+    GateB -->|infeasible| User
+    Synthesizer --> Verifier["Verifier"]
+    Verifier -->|APPROVE| Response[/"Trip packages"/]
+    Verifier -->|REJECT| Supervisor
+    Response --> User
+    Planner <-.-> State[("SharedState")]
+    Executor <-.-> State
+    Synthesizer <-.-> State
+    Verifier <-.-> State
 ```
 
-### Component Overview
+### PNG version
 
-| Component | Role | LLM Calls |
-|-----------|------|-----------|
-| **Supervisor** | Brain — decides next action at every step | 1 per round (3+ rounds typical) |
-| **Planner** | Extracts constraints + generates task plan + RAG | 1 call |
-| **Executor** | Runs tools in parallel (flights, hotels, weather, POIs) | 0 (pure API calls) |
-| **Synthesizer** | Builds tiered trip packages from data | 1 call |
-| **Verifier** | Quality audit (deterministic rules + LLM) | 1 call |
+![Architecture](architecture.png)
 
-### External Services
+### Modules
 
-| Service | Purpose | Cost |
-|---------|---------|------|
-| LLMod.ai / Azure OpenAI | LLM reasoning (all agents) | ~$0.01-0.05/call |
-| Pinecone | RAG vector DB (Wikivoyage) | Free tier |
-| Supabase | Caching, trip storage, session persistence | Free tier |
-| RapidAPI (Booking.com) | Flights + Hotels search | Freemium |
-| Open-Meteo | Weather forecasts | Free |
-| OpenTripMap | Points of interest | Free |
+| Module | Role |
+|--------|------|
+| **Supervisor** | Decides next action from current state (plan / continue / synthesize / clarify). |
+| **Planner** | Extracts constraints and builds a task plan; uses RAG (Pinecone/Wikivoyage) for destinations. |
+| **Executor** | Runs tools in parallel (flights, hotels, weather, POIs). No LLM calls. |
+| **Trip Synthesizer** | Builds tiered packages (Budget / Best Value / Premium) from collected data. |
+| **Verifier** | Checks packages (rules + LLM) and approves or rejects. |
 
-### LLM Budget
+**External services:** LLMod.ai (LLM), Pinecone (RAG), Supabase (cache + persistence), Booking.com (flights/hotels), Open-Meteo (weather), OpenTripMap (POIs).
 
-Each request has a hard cap of **12 LLM calls** (configurable). Typical successful run uses 5-7:
-
-| Call | Agent | Purpose |
-|------|-------|---------|
-| 1 | Supervisor | Initial routing decision |
-| 2 | Planner | Extract constraints + generate tasks |
-| 3 | Supervisor | Observe Phase 1 results, decide continue |
-| 4 | Supervisor | Observe Phase 2 results, decide synthesize |
-| 5 | Synthesizer | Build trip packages |
-| 6 | Verifier | Quality audit |
-| 7-12 | (spare) | Available for replanning if rejected |
+**LLM budget:** Up to 12 LLM calls per request; a typical successful run uses 5–7.
 
 ---
 
-## Key Features
-
-### Intelligent Decision Making
-- **Multi-round Supervisor (ReAct)**: Called 3+ times per request with Thought → Action → Observation cycles
-- **Phased execution**: Searches destinations one at a time, observing results between phases
-- **Adaptive decisions**: Can skip expensive destinations, pivot to cheaper ones based on observations
-- **Scope guard**: Politely refuses non-travel requests
-
-### Data Validation & Quality
-- **Flight sanity filtering**: Rejects invalid flight data (missing timestamps, impossible durations, nonstop > 20h)
-- **Deterministic verifier rules**: Budget violations, missing fields, fabricated transport force rejection
-- **Pre-synthesis consistency checks**: Validates destination overlap between flights and hotels
-- **Early budget feasibility (Gate B)**: Stops immediately when budget is provably infeasible
-
-### RAG Knowledge
-- **Wikivoyage integration**: ~350 cities seeded with travel knowledge
-- **Context-aware planning**: Uses destination knowledge to inform itineraries
-
-### Session Continuity
-- **Multi-turn conversations**: Follow-up messages inherit context
-- **Constraint updates**: Users can modify budget, dates, preferences mid-conversation
-
----
-
-## API Endpoints
+## API
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | Frontend UI |
 | GET | `/health` | Health check |
-| GET | `/api/team_info` | Team information |
-| GET | `/api/agent_info` | Agent description and examples |
+| GET | `/api/team_info` | Team and student details |
+| GET | `/api/agent_info` | Agent description, purpose, prompt template, examples with steps |
 | GET | `/api/model_architecture` | Architecture diagram (PNG) |
-| POST | `/api/execute` | Main endpoint — plan a trip |
+| POST | `/api/execute` | Run the agent; body `{"prompt": "..."}`; returns `status`, `error`, `response`, `steps` |
 
-### POST /api/execute
+**POST /api/execute** returns JSON with:
 
-**Request:**
-```json
-{
-  "prompt": "Beach vacation in June from New York",
-  "session_id": "optional-for-follow-ups"
-}
+- `status`: `"ok"` or `"error"`
+- `error`: `null` or a string
+- `response`: string (e.g. JSON of packages) or `null`
+- `steps`: array of `{ "module", "prompt", "response" }` for each LLM call
+
+---
+
+## Testing
+
+**Endpoint checks** (server must be running on port 8001):
+
+```bash
+uvicorn app.main:app --host 127.0.0.1 --port 8001 &
+python scripts/check_endpoints.py --base-url http://127.0.0.1:8001
 ```
 
-**Response (success):**
-```json
-{
-  "status": "ok",
-  "response": "{\"trip_packages\": [...]}",
-  "steps": [...],
-  "session_id": "uuid",
-  "llm_calls_used": 6,
-  "elapsed_seconds": 134.5
-}
+**Unit tests** (no server, no LLM):
+
+```bash
+python -m pytest tests/ -v
 ```
 
-**Response types:**
-- `status: "ok"` + `trip_packages` — successful planning
-- `status: "ok"` + `budget_infeasible` — budget too low (with alternatives)
-- `status: "ok"` + `clarification` — needs more information
-- `status: "error"` — system error
+**E2E smoke tests** (server must be running):
+
+```bash
+python scripts/test_e2e_smoke.py --base-url http://127.0.0.1:8001
+```
+
+**Tool checks** (no LLM, uses real APIs):
+
+```bash
+python scripts/test_tools_dry.py
+```
 
 ---
 
 ## Project Structure
 
 ```
-ai-travel-agent/
-├── app/
-│   ├── main.py                 # FastAPI app + Supervisor-driven loop
-│   ├── config.py               # Environment variables
-│   ├── agents/
-│   │   ├── supervisor.py       # Decision-making brain (multi-call)
-│   │   ├── planner.py          # Constraint extraction + task planning + RAG
-│   │   ├── executor.py         # Pure tool runner (no LLM)
-│   │   ├── synthesizer.py      # Trip package builder
-│   │   └── verifier.py         # Quality auditor (hybrid)
-│   ├── tools/
-│   │   ├── flights_tool.py     # Booking.com Flights API + sanity filter
-│   │   ├── hotels_tool.py      # Booking.com Hotels API
-│   │   ├── weather_tool.py     # Open-Meteo (forecast + climate normals)
-│   │   ├── poi_tool.py         # OpenTripMap POIs
-│   │   ├── rag_tool.py         # Pinecone/Wikivoyage search
-│   │   └── geocode.py          # City name → lat/lon
-│   ├── llm/
-│   │   └── client.py           # LLM wrapper with call cap enforcement
-│   ├── rag/
-│   │   └── retriever.py        # Pinecone query logic
-│   ├── models/
-│   │   ├── shared_state.py     # Central state dataclass
-│   │   └── schemas.py          # Pydantic API schemas
-│   └── utils/
-│       ├── cache.py            # Two-level cache (memory + Supabase)
-│       ├── trip_store.py       # Persist trips/sessions/logs to Supabase
-│       └── step_logger.py      # Tool invocation logger
-├── frontend/
-│   ├── index.html              # UI with live progress indicator
-│   ├── script.js               # Client-side logic
-│   └── style.css               # Modern responsive styles
-├── scripts/
-│   ├── seed_test_data.py       # Seed Pinecone with Wikivoyage data
-│   ├── test_e2e_smoke.py       # E2E smoke tests (10 scenarios)
-│   ├── run_verifier_tests.py   # Verifier stress tests
-│   ├── check_endpoints.py      # API endpoint validation
-│   └── run_tests.py            # Test runner utility
-├── tests/
-│   └── test_deterministic.py   # 89 unit tests (zero-LLM)
-├── .env                        # API keys (not committed)
-├── requirements.txt            # Python dependencies
-├── architecture.png            # System diagram
-├── ARCHITECTURE.md             # Detailed architecture documentation
-├── TESTING.md                  # Basic test checklist
-├── TESTING_EXTENDED.md         # Extended test scenarios
-├── TODO.md                     # Feature tracking
-└── README.md                   # This file
-```
-
----
-
-## Testing
-
-### Unit Tests (89 tests, zero LLM calls)
-
-```bash
-python -m pytest tests/ -v
-```
-
-Covers:
-- Feasibility checks (Gate B budget guard)
-- Rejection classification
-- Destination grouping and task splitting
-- Cache key generation
-- Flight sanity filtering
-- Verifier hard failure logic
-- Pre-synthesis consistency checks
-- Session continuity
-- Price cross-checking
-
-### E2E Smoke Tests
-
-```bash
-# Start the server first
-uvicorn app.main:app --host 127.0.0.1 --port 8001
-
-# Run all tests
-python scripts/test_e2e_smoke.py --base-url http://127.0.0.1:8001
-
-# Run specific test
-python scripts/test_e2e_smoke.py --test 1
-```
-
-**Test scenarios:**
-1. Beach vacation from NYC
-2. Europe trip with flexible dates
-3. Specific destination (Rome)
-4. Budget infeasibility detection
-5. RAG-influenced destinations
-6. Multi-traveler pricing
-7. Session continuity
-8. Off-topic request handling
-9. Family vacation (complex)
-10. Budget-tight scenario
-
----
-
-## Supabase Setup
-
-Create these tables in your Supabase project (SQL Editor):
-
-```sql
--- Tool result caching
-CREATE TABLE IF NOT EXISTS cache (
-  id BIGSERIAL PRIMARY KEY,
-  key TEXT UNIQUE NOT NULL,
-  value JSONB NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Completed trip storage
-CREATE TABLE IF NOT EXISTS trips (
-  id BIGSERIAL PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  session_id TEXT,
-  prompt TEXT,
-  constraints JSONB,
-  packages JSONB,
-  llm_calls_used INTEGER,
-  status TEXT DEFAULT 'approved'
-);
-
--- Session persistence
-CREATE TABLE IF NOT EXISTS sessions (
-  id BIGSERIAL PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  session_id TEXT,
-  prompt TEXT,
-  state_snapshot JSONB
-);
-
--- Execution audit trail
-CREATE TABLE IF NOT EXISTS execution_logs (
-  id BIGSERIAL PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  session_id TEXT,
-  round_num INTEGER,
-  action TEXT,
-  reason TEXT,
-  data_snapshot JSONB
-);
+app/
+├── main.py              # FastAPI app and Supervisor loop
+├── config.py            # Env and config
+├── agents/              # Supervisor, Planner, Executor, Synthesizer, Verifier
+├── tools/               # Flights, hotels, weather, POI, RAG, geocode
+├── llm/                 # LLM client and call cap
+├── rag/                 # Pinecone retriever
+├── models/              # SharedState, Pydantic schemas
+└── utils/               # Cache, trip store, step logger
+frontend/                # UI (HTML, CSS, JS)
+scripts/                 # seed_test_data, check_endpoints, test_e2e_smoke, etc.
+tests/                   # Unit tests (test_deterministic.py)
+architecture.png         # System diagram
+ARCHITECTURE.md          # Diagram (Mermaid) and component docs
 ```
 
 ---
 
 ## Configuration
 
-Create a `.env` file in the project root:
+Create `.env` in the project root:
 
 ```env
-# LLM Provider (Azure OpenAI via LLMod.ai or direct)
-LLM_API_KEY=your_api_key
+LLM_API_KEY=...
 LLM_BASE_URL=https://api.llmod.ai/v1
 LLM_MODEL=gpt-4o
 EMBEDDING_MODEL=text-embedding-3-small
 
-# Pinecone (RAG - Wikivoyage knowledge)
-PINECONE_API_KEY=your_pinecone_key
-PINECONE_ENVIRONMENT=your_pinecone_env
+PINECONE_API_KEY=...
+PINECONE_ENVIRONMENT=...
 PINECONE_INDEX_NAME=wikivoyage-index
 
-# Supabase (caching + persistence)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
 
-# External APIs
-RAPIDAPI_KEY=your_rapidapi_key           # For Booking.com flights/hotels
-OPENTRIPMAP_API_KEY=your_opentripmap_key # For POIs
+RAPIDAPI_KEY=...
+OPENTRIPMAP_API_KEY=...
 ```
 
-### Optional Configuration (in `app/config.py`)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LLM_CALL_CAP` | 12 | Max LLM calls per request |
-| `MAX_SUPERVISOR_ROUNDS` | 8 | Max supervisor iterations |
-| `DAILY_EXPENSES_ESTIMATE` | 50 | Default daily expense ($) |
-| `BUDGET_TOLERANCE` | 1.05 | Budget check tolerance (5%) |
+Supabase tables: `cache`, `trips`, `sessions`, `execution_logs` (see [ARCHITECTURE.md](ARCHITECTURE.md) or run the SQL from the Supabase dashboard).
 
 ---
 
-## What Makes This an Agent (Not Just a Workflow)
+## Features
 
-1. **Multi-round Supervisor (ReAct)**: Called 3+ times per request — Thought → Action → Observation cycles
-2. **Phased execution**: Searches destinations one at a time, observes results between phases
-3. **Adaptive decisions**: Can skip expensive destinations, pivot to cheaper ones based on observations
-4. **Per-destination reasoning**: Supervisor compares prices across destinations to make informed decisions
-5. **Scope guard**: Refuses non-travel requests politely
-6. **RAG grounding**: Uses Wikivoyage knowledge to inform destination choices
-7. **Budget-aware reasoning**: Compares prices to budget at every decision point
-8. **Self-healing**: On Verifier rejection (Reflection), loops back for delta replanning
-9. **Parallel tool execution**: Flight/hotel/weather/POI searches run concurrently within each phase
-10. **Session continuity**: Multi-turn conversations with context inheritance
+- **ReAct loop:** Supervisor runs multiple times per request (observe → decide → act).
+- **Phased execution:** One destination group at a time so the Supervisor can adapt.
+- **Budget gate:** Stops early if the trip is provably over budget (Gate B).
+- **RAG:** Wikivoyage-based destination knowledge via Pinecone.
+- **Session continuity:** Follow-up prompts keep context (constraints, previous packages).
+- **Scope guard:** Non-travel prompts get a polite redirect.
 
 ---
 
-## Example Prompts
+## Example prompts
 
-```
-"Beach vacation in June from New York"
-"4 days in Rome in September, budget $1500 from NYC"
-"Family trip to Barcelona, 5 adults, August 10-17 2026, budget $7000 from TLV"
-"Europe in May, best value for money, 1 week"
-"Trip to Tokyo for 2 weeks from New York, budget $3000"
-```
-
----
-
-## License
-
-MIT License - See LICENSE file for details.
+- "Beach vacation in June from New York"
+- "4 days in Rome in September, budget $1500 from NYC"
+- "Europe in May, best value, 1 week"
+- "Family trip to Barcelona, 5 adults, August 10–17 2026, budget $7000 from TLV"

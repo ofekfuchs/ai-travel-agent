@@ -20,10 +20,11 @@ Thumbs.db
 .vscode/
 *.code-workspace
 
-# Project-specific (local tracking files)
+# Project-specific (local tracking/generated files)
 .pinecone_uploaded.json
 pinecone_audit.json
 verifier_tests_result.txt
+test_runs/
 
 # Course materials
 *.pdf

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Check all required API endpoints (except POST /api/execute) against Course Project spec.
+"""Validate all API endpoints and response shapes.
 
-Read-only: calls GET /health, GET /api/team_info, GET /api/agent_info,
-GET /api/model_architecture, and GET / (frontend). Validates response shape
-against the PDF requirements and prints pass/fail per endpoint.
+Calls GET /health, GET /api/team_info, GET /api/agent_info,
+GET /api/model_architecture, GET / (frontend), and POST /api/execute.
+Verifies each response has the required keys and types; for /api/execute
+checks status, error, response, steps and that each step has module, prompt, response.
 
 Usage:
   python scripts/check_endpoints.py
@@ -30,7 +31,7 @@ TIMEOUT = 10
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Check API endpoints against course spec")
+    ap = argparse.ArgumentParser(description="Validate API endpoints and response shapes")
     ap.add_argument("--base-url", default=DEFAULT_BASE, help="Base URL of the running server")
     args = ap.parse_args()
     base = args.base_url.rstrip("/")
@@ -119,7 +120,7 @@ def main() -> int:
                         fail("/api/agent_info", f"prompt_examples[{i}].steps must be an array")
                         break
                 else:
-                    ok("/api/agent_info", f"description/purpose/template + {len(data['prompt_examples'])} example(s) with steps")
+                    ok("/api/agent_info", f"description, purpose, prompt_template, prompt_examples ({len(data['prompt_examples'])} item(s), each with prompt + full_response + steps)")
     except Exception as e:
         fail("/api/agent_info", str(e))
     print()
@@ -158,6 +159,43 @@ def main() -> int:
                 fail("GET /", "response too short or unrecognized")
     except Exception as e:
         fail("GET /", str(e))
+    print()
+
+    # ── POST /api/execute (response shape: status, error, response, steps) ──
+    print("POST /api/execute (shape check)")
+    try:
+        # Use off-topic prompt so agent returns quickly (scope guard)
+        r = httpx.post(
+            f"{base}/api/execute",
+            json={"prompt": "What is the capital of France?"},
+            timeout=60,
+        )
+        if r.status_code != 200:
+            fail("POST /api/execute", f"status {r.status_code}")
+        else:
+            data = r.json()
+            need = {"status", "error", "response", "steps"}
+            missing = need - set(data.keys())
+            if missing:
+                fail("POST /api/execute", f"missing keys: {missing}")
+            elif data["status"] not in ("ok", "error"):
+                fail("POST /api/execute", f"status must be 'ok' or 'error', got {data['status']!r}")
+            elif not isinstance(data["steps"], list):
+                fail("POST /api/execute", "steps must be an array")
+            else:
+                for i, step in enumerate(data["steps"]):
+                    if not isinstance(step, dict):
+                        fail("POST /api/execute", f"steps[{i}] must be an object")
+                        break
+                    need_step = {"module", "prompt", "response"}
+                    miss_step = need_step - set(step.keys())
+                    if miss_step:
+                        fail("POST /api/execute", f"steps[{i}] missing: {miss_step}")
+                        break
+                else:
+                    ok("POST /api/execute", f"status={data['status']!r}, steps={len(data['steps'])}")
+    except Exception as e:
+        fail("POST /api/execute", str(e))
     print()
 
     # ── Summary ─────────────────────────────────────────────────────────

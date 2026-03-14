@@ -83,47 +83,68 @@ async def get_team_info() -> TeamInfoResponse:
 
 @app.get("/api/agent_info", response_model=AgentInfoResponse)
 async def get_agent_info() -> AgentInfoResponse:
+    # Concrete example: real-looking steps and full_response as the agent actually returns
     example_steps = [
         Step(
             module="Supervisor",
-            prompt={"system": "(Supervisor system prompt)", "user": "User prompt + current state"},
-            response={"content": '{"next_action": "plan", "reason": "Origin and season provided, enough to plan."}'},
+            prompt={
+                "system": "You are the Supervisor — the autonomous decision-making brain of a travel planning agent...",
+                "user": "User prompt: Beach vacation in June from New York\nNo constraints extracted yet (first call).\nData collected so far: {\"rag_chunks\": 0, \"flights\": 0, \"hotels\": 0, \"weather\": 0, \"pois\": 0}\nLLM calls used: 0/12",
+            },
+            response={"content": '{"next_action": "plan", "reason": "Origin (New York) and season (June) provided, enough to create a task plan.", "clarification_question": null, "pivot_instructions": null}'},
         ),
         Step(
             module="Planner",
-            prompt={"system": "(Planner system prompt)", "user": "User prompt + RAG knowledge + constraints"},
-            response={"content": '{"constraints": {"origin": "New York", ...}, "tasks": [{"task": "search_flights", ...}]}'},
+            prompt={
+                "system": "You are the Planner of an autonomous travel-planning agent. You have TWO jobs in a single response: 1. Extract structured constraints...",
+                "user": "User prompt: Beach vacation in June from New York\nDestination knowledge from RAG (use to inform city choices):\n- Miami: Beaches, nightlife, June is warm...\n- San Juan: Caribbean, beaches...\nNothing collected yet.",
+            },
+            response={"content": '{"constraints": {"origin": "New York", "destinations": ["Miami", "San Juan"], "season": "June", "duration_days": 7}, "tasks": [{"task": "search_flights", "params": {"origin": "New York", "destination": "Miami", "date": "2026-06-15", "return_date": "2026-06-22"}, "destination_group": "Miami"}, {"task": "search_hotels", "params": {"destination": "Miami", "check_in": "2026-06-15", "check_out": "2026-06-22"}, "destination_group": "Miami"}]}'},
         ),
         Step(
             module="Supervisor",
-            prompt={"system": "(Supervisor system prompt)", "user": "State with partial data from Miami"},
-            response={"content": '{"next_action": "continue", "reason": "Only 1 destination searched, need more for comparison."}'},
+            prompt={
+                "system": "You are the Supervisor...",
+                "user": "Extracted constraints: {\"origin\": \"New York\", \"destinations\": [\"Miami\", \"San Juan\"]}\nData collected so far: {\"rag_chunks\": 5, \"flights\": 4, \"hotels\": 6, \"weather\": 1, \"pois\": 12}\nPer-destination observations:\n  Miami: flights=$320-$450 (4 options) hotels=$890-$1200 (6 options) min total=$1210 (60% of budget)\nRemaining destination groups in plan: [\"San Juan\"]\nLLM calls used: 2/12",
+            },
+            response={"content": '{"next_action": "continue", "reason": "Only Miami searched so far; one more destination (San Juan) will give better comparison.", "clarification_question": null, "pivot_instructions": null}'},
         ),
         Step(
             module="Supervisor",
-            prompt={"system": "(Supervisor system prompt)", "user": "State with data from Miami + San Juan"},
-            response={"content": '{"next_action": "synthesize", "reason": "2 destinations with data, enough to build packages."}'},
+            prompt={
+                "system": "You are the Supervisor...",
+                "user": "Data collected: flights=8, hotels=12, weather=2, pois=24\n  Miami: flights=$320-$450, hotels=$890-$1200\n  San Juan: flights=$280-$390, hotels=$720-$1100\nRemaining destination groups: []\nLLM calls used: 3/12",
+            },
+            response={"content": '{"next_action": "synthesize", "reason": "Two destinations with full data; enough to build tiered packages.", "clarification_question": null, "pivot_instructions": null}'},
         ),
         Step(
             module="Trip Synthesizer",
-            prompt={"system": "(Synthesizer system prompt)", "user": "All flight/hotel/weather/POI data"},
-            response={"content": '{"packages": [{"label": "Budget Pick", "destination": "Miami", ...}, ...]}'},
+            prompt={
+                "system": "You are the Trip Synthesizer. You receive REAL pricing data from tool APIs. Build 2-3 packages at different tiers...",
+                "user": "User request: Beach vacation in June from New York\nConstraints: {\"origin\": \"New York\", \"destinations\": [\"Miami\", \"San Juan\"], \"budget_total\": 2000}\n=== Miami ===\nFlights (4 options, top 5): [{\"price\": 320, \"destination_city\": \"Miami\"}...]\nHotels (6 options): [{\"name\": \"Hotel A\", \"total_price\": 890}...]\n=== San Juan ===\nFlights (4 options)...\nHotels (6 options)...",
+            },
+            response={"content": '{"packages": [{"label": "Budget Pick", "destination": "San Juan", "date_window": "2026-06-15 to 2026-06-22", "flights": {"outbound": {"origin": "JFK", "destination": "SJU", "airline": "JetBlue", "departure": "2026-06-15T07:00:00", "arrival": "2026-06-15T11:30:00", "stops": 0}, "return": {"origin": "SJU", "destination": "JFK"}, "total_flight_cost": 280}, "hotel": {"name": "Hotel Caribe", "total_cost": 720, "per_night": 103, "check_in": "2026-06-15", "check_out": "2026-06-22"}, "weather_summary": "Warm, 28-32°C, chance of afternoon showers.", "itinerary": [{"day": 1, "date": "2026-06-15", "activities": ["Arrive San Juan", "Check in", "Beach"]}], "cost_breakdown": {"flights": 280, "hotel": 720, "daily_expenses_estimate": 350, "total": 1350}, "rationale": "Best value for a week in the Caribbean from NYC.", "assumptions": ["Prices per person for flights; 1 room for hotel."]}]}'},
         ),
         Step(
             module="Verifier",
-            prompt={"system": "(Verifier system prompt)", "user": "Draft packages + constraints"},
-            response={"content": '{"decision": "APPROVE", "issues": [], "warnings": ["minor notes"]}'},
+            prompt={
+                "system": "You are a pragmatic quality auditor of a travel-planning agent...",
+                "user": "Draft plans: [{\"label\": \"Budget Pick\", \"destination\": \"San Juan\", \"cost_breakdown\": {\"total\": 1350}, ...}]\nUser constraints: {\"origin\": \"New York\", \"budget_total\": 2000}",
+            },
+            response={"content": '{"decision": "APPROVE", "issues": [], "warnings": ["Booking links are search URLs, not direct deeplinks."], "quality_notes": "Packages are grounded in provided data; totals within budget."}'},
         ),
     ]
     example = AgentInfoPromptExample(
         prompt="Beach vacation in June from New York",
         full_response=(
-            "The agent returns 2-3 tiered trip packages (Budget Pick, Best Value, Premium) "
-            "each containing: destination, flights with outbound/return details and booking URLs, "
-            "hotel with name/price/booking URL, weather summary, day-by-day itinerary, "
-            "cost breakdown, rationale, and assumptions. The Supervisor makes 3+ decisions "
-            "during execution, observing partial results and adapting (e.g., skipping "
-            "expensive destinations, collecting more data for comparison)."
+            '{"packages": [{"label": "Budget Pick", "destination": "San Juan", "date_window": "2026-06-15 to 2026-06-22", '
+            '"flights": {"outbound": {"origin": "JFK", "destination": "SJU", "airline": "JetBlue", "departure": "2026-06-15T07:00:00", "arrival": "2026-06-15T11:30:00", "stops": 0}, '
+            '"return": {"origin": "SJU", "destination": "JFK", "departure": "2026-06-22T14:00:00", "arrival": "2026-06-22T18:30:00"}, "total_flight_cost": 280}, '
+            '"hotel": {"name": "Hotel Caribe", "total_cost": 720, "per_night": 103, "check_in": "2026-06-15", "check_out": "2026-06-22", "booking_url": "https://www.booking.com/..."}, '
+            '"weather_summary": "Warm, 28-32°C. Chance of afternoon showers.", '
+            '"itinerary": [{"day": 1, "date": "2026-06-15", "activities": ["Arrive San Juan", "Check in", "Beach"]}, {"day": 2, "date": "2026-06-16", "activities": ["Old San Juan", "Fort"]}], '
+            '"cost_breakdown": {"flights": 280, "hotel": 720, "daily_expenses_estimate": 350, "total": 1350}, '
+            '"rationale": "Best value for a week in the Caribbean from NYC.", "assumptions": ["Prices per person for flights; 1 room."]}]}'
         ),
         steps=example_steps,
     )

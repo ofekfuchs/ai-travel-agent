@@ -4,6 +4,14 @@
 
 This document describes the architecture of an **autonomous AI Travel Agent** that uses a **Supervisor-driven ReAct pattern** to plan complete trip packages from free-form user requests.
 
+### Real architecture (as implemented)
+
+The diagrams and sections below match the codebase:
+
+- **RAG (Pinecone Wikivoyage):** The **Planner** queries RAG (e.g. prefetch via `search_destinations`) and stores results in **SharedState** as `destination_chunks`. The **Executor** can also run `rag_search` tasks that query RAG. The **Trip Synthesizer** does not call Pinecone; it uses **RAG chunks from SharedState** (`state.destination_chunks`) to ground itineraries in Wikivoyage knowledge.
+- **Supabase:** Primary persistence layer. Used for **cache** (tool results), **trips**, **sessions**, and **execution_logs**. The PNG diagram and Mermaid both show Supabase in the data layer; the README Mermaid is simplified but references it in the text.
+- **Flow:** Supervisor → Planner (plan/replan) → Executor (tasks) → tools and RAG; Gate B (budget) → Synthesizer → Verifier; SharedState is read/written by Planner, Executor, Synthesizer, and Verifier.
+
 ---
 
 ## Architecture Diagram
@@ -53,7 +61,7 @@ flowchart TB
     end
 
     subgraph Data_Layer["💾 Data Layer"]
-        SharedState[("📦 SharedState<br/>constraints, flights, hotels,<br/>weather, POIs, drafts")]
+        SharedState[("📦 SharedState<br/>constraints, flights, hotels,<br/>weather, POIs, RAG chunks, drafts")]
         Supabase[("🗄️ Supabase<br/>Cache | Trips | Sessions | Logs")]
     end
 
@@ -148,7 +156,7 @@ flowchart TB
 |--------|------|-------|-----------|
 | **Supervisor** | Autonomous decision-making brain. Called at every decision point to reason about state and choose next action. | THOUGHT | 1+ per request |
 | **Planner** | Extracts constraints from user prompt and generates executable task plan. Uses RAG for destination grounding. | PLAN | 1 per planning cycle |
-| **Trip Synthesizer** | Assembles tiered trip packages (Budget/Best Value/Premium) from collected tool data. | SYNTHESIS | 1 per synthesis |
+| **Trip Synthesizer** | Assembles tiered trip packages (Budget/Best Value/Premium) from collected tool data. Uses **RAG chunks from SharedState** (Wikivoyage) to ground itineraries; does not call Pinecone directly. | SYNTHESIS | 1 per synthesis |
 | **Verifier** | Audits packages with rule-based checks + LLM quality assessment. Can approve or reject. | REFLECTION | 1 per verification |
 
 ### Non-LLM Components

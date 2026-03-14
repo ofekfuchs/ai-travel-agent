@@ -174,10 +174,13 @@ flowchart TB
     Verifier -->|APPROVE| Response[/"Trip packages"/]
     Verifier -->|REJECT| Supervisor
     Response --> User
-    Planner <-.-> State[("SharedState")]
+    Planner <-.-> State[("SharedState\n+RAG chunks")]
     Executor <-.-> State
-    Synthesizer <-.-> State
+    Synthesizer <-.->|"uses RAG from state"| State
     Verifier <-.-> State
+    Executor -.-> Supabase["Supabase\nCache | Trips | Sessions | Logs"]
+    Flights -.-> Supabase
+    Hotels -.-> Supabase
 ```
 
 **Diagram (PNG):**
@@ -191,7 +194,7 @@ flowchart TB
 | Supervisor         | Decides next action from current state. |
 | Planner            | Extracts constraints and task list; can query RAG (Pinecone). |
 | Executor           | Runs tools (flights, hotels, weather, POIs) in parallel; no LLM. |
-| Trip Synthesizer   | Builds 1–3 packages from collected data. |
+| Trip Synthesizer   | Builds 1–3 packages from collected data; uses RAG chunks from SharedState for itinerary grounding. |
 | Verifier           | Validates packages (rules + LLM); approve or reject. |
 | Gate B             | Deterministic budget check before synthesis. |
 

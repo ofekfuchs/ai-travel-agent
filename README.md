@@ -160,8 +160,8 @@ flowchart TB
     Prompt --> Supervisor{{"Supervisor"}}
     Supervisor -->|plan/replan| Planner["Planner"]
     Supervisor -->|clarify| User
-    Supervisor -->|synthesize| GateB["Gate B\nBudget Check"]
-    Planner --> RAG["RAG\nPinecone"]
+    Supervisor -->|synthesize| GateB["Gate B<br/>Budget Check"]
+    Planner --> RAG["RAG<br/>Pinecone"]
     Planner -->|tasks| Executor["Executor"]
     Executor --> Flights["Flights API"]
     Executor --> Hotels["Hotels API"]
@@ -174,11 +174,11 @@ flowchart TB
     Verifier -->|APPROVE| Response[/"Trip packages"/]
     Verifier -->|REJECT| Supervisor
     Response --> User
-    Planner <-.-> State[("SharedState\n+RAG chunks")]
+    Planner <-.-> State[("SharedState<br/>+ RAG chunks")]
     Executor <-.-> State
     Synthesizer <-.->|"uses RAG from state"| State
     Verifier <-.-> State
-    Executor -.-> Supabase["Supabase\nCache | Trips | Sessions | Logs"]
+    Executor -.-> Supabase["Supabase<br/>Cache · Trips · Sessions · Logs"]
     Flights -.-> Supabase
     Hotels -.-> Supabase
 ```

@@ -1,12 +1,29 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
-.env
-.DS_Store
+*.pyo
 *.egg-info/
 dist/
 build/
-.pinecone_uploaded.json
+.pytest_cache/
+
+# Environment & Secrets
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
 .cursor/
-*.pdf
+.vscode/
+*.code-workspace
+
+# Project-specific (local tracking files)
+.pinecone_uploaded.json
+pinecone_audit.json
 verifier_tests_result.txt
+
+# Course materials
+*.pdf

@@ -24,9 +24,26 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 import httpx
+
+
+def normalize_to_ascii(text: str) -> str:
+    """Convert special characters to ASCII equivalents for Pinecone IDs.
+    
+    Examples: Düsseldorf -> dusseldorf, São Paulo -> sao_paulo, Curaçao -> curacao
+    """
+    # Normalize unicode characters (NFD decomposes accented characters)
+    normalized = unicodedata.normalize("NFD", text)
+    # Remove diacritical marks (combining characters)
+    ascii_text = "".join(c for c in normalized if unicodedata.category(c) != "Mn")
+    # Replace spaces with underscores and convert to lowercase
+    ascii_text = ascii_text.replace(" ", "_").lower()
+    # Remove any remaining non-ASCII characters
+    ascii_text = ascii_text.encode("ascii", "ignore").decode("ascii")
+    return ascii_text
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -41,33 +58,158 @@ TRACKING_FILE = Path(__file__).resolve().parent.parent / ".pinecone_uploaded.jso
 # ── Curated high-value city list ─────────────────────────────────────────
 # Criteria: major international airport, capital/high-tourism, multi-region,
 # mix of budget-friendly and premium destinations.
+# Target: ~350 cities for 80% Pareto coverage of travel queries.
 CURATED_CITIES = [
-    # ── Europe ──
-    "London", "Paris", "Berlin", "Rome", "Barcelona",
-    "Amsterdam", "Prague", "Vienna", "Lisbon", "Budapest",
-    "Athens", "Istanbul", "Dublin", "Edinburgh", "Copenhagen",
-    "Stockholm", "Brussels", "Zurich", "Warsaw", "Bucharest",
-    "Krakow", "Porto", "Florence", "Milan", "Munich",
-    "Nice", "Dubrovnik", "Reykjavik", "Helsinki", "Oslo",
-    # ── North America ──
-    "New York City", "Los Angeles", "Miami", "San Francisco", "Chicago",
-    "Washington, D.C.", "Boston", "Las Vegas", "New Orleans", "Toronto",
-    "Vancouver", "Montreal", "Mexico City", "Cancún",
-    # ── Central America & Caribbean ──
-    "San Juan", "Havana", "Nassau",
-    # ── South America ──
-    "Buenos Aires", "Rio de Janeiro", "Lima", "Bogotá", "Santiago",
-    "Medellín", "Cartagena",
-    # ── Asia ──
-    "Tokyo", "Bangkok", "Singapore", "Hong Kong", "Seoul",
-    "Taipei", "Kuala Lumpur", "Bali", "Hanoi", "Ho Chi Minh City",
-    "Delhi", "Mumbai", "Kyoto", "Osaka",
-    # ── Middle East ──
-    "Dubai", "Tel Aviv", "Amman", "Marrakech",
-    # ── Africa ──
-    "Cape Town", "Nairobi", "Cairo",
-    # ── Oceania ──
-    "Sydney", "Melbourne", "Auckland",
+    # ══════════════════════════════════════════════════════════════════════
+    # EUROPE (~100 cities) - Major capitals, tourist hubs, airport cities
+    # ══════════════════════════════════════════════════════════════════════
+    # Western Europe - Major capitals
+    "London", "Paris", "Berlin", "Rome", "Madrid",
+    "Amsterdam", "Brussels", "Vienna", "Zurich", "Geneva",
+    "Luxembourg City",
+    # UK & Ireland
+    "Edinburgh", "Dublin", "Glasgow", "Manchester", "Birmingham",
+    "Liverpool", "Belfast", "Cardiff", "Bristol", "Leeds",
+    # France
+    "Nice", "Lyon", "Marseille", "Bordeaux", "Toulouse",
+    "Strasbourg", "Nantes", "Montpellier", "Lille",
+    # Germany
+    "Munich", "Frankfurt", "Hamburg", "Cologne", "Düsseldorf",
+    "Stuttgart", "Dresden", "Leipzig", "Nuremberg",
+    # Italy
+    "Milan", "Florence", "Venice", "Naples", "Turin",
+    "Bologna", "Verona", "Palermo", "Genoa", "Pisa",
+    # Spain & Portugal
+    "Barcelona", "Lisbon", "Porto", "Seville", "Valencia",
+    "Málaga", "Bilbao", "Granada", "Alicante", "Palma de Mallorca",
+    # Scandinavia
+    "Stockholm", "Copenhagen", "Oslo", "Helsinki", "Reykjavik",
+    "Gothenburg", "Malmö", "Bergen", "Tampere",
+    # Central Europe
+    "Prague", "Budapest", "Warsaw", "Krakow", "Bratislava",
+    "Ljubljana", "Zagreb",
+    # Eastern Europe
+    "Bucharest", "Sofia", "Belgrade", "Kyiv", "Tallinn",
+    "Riga", "Vilnius", "Minsk", "Chisinau",
+    # Balkans & Greece
+    "Athens", "Thessaloniki", "Dubrovnik", "Split", "Sarajevo",
+    "Tirana", "Skopje", "Podgorica", "Pristina", "Santorini",
+    "Mykonos", "Rhodes", "Corfu", "Crete",
+    # Turkey
+    "Istanbul", "Ankara", "Antalya", "Izmir", "Cappadocia",
+    # Russia
+    "Moscow", "Saint Petersburg",
+    # Cyprus & Malta
+    "Nicosia", "Larnaca", "Paphos", "Valletta",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # NORTH AMERICA (~50 cities) - US, Canada, Mexico
+    # ══════════════════════════════════════════════════════════════════════
+    # US East Coast
+    "New York City", "Washington, D.C.", "Boston", "Philadelphia", "Miami",
+    "Orlando", "Tampa", "Fort Lauderdale", "Atlanta", "Charlotte",
+    "Baltimore", "Charleston",
+    # US West Coast
+    "Los Angeles", "San Francisco", "San Diego", "Seattle", "Portland",
+    "Las Vegas", "Phoenix", "Honolulu",
+    # US Central
+    "Chicago", "Denver", "Dallas", "Houston", "Austin",
+    "San Antonio", "Nashville", "New Orleans", "Minneapolis", "Detroit",
+    "St. Louis", "Kansas City", "Salt Lake City",
+    # Canada
+    "Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa",
+    "Quebec City", "Victoria", "Edmonton", "Halifax", "Winnipeg",
+    # Mexico
+    "Mexico City", "Cancún", "Guadalajara", "Puerto Vallarta", "Los Cabos",
+    "Playa del Carmen", "Oaxaca", "Monterrey", "Tijuana",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CARIBBEAN & CENTRAL AMERICA (~25 cities)
+    # ══════════════════════════════════════════════════════════════════════
+    "San Juan", "Havana", "Nassau", "Punta Cana", "Santo Domingo",
+    "Kingston", "Montego Bay", "Aruba", "Curaçao", "Barbados",
+    "Saint Lucia", "Cayman Islands", "Turks and Caicos", "Bermuda",
+    "Panama City", "San José", "Guatemala City", "Belize City",
+    "Tegucigalpa", "Managua", "San Salvador", "Roatán",
+    "Antigua Guatemala", "Cartagena",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SOUTH AMERICA (~25 cities)
+    # ══════════════════════════════════════════════════════════════════════
+    "Buenos Aires", "Rio de Janeiro", "São Paulo", "Lima", "Bogotá",
+    "Santiago", "Medellín", "Cusco", "Quito", "Montevideo",
+    "Cartagena", "Mendoza", "Salvador", "Brasília", "Florianópolis",
+    "Galápagos Islands", "La Paz", "Asunción", "Caracas", "Sucre",
+    "Machu Picchu", "Patagonia", "Iguazu Falls", "Bariloche", "Guayaquil",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # ASIA (~80 cities) - East, Southeast, South, Central
+    # ══════════════════════════════════════════════════════════════════════
+    # Japan
+    "Tokyo", "Kyoto", "Osaka", "Hiroshima", "Nara",
+    "Fukuoka", "Sapporo", "Nagoya", "Okinawa", "Yokohama",
+    # South Korea
+    "Seoul", "Busan", "Jeju Island", "Incheon",
+    # China
+    "Beijing", "Shanghai", "Hong Kong", "Macau", "Shenzhen",
+    "Guangzhou", "Chengdu", "Xi'an", "Hangzhou", "Guilin",
+    # Taiwan
+    "Taipei", "Kaohsiung", "Taichung",
+    # Southeast Asia - Thailand
+    "Bangkok", "Phuket", "Chiang Mai", "Krabi", "Koh Samui",
+    "Pattaya",
+    # Southeast Asia - Vietnam
+    "Hanoi", "Ho Chi Minh City", "Da Nang", "Hoi An", "Nha Trang",
+    "Ha Long Bay",
+    # Southeast Asia - Indonesia
+    "Bali", "Jakarta", "Yogyakarta", "Lombok", "Komodo",
+    # Southeast Asia - Other
+    "Singapore", "Kuala Lumpur", "Penang", "Langkawi", "Manila",
+    "Cebu", "Boracay", "Phnom Penh", "Siem Reap", "Luang Prabang",
+    "Vientiane", "Yangon",
+    # South Asia
+    "Delhi", "Mumbai", "Jaipur", "Agra", "Goa",
+    "Bangalore", "Kolkata", "Chennai", "Udaipur", "Varanasi",
+    "Kerala", "Kathmandu", "Colombo", "Dhaka", "Maldives",
+    # Central Asia
+    "Almaty", "Tashkent", "Samarkand", "Bishkek", "Tbilisi",
+    "Yerevan", "Baku",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # MIDDLE EAST (~25 cities)
+    # ══════════════════════════════════════════════════════════════════════
+    "Dubai", "Abu Dhabi", "Tel Aviv", "Jerusalem", "Amman",
+    "Petra", "Doha", "Muscat", "Kuwait City", "Bahrain",
+    "Riyadh", "Jeddah", "Beirut", "Aqaba", "Dead Sea",
+    "Eilat", "Haifa", "Sharjah", "Ras Al Khaimah",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # AFRICA (~30 cities)
+    # ══════════════════════════════════════════════════════════════════════
+    # North Africa
+    "Cairo", "Marrakech", "Casablanca", "Fes", "Tunis",
+    "Luxor", "Aswan", "Alexandria", "Tangier", "Agadir",
+    # East Africa
+    "Nairobi", "Zanzibar", "Dar es Salaam", "Addis Ababa", "Kigali",
+    "Kampala", "Seychelles", "Mauritius", "Madagascar",
+    # Southern Africa
+    "Cape Town", "Johannesburg", "Victoria Falls", "Kruger National Park",
+    "Windhoek", "Gaborone", "Maputo",
+    # West Africa
+    "Lagos", "Accra", "Dakar", "Abidjan",
+
+    # ══════════════════════════════════════════════════════════════════════
+    # OCEANIA (~20 cities)
+    # ══════════════════════════════════════════════════════════════════════
+    # Australia
+    "Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide",
+    "Gold Coast", "Cairns", "Darwin", "Hobart", "Canberra",
+    "Great Barrier Reef",
+    # New Zealand
+    "Auckland", "Wellington", "Queenstown", "Christchurch", "Rotorua",
+    # Pacific Islands
+    "Fiji", "Tahiti", "Bora Bora", "Samoa", "Vanuatu",
+    "New Caledonia", "Guam", "Palau",
 ]
 
 # Backward compatibility
@@ -111,7 +253,7 @@ def split_sections(title: str, raw_text: str) -> list[dict]:
     parts = re.split(r"^(==+)\s*(.+?)\s*\1\s*$", raw_text, flags=re.MULTILINE)
 
     sections: list[dict] = []
-    safe_title = title.replace(" ", "_").lower()
+    safe_title = normalize_to_ascii(title)
 
     if parts[0].strip():
         clean = strip_wiki_markup(parts[0])
@@ -133,7 +275,7 @@ def split_sections(title: str, raw_text: str) -> list[dict]:
         if heading in RELEVANT_SECTIONS:
             clean = strip_wiki_markup(body)
             if len(clean) > RAG_MIN_SECTION_CHARS:
-                section_id = f"{safe_title}::{heading.replace(' ', '_')}"
+                section_id = f"{safe_title}::{normalize_to_ascii(heading)}"
                 sections.append({
                     "id": section_id,
                     "title": title,

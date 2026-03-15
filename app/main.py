@@ -71,7 +71,7 @@ _session_memory: dict[str, dict] = {}
 async def get_team_info() -> TeamInfoResponse:
     return TeamInfoResponse(
         group_batch_order_number="3_11",
-        team_name="Ofek & Omri",
+        team_name="אופק עמרי ורות",
         students=[
             TeamInfoStudent(name="Ofek Fuchs", email="ofek.fuchs@campus.technion.ac.il"),
             TeamInfoStudent(name="Omri Lazover", email="omri.lazover@campus.technion.ac.il"),

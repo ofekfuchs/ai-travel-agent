@@ -34,6 +34,7 @@ from app.models.schemas import (
     AgentInfoResponse,
     ExecuteRequest,
     ExecuteResponse,
+    ExecuteResponsePublic,
     Step,
     TeamInfoResponse,
     TeamInfoStudent,
@@ -187,8 +188,7 @@ async def get_model_architecture() -> FileResponse:
 
 # ── POST /api/execute  (Supervisor loop) ───────────────────────────────────
 
-@app.post("/api/execute", response_model=ExecuteResponse)
-async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
+async def _execute_agent_internal(request: ExecuteRequest) -> ExecuteResponse:
     """Supervisor-driven agentic loop.
 
     The Supervisor is called at EVERY decision point.  It observes the
@@ -628,6 +628,25 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             response=None,
             steps=[Step(**s) for s in state.steps],
         )
+
+
+@app.post("/api/execute")
+async def execute_agent(request: ExecuteRequest) -> dict:
+    """Public /api/execute endpoint returning exactly the required schema.
+
+    Internally uses ExecuteResponse for full metadata, but only exposes:
+      - status
+      - error
+      - response
+      - steps
+    """
+    internal = await _execute_agent_internal(request)
+    return {
+        "status": internal.status,
+        "error": internal.error,
+        "response": internal.response,
+        "steps": internal.steps,
+    }
 
 
 _ALTERNATIVE_KEYWORDS = {

@@ -59,6 +59,23 @@ class ExecuteResponse(BaseModel):
     error: Optional[str] = None
     response: Optional[str] = None
     steps: List[Step] = Field(default_factory=list)
+    # Internal-only metadata; not required by the course spec but useful for logs.
     session_id: Optional[str] = None
     llm_calls_used: Optional[int] = None
     elapsed_seconds: Optional[float] = None
+
+
+class ExecuteResponsePublic(BaseModel):
+    """Minimal schema exposed by POST /api/execute for the grader.
+
+    Exactly matches the course requirements:
+      - status: "ok" or "error"
+      - error: null or human-readable message
+      - response: string or null
+      - steps: array of Step objects
+    """
+
+    status: Literal["ok", "error"]
+    error: Optional[str] = None
+    response: Optional[str] = None
+    steps: List[Step] = Field(default_factory=list)

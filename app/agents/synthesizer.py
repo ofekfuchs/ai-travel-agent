@@ -296,14 +296,17 @@ def _group_rag_by_destination(state: SharedState) -> dict[str, list[dict]]:
 
 
 def _group_data_by_destination(state: SharedState) -> dict[str, dict]:
-    """Group flights/hotels/weather/POIs by destination city.
+    """Group flights/hotels/weather/POIs by destination city and harmonize date ranges.
 
-    Returns {city_name: {"flights": [...], "hotels": [...], "weather": [...], "pois": [...]}}
-    ONLY includes destinations that have real flight data — destinations
-    with 0 flights are excluded to prevent fabricated drive/train packages.
+    Returns {city_name: {"flights": [...], "hotels": [...], "weather": [...], "pois": [...]}}.
+
+    IMPORTANT: For each destination we ONLY keep hotels/weather records whose
+    date ranges match one of the flight date windows for that destination.
+    This prevents mixing, for example, April flights with June hotels.
     """
     grouped: dict[str, dict] = {}
 
+    # First, group everything by destination as before.
     for f in state.flight_options:
         dest = f.get("destination_city") or f.get("destination", "")
         if not dest:
@@ -327,10 +330,56 @@ def _group_data_by_destination(state: SharedState) -> dict[str, dict]:
         if dest in grouped:
             grouped[dest]["pois"].append(p)
 
+    # Only keep destinations that actually have flights.
     grouped = {d: v for d, v in grouped.items() if v["flights"]}
 
     if not grouped:
         return {}
+
+    # For each destination, filter hotels/weather so their date ranges align
+    # with at least one of the flight date windows.
+    def _flight_range_key(f: dict) -> tuple[str, str]:
+        dep = (f.get("departure") or "")[:10]
+        ret = (f.get("return_departure") or "")[:10]
+        return dep, ret
+
+    def _hotel_range_key(h: dict) -> tuple[str, str]:
+        return h.get("check_in", ""), h.get("check_out", "")
+
+    def _weather_range_key(w: dict) -> tuple[str, str]:
+        # weather_tool stores "start"/"end" ISO dates for the requested window
+        return w.get("start", ""), w.get("end", "")
+
+    for dest, data in grouped.items():
+        flights = data.get("flights", [])
+        if not flights:
+            continue
+
+        flight_ranges = {
+            _flight_range_key(f)
+            for f in flights
+            if _flight_range_key(f)[0]  # must have a departure date
+        }
+
+        # If we couldn't infer any date windows from flights, leave data as-is.
+        if not flight_ranges:
+            continue
+
+        hotels = data.get("hotels", [])
+        aligned_hotels: list[dict] = []
+        for h in hotels:
+            h_key = _hotel_range_key(h)
+            if h_key in flight_ranges:
+                aligned_hotels.append(h)
+        data["hotels"] = aligned_hotels
+
+        weather_list = data.get("weather", [])
+        aligned_weather: list[dict] = []
+        for w in weather_list:
+            w_key = _weather_range_key(w)
+            if w_key in flight_ranges:
+                aligned_weather.append(w)
+        data["weather"] = aligned_weather
 
     return grouped
 

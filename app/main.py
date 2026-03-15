@@ -1037,12 +1037,41 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
     }
 
     _save_session_memory(state)
+
+    # Human-readable summary of why the Verifier rejected the plan.
+    issues = verdict.get("issues", [])
+    warnings = verdict.get("warnings", [])
+    if issues:
+        rejection_expl = (
+            "The quality Verifier rejected the draft packages because:\n- "
+            + "\n- ".join(str(iss) for iss in issues)
+        )
+    else:
+        rejection_expl = (
+            "The quality Verifier rejected the draft packages, but did not provide "
+            "specific issue messages. This usually means something about the plan "
+            "looked unsafe or inconsistent."
+        )
+
+    if warnings:
+        rejection_expl += (
+            "\n\nThe Verifier also raised these warnings (the plan might still be usable, "
+            "but you should double-check these points):\n- "
+            + "\n- ".join(str(w) for w in warnings)
+        )
+
+    rejection_expl += (
+        "\n\nBecause the LLM call budget for this request was exhausted, the agent "
+        "could not run another full repair-and-verify cycle, so it is returning "
+        "the last draft packages as a **best-effort** result together with this explanation."
+    )
     response_data = {
         "status": "best_effort",
         "packages": state.draft_plans if state.draft_plans else [],
-        "verifier_issues": verdict.get("issues", []),
-        "verifier_warnings": verdict.get("warnings", []),
+        "verifier_issues": issues,
+        "verifier_warnings": warnings,
         "repair_category": repair,
+        "explanation": rejection_expl,
         "question": question_map.get(repair, "Could you provide more details?"),
         "llm_calls_used": state.llm_call_count,
     }
@@ -1102,13 +1131,74 @@ def _build_final_response(state: SharedState) -> ExecuteResponse:
     )
 
 
+def _planner_call_count(state: SharedState) -> int:
+    """Count how many times the Planner LLM was invoked in this run."""
+    return sum(1 for s in state.steps if s.get("module") == "Planner")
+
+
 def _build_best_effort_response(state: SharedState, reason: str) -> ExecuteResponse:
     """Generic best-effort response when we can't complete the full loop."""
+    planning_attempts = _planner_call_count(state)
+    last_verdict = state.verifier_verdicts[-1] if state.verifier_verdicts else {}
+    verifier_issues = last_verdict.get("issues", [])
+    verifier_warnings = last_verdict.get("warnings", [])
+
+    # Build a short natural-language reasoning summary so the user can see
+    # *why* this is best-effort and how many times planning was attempted.
+    reasoning_lines: list[str] = []
+    if planning_attempts <= 1:
+        reasoning_lines.append(
+            "The agent ran one full planning cycle but could not complete the full "
+            "Supervisor → Plan → Execute → Synthesize → Verify loop."
+        )
+    else:
+        reasoning_lines.append(
+            f"The agent ran the Planner {planning_attempts} times to try to repair or "
+            "improve the trip plan, but still could not complete a fully approved loop."
+        )
+
+    if state.destination_search_state:
+        # Summarise destinations where repeated date variants produced no hotels,
+        # so the user can understand why re-planning did not help.
+        exhausted_summaries: list[str] = []
+        for dest, entry in state.destination_search_state.items():
+            empty_ranges = entry.get("hotel_empty_ranges", set())
+            tried = entry.get("date_ranges_tried", set())
+            if empty_ranges:
+                exhausted_summaries.append(
+                    f"{dest}: {len(empty_ranges)} date range(s) tried with no hotel availability"
+                    + (f" out of {len(tried)} total ranges tested" if tried else "")
+                )
+        if exhausted_summaries:
+            reasoning_lines.append(
+                "For some destinations, multiple date ranges were tried but hotels were "
+                "still unavailable within your budget:\n- "
+                + "\n- ".join(exhausted_summaries)
+            )
+
+    if verifier_issues:
+        reasoning_lines.append(
+            "The Verifier reviewed the last draft packages and flagged issues:\n- "
+            + "\n- ".join(str(iss) for iss in verifier_issues)
+        )
+    elif state.verifier_verdicts:
+        reasoning_lines.append(
+            "The Verifier reviewed the last draft packages but rejected them without "
+            "specific issue text. This usually indicates the plan looked unsafe or inconsistent."
+        )
+
+    reasoning_summary = " ".join(reasoning_lines) if reasoning_lines else reason
+
     if state.draft_plans:
         result = {
             "status": "best_effort",
             "packages": state.draft_plans,
             "note": reason,
+            "reasoning_summary": reasoning_summary,
+            "verifier_issues": verifier_issues,
+            "verifier_warnings": verifier_warnings,
+            "planning_attempts": planning_attempts,
+            "destination_search_history": state.destination_search_state,
             "llm_calls_used": state.llm_call_count,
         }
         formatted = json.dumps(result, indent=2, default=str)
@@ -1121,6 +1211,10 @@ def _build_best_effort_response(state: SharedState, reason: str) -> ExecuteRespo
         formatted = json.dumps({
             "status": "best_effort",
             "note": reason,
+            "verifier_issues": verifier_issues,
+            "verifier_warnings": verifier_warnings,
+            "planning_attempts": planning_attempts,
+            "destination_search_history": state.destination_search_state,
             "data_collected": data_summary,
             "llm_calls_used": state.llm_call_count,
         }, indent=2, default=str)

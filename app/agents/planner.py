@@ -196,8 +196,76 @@ def run_planner(state: SharedState, repair_category: str | None = None) -> list[
     except json.JSONDecodeError:
         task_list = []
 
+    # Ensure concrete dates on constraints and tasks so tools never see None.
+    _backfill_dates_on_tasks(state, task_list)
+
     state.task_list = task_list
     return task_list
+
+
+def _backfill_dates_on_tasks(state: SharedState, task_list: list[dict]) -> None:
+    """Deterministically fill in missing dates on constraints and tasks.
+
+    Some LLM responses may leave date fields as null/None even when duration
+    and other info are present. This helper:
+      1. Ensures state.constraints.start_date/end_date are set.
+      2. Propagates those dates into search_flights/search_hotels/get_weather
+         tasks that are missing or have falsy date fields.
+    """
+    from datetime import date as _date, timedelta as _timedelta
+
+    if not isinstance(task_list, list) or not task_list:
+        return
+
+    constraints = state.constraints or {}
+    start = constraints.get("start_date")
+    end = constraints.get("end_date")
+    duration = constraints.get("duration_days") or 5
+
+    # If dates are missing, pick a concrete window based on today's date.
+    if not start or not end:
+        try:
+            base = _date.today() + _timedelta(days=60)
+        except Exception:
+            base = _date.today()
+        try:
+            days = int(duration) if int(duration) > 0 else 5
+        except Exception:
+            days = 5
+        start_dt = base
+        end_dt = base + _timedelta(days=days)
+        start = start_dt.isoformat()
+        end = end_dt.isoformat()
+        constraints["start_date"] = start
+        constraints["end_date"] = end
+        state.constraints = constraints
+
+    # Propagate into tasks where dates are missing/None/empty.
+    for task in task_list:
+        if not isinstance(task, dict):
+            continue
+        params = task.get("params") or {}
+        ttype = task.get("task")
+
+        if ttype == "search_flights":
+            if not params.get("date"):
+                params["date"] = start
+            if params.get("return_date") in (None, "", 0):
+                params["return_date"] = end
+
+        elif ttype == "search_hotels":
+            if not params.get("check_in"):
+                params["check_in"] = start
+            if not params.get("check_out"):
+                params["check_out"] = end
+
+        elif ttype == "get_weather":
+            if not params.get("start_date"):
+                params["start_date"] = start
+            if not params.get("end_date"):
+                params["end_date"] = end
+
+        task["params"] = params
 
 
 def _prefetch_rag(state: SharedState) -> None:

@@ -39,6 +39,17 @@ class SharedState:
     weather_context: list[dict] = field(default_factory=list)
     poi_list: list[dict] = field(default_factory=list)
 
+    # Per-destination search history (in-memory only, not persisted).
+    # Example shape:
+    # {
+    #   "Miami": {
+    #       "date_ranges_tried": {"2026-04-15:2026-04-20", "2026-04-20:2026-04-25"},
+    #       "hotel_empty_ranges": {"2026-04-15:2026-04-20"},
+    #       "flight_empty_ranges": set(),
+    #   },
+    # }
+    destination_search_state: dict = field(default_factory=dict)
+
     # -- Synthesiser output ---------------------------------------------------
     draft_plans: list[dict] = field(default_factory=list)
 

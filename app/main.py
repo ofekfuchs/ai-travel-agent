@@ -270,6 +270,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             ]
 
         t_start = time.time()
+        consecutive_empty_hotel_rounds = 0  # stop re-planning when hotels keep returning empty
 
         for round_num in range(MAX_SUPERVISOR_ROUNDS):
             print(f"\n{'='*60}", flush=True)
@@ -283,6 +284,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             # Supervisor and go straight to synthesis.
             remaining = state.remaining_llm_calls()
             has_data = bool(state.flight_options and state.hotel_options)
+            # If we're low on budget but have data, force synthesis.
             if remaining <= 2 and has_data and not state.draft_plans:
                 print(f"  BUDGET GUARD: {remaining} calls left with data ready "
                       f"-- forcing synthesize", flush=True)
@@ -291,8 +293,46 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                 decision = {"next_action": action, "reason": reason}
             elif remaining <= 0:
                 print("  LLM cap reached -- returning best-effort", flush=True)
+                _save_session_memory(state)  # so follow-ups keep origin/constraints
                 return _with_metadata(
                     _build_best_effort_response(state, "LLM budget exhausted."),
+                    state, t_start)
+            else:
+                # Heuristic: if we have repeatedly tried multiple date ranges for the same
+                # destination and always received empty hotel results, stop re-planning and
+                # return a grounded best-effort message instead of looping.
+                exhausted_dest, info = _find_exhausted_destination(state)
+                if exhausted_dest and info:
+                    tried_ranges = ", ".join(info["tried_ranges"])
+                    print(
+                        "  STOP: flights found but hotels empty for multiple date ranges "
+                        f"for {exhausted_dest} -- returning best-effort", flush=True
+                    )
+                    _save_session_memory(state)
+                    note = (
+                        f"We found flights for {exhausted_dest} but could not find hotel "
+                        f"availability in your budget for the date ranges we tried "
+                        f"({tried_ranges}). Try different dates, a different destination, "
+                        "or adjust your budget."
+                    )
+                    return _with_metadata(
+                        _build_best_effort_response(state, note),
+                        state,
+                        t_start,
+                    )
+            if (state.flight_options and not state.hotel_options
+                    and consecutive_empty_hotel_rounds >= 2):
+                # Backwards-compatible guard: if flights exist but hotels have been empty
+                # for several supervisor cycles (even without rich per-destination state),
+                # fall back to a simpler best-effort message.
+                print("  STOP: flights found but hotels empty for 2+ rounds "
+                      "-- returning best-effort", flush=True)
+                _save_session_memory(state)
+                return _with_metadata(
+                    _build_best_effort_response(
+                        state,
+                        "We found flights but could not find hotel availability for your dates/destination. "
+                        "Try different dates or another destination."),
                     state, t_start)
             else:
                 decision = run_supervisor(state)
@@ -396,10 +436,18 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     all_first = general_tasks + first_batch
 
                     t2 = time.time()
+                    hotel_count_before = len(state.hotel_options)
+                    before_counts = _count_options_for_destination(state, first_dest)
                     print(f"  Executor Phase 1: '{first_dest}' ({len(all_first)} tasks) ...", flush=True)
                     run_executor(state, all_first)
                     print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
                     _print_data_summary(state)
+                    _record_destination_attempts(state, first_dest, all_first, before_counts)
+                    if any(t.get("task") == "search_hotels" for t in all_first):
+                        if len(state.hotel_options) <= hotel_count_before:
+                            consecutive_empty_hotel_rounds += 1
+                        else:
+                            consecutive_empty_hotel_rounds = 0
 
                     # Early feasibility check to avoid wasting LLM calls
                     early_feasibility = _feasibility_check(state)
@@ -407,6 +455,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                         print(f"  EARLY GATE B: budget infeasible after Phase 1 "
                               f"(${early_feasibility['lower_bound']:.0f} > "
                               f"${early_feasibility['budget']:.0f})", flush=True)
+                        _save_session_memory(state)
                         return _with_metadata(
                             _build_gate_b_response(state, early_feasibility), state, t_start)
 
@@ -430,6 +479,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                         print(f"  EARLY GATE B: budget infeasible "
                               f"(${early_feasibility['lower_bound']:.0f} > "
                               f"${early_feasibility['budget']:.0f})", flush=True)
+                        _save_session_memory(state)
                         return _with_metadata(
                             _build_gate_b_response(state, early_feasibility), state, t_start)
 
@@ -448,10 +498,18 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     batch = task_map.get(next_dest, [])
 
                     t2 = time.time()
+                    hotel_count_before = len(state.hotel_options)
+                    before_counts = _count_options_for_destination(state, next_dest)
                     print(f"  Executor Phase N: '{next_dest}' ({len(batch)} tasks) ...", flush=True)
                     run_executor(state, batch)
                     print(f"    -> done ({time.time()-t2:.1f}s)", flush=True)
                     _print_data_summary(state)
+                    _record_destination_attempts(state, next_dest, batch, before_counts)
+                    if any(t.get("task") == "search_hotels" for t in batch):
+                        if len(state.hotel_options) <= hotel_count_before:
+                            consecutive_empty_hotel_rounds += 1
+                        else:
+                            consecutive_empty_hotel_rounds = 0
 
                     # Early feasibility check to avoid wasting LLM calls
                     early_feasibility = _feasibility_check(state)
@@ -459,6 +517,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                         print(f"  EARLY GATE B: budget infeasible after Phase N "
                               f"(${early_feasibility['lower_bound']:.0f} > "
                               f"${early_feasibility['budget']:.0f})", flush=True)
+                        _save_session_memory(state)
                         return _with_metadata(
                             _build_gate_b_response(state, early_feasibility), state, t_start)
 
@@ -475,6 +534,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             if action == "synthesize":
                 if not state.flight_options and not state.hotel_options:
                     print(f"  NO PRICING DATA -- cannot synthesize", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_no_data_response(state), state, t_start)
 
@@ -482,6 +542,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                 if feasibility:
                     print(f"  GATE B: budget infeasible (${feasibility['lower_bound']:.0f} "
                           f"> ${feasibility['budget']:.0f})", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_gate_b_response(state, feasibility), state, t_start)
 
@@ -491,10 +552,12 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                     print(f"  GATE C: data consistency issues", flush=True)
                     for iss in consistency_issues:
                         print(f"    ! {iss}", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_no_data_response(state), state, t_start)
 
                 if not state.can_call_llm():
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_best_effort_response(state, "LLM budget exhausted."),
                         state, t_start)
@@ -509,6 +572,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                 # Verify
                 if not state.can_call_llm():
                     print("  No budget for Verifier -- returning packages as-is", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_final_response(state), state, t_start)
 
@@ -526,12 +590,14 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
 
                 if vdecision == "APPROVE":
                     print(f"\n  APPROVED in {time.time()-t_start:.1f}s total", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_final_response(state), state, t_start)
 
                 # Rejected -- loop back to Supervisor to decide replan
                 if not state.can_call_llm():
                     print(f"  REJECTED, no LLM budget for replan -- best-effort", flush=True)
+                    _save_session_memory(state)
                     repair = _classify_rejection(verdict)
                     return _with_metadata(
                         _build_rejection_response(state, verdict, repair),
@@ -542,12 +608,14 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
 
         # Exhausted all rounds
         print(f"  Max supervisor rounds reached -- returning best-effort", flush=True)
+        _save_session_memory(state)
         return _with_metadata(
             _build_best_effort_response(state, "Agent loop exhausted."),
             state, t_start)
 
     except LLMCapReached as exc:
         print(f"\n  LLM CAP REACHED (safety net): {exc}", flush=True)
+        _save_session_memory(state)  # so follow-ups keep origin/destinations/constraints
         return _with_metadata(
             _build_best_effort_response(state, str(exc)), state, t_start)
 
@@ -588,6 +656,96 @@ def _print_data_summary(state: SharedState) -> None:
     print(f"    data: flights={len(state.flight_options)} "
           f"hotels={len(state.hotel_options)} weather={len(state.weather_context)} "
           f"POIs={len(state.poi_list)} RAG={len(state.destination_chunks)}", flush=True)
+
+
+def _count_options_for_destination(state: SharedState, destination: str) -> dict[str, int]:
+    """Return counts of flights/hotels currently stored for a given destination city."""
+    dest_norm = (destination or "").strip().lower()
+    flights = sum(
+        1
+        for f in state.flight_options
+        if (f.get("destination_city") or f.get("destination") or "").strip().lower() == dest_norm
+    )
+    hotels = sum(
+        1
+        for h in state.hotel_options
+        if (h.get("destination_city") or h.get("city") or "").strip().lower() == dest_norm
+    )
+    return {"flights": flights, "hotels": hotels}
+
+
+def _record_destination_attempts(
+    state: SharedState,
+    destination: str,
+    tasks: list[dict],
+    before_counts: dict[str, int],
+) -> None:
+    """Update in-memory search history for a destination after executing tasks.
+
+    Tracks which date ranges were attempted and whether flights/hotels came
+    back empty for those ranges. This is used to justify early best-effort exits
+    after multiple failed attempts for the same destination.
+    """
+    dest_key = (destination or "").strip()
+    if not dest_key:
+        return
+
+    after_counts = _count_options_for_destination(state, dest_key)
+
+    entry = state.destination_search_state.setdefault(
+        dest_key,
+        {
+            "date_ranges_tried": set(),
+            "hotel_empty_ranges": set(),
+            "flight_empty_ranges": set(),
+        },
+    )
+
+    for t in tasks:
+        params = t.get("params") or {}
+        task_type = t.get("task")
+
+        if task_type == "search_hotels":
+            ci = params.get("check_in")
+            co = params.get("check_out")
+            key = f"{ci}:{co}"
+            entry["date_ranges_tried"].add(key)
+            if after_counts["hotels"] <= before_counts.get("hotels", 0):
+                entry["hotel_empty_ranges"].add(key)
+
+        if task_type == "search_flights":
+            dt = params.get("date")
+            rd = params.get("return_date")
+            key = f"{dt}:{rd}"
+            entry["date_ranges_tried"].add(key)
+            if after_counts["flights"] <= before_counts.get("flights", 0):
+                entry["flight_empty_ranges"].add(key)
+
+
+def _find_exhausted_destination(state: SharedState, max_date_variants: int = 3) -> tuple[str, dict] | tuple[None, None]:
+    """Return a destination whose flexible date search space appears exhausted.
+
+    Heuristic: a destination is considered 'exhausted' if:
+      - At least `max_date_variants` distinct date ranges were tried, AND
+      - All of those ranges produced no hotels, AND
+      - At least one flight option exists for that destination (so the route is viable).
+    """
+    for dest, entry in state.destination_search_state.items():
+        tried = entry.get("date_ranges_tried", set())
+        hotel_empty = entry.get("hotel_empty_ranges", set())
+        if not tried:
+            continue
+        if len(hotel_empty) < max_date_variants:
+            continue
+
+        counts = _count_options_for_destination(state, dest)
+        if counts["flights"] > 0 and counts["hotels"] == 0:
+            return dest, {
+                "tried_ranges": sorted(hotel_empty),
+                "attempt_count": len(hotel_empty),
+            }
+
+    return None, None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -883,6 +1041,7 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
         "status": "best_effort",
         "packages": state.draft_plans if state.draft_plans else [],
         "verifier_issues": verdict.get("issues", []),
+        "verifier_warnings": verdict.get("warnings", []),
         "repair_category": repair,
         "question": question_map.get(repair, "Could you provide more details?"),
         "llm_calls_used": state.llm_call_count,

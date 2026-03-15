@@ -281,6 +281,17 @@ function renderResponse(responseStr) {
     return;
   }
 
+  if (parsed.status === "best_effort") {
+    if (parsed.packages && Array.isArray(parsed.packages) && parsed.packages.length > 0 && parsed.packages[0].destination) {
+      const warning = { issues: parsed.verifier_issues || [], question: parsed.question || "", category: parsed.repair_category || "", note: parsed.note };
+      renderPackages(parsed.packages, warning);
+    } else {
+      renderBestEffort(parsed);
+      promptEl.placeholder = "Try different dates, origin, or destination...";
+    }
+    return;
+  }
+
   let packages = null;
   let warning  = null;
 
@@ -288,19 +299,17 @@ function renderResponse(responseStr) {
     packages = parsed;
   } else if (parsed.packages && Array.isArray(parsed.packages)) {
     packages = parsed.packages;
-    if (parsed.status === "best_effort") {
-      warning = {
-        issues: parsed.verifier_issues || [],
-        question: parsed.question || "",
-        category: parsed.repair_category || "",
-      };
-    }
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
     renderPackages(packages, warning);
   } else {
-    addAgentMessage(`<p>${esc(responseStr)}</p>`);
+    // Never show raw JSON: if we parsed an object but didn't handle it, show a safe message
+    if (parsed && typeof parsed === "object") {
+      addAgentMessage("<p>We couldn't put together a complete trip this time. Try different dates or destinations.</p>");
+    } else {
+      addAgentMessage(`<p>${esc(responseStr)}</p>`);
+    }
   }
 }
 
@@ -401,6 +410,38 @@ function renderBudgetInfeasible(data) {
   addAgentMessage(html);
 }
 
+/* ── Best Effort (e.g. LLM budget exhausted) ───────────────────────────── */
+
+function renderBestEffort(data) {
+  const note = data.note || "The agent could not complete a full trip plan.";
+  const collected = data.data_collected || {};
+  const flights = collected.flights_found ?? 0;
+  const hotels = collected.hotels_found ?? 0;
+  const pois = collected.pois_found ?? 0;
+
+  const parts = [];
+  if (flights === 0) {
+    parts.push("No flights were found for your route or dates.");
+  } else {
+    parts.push(`${flights} flight option${flights !== 1 ? "s" : ""} found.`);
+  }
+  if (hotels > 0 || pois > 0) {
+    parts.push(` ${hotels} hotel${hotels !== 1 ? "s" : ""}, ${pois} POI${pois !== 1 ? "s" : ""}.`);
+  }
+
+  let html = `<div class="status-card nodata-card">
+    <div class="status-icon">⏱️</div>
+    <h3>Partial result</h3>
+    <p class="status-message">${esc(note)}</p>
+    <div class="status-details">
+      <p>${esc(parts.join(""))}</p>
+      <p>Try different dates, origin, or destination — or simplify your request.</p>
+    </div>
+  </div>`;
+
+  addAgentMessage(html);
+}
+
 /* ── No Pricing Data ──────────────────────────────────────────────────── */
 
 function renderNoPricingData(data) {
@@ -413,7 +454,7 @@ function renderNoPricingData(data) {
     <h3>No Pricing Data Found</h3>
     <p class="status-message">${esc(data.message || "Could not find flight or hotel pricing.")}</p>
     <div class="status-details">
-      <p>LLM calls used: ${llmCalls}/8</p>
+      <p>LLM calls used: ${llmCalls}/12</p>
       ${ragCount ? `<p>Destination knowledge found: ${ragCount} chunks</p>` : ""}
       ${constraints.destinations ? `<p>Searched destinations: ${esc(constraints.destinations.join(", "))}</p>` : ""}
     </div>
@@ -685,7 +726,7 @@ function addStepsSection(steps, llmCalls, elapsedSec) {
   const supervisorCount = infos.filter(s => s.role === "thought").length;
 
   const metaParts = [`${steps.length} steps`, `${supervisorCount} reasoning cycles`];
-  if (llmCalls != null) metaParts.push(`${llmCalls}/8 LLM calls`);
+  if (llmCalls != null) metaParts.push(`${llmCalls}/12 LLM calls`);
   if (elapsedSec != null) metaParts.push(`${elapsedSec}s`);
 
   const wrapper = document.createElement("div");

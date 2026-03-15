@@ -138,7 +138,9 @@ def search_hotels(
 
         options = _parse_hotel_results(data, check_in, check_out, destination, adults=adults)
         state.hotel_options.extend(options)
-        cache_set(ck, {"options": options})
+        # Only cache when we have results so a later retry can hit the API again
+        if options:
+            cache_set(ck, {"options": options})
 
         log_tool_call(state, "Executor", "hotels_search", params,
                       {"count": len(options), "resolved_dest_id": dest_id})

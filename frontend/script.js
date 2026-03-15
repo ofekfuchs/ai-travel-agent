@@ -59,16 +59,18 @@ sendBtn.addEventListener("click", async () => {
     const data = await res.json();
     stopProgress();
 
-    if (data.session_id) currentSessionId = data.session_id;
+    // session_id may be in steps (clarification flow) since API returns only status, error, response, steps
+    const sessionIdFromSteps = extractSessionIdFromSteps(data.steps);
+    if (sessionIdFromSteps) currentSessionId = sessionIdFromSteps;
 
     if (data.status === "error") {
       addAgentMessage(`<div class="error-text">${esc(data.error || "Unknown error")}</div>`);
     } else {
-      renderResponse(data.response);
+      renderResponse(data.response, data.steps);
     }
 
     if (data.steps && data.steps.length > 0) {
-      addStepsSection(data.steps, data.llm_calls_used, data.elapsed_seconds);
+      addStepsSection(data.steps);
     }
   } catch (err) {
     stopProgress();
@@ -247,69 +249,73 @@ function scrollToBottom() {
 
 /* ═══════════════════════════════════════════════════════════════════════
    RESPONSE RENDERING
+   API returns: response = human-readable string; packages in Trip Synthesizer step
    ═══════════════════════════════════════════════════════════════════════ */
 
-function renderResponse(responseStr) {
+/** Extract session_id from any step's response (for clarification / multi-turn). */
+function extractSessionIdFromSteps(steps) {
+  if (!steps || !Array.isArray(steps)) return null;
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const r = steps[i]?.response;
+    if (r && typeof r === "object" && r.session_id) return r.session_id;
+  }
+  return null;
+}
+
+/** Extract packages from Trip Synthesizer step for GUI card rendering. */
+function extractPackagesFromSteps(steps) {
+  if (!steps || !Array.isArray(steps)) return null;
+  for (let i = 0; i < steps.length; i++) {
+    if ((steps[i]?.module || "").toLowerCase().includes("synthesizer") ||
+        (steps[i]?.module || "").toLowerCase().includes("trip")) {
+      const content = steps[i]?.response?.content ?? steps[i]?.response?.text ?? "";
+      if (!content) continue;
+      const parsed = tryParseJSON(typeof content === "string" ? content : String(content));
+      if (parsed && Array.isArray(parsed.packages) && parsed.packages.length > 0) {
+        return parsed.packages;
+      }
+    }
+  }
+  return null;
+}
+
+/** Check if last Supervisor step asked for clarification. */
+function isClarificationResponse(steps) {
+  if (!steps || steps.length === 0) return false;
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const mod = (steps[i]?.module || "").toLowerCase();
+    if (mod === "supervisor") {
+      const content = steps[i]?.response?.content ?? "";
+      const parsed = tryParseJSON(content);
+      return parsed && parsed.next_action === "ask_clarification";
+    }
+  }
+  return false;
+}
+
+function renderResponse(responseStr, steps) {
   if (!responseStr) {
     addAgentMessage(`<p>No response received.</p>`);
     return;
   }
 
-  let parsed = null;
-  try { parsed = JSON.parse(responseStr); } catch { /* not JSON */ }
+  const packages = extractPackagesFromSteps(steps);
+  const isClarification = isClarificationResponse(steps);
 
-  if (!parsed) {
-    addAgentMessage(`<p>${esc(responseStr)}</p>`);
+  if (isClarification) {
+    renderClarification(responseStr);
+    promptEl.placeholder = "Answer the question above to continue...";
     return;
-  }
-
-  if (parsed.type === "clarification") {
-    currentSessionId = parsed.session_id || null;
-    renderClarification(parsed.message || responseStr);
-    return;
-  }
-
-  if (parsed.status === "budget_infeasible") {
-    renderBudgetInfeasible(parsed);
-    promptEl.placeholder = "Adjust your preferences to continue...";
-    return;
-  }
-
-  if (parsed.status === "no_pricing_data") {
-    renderNoPricingData(parsed);
-    promptEl.placeholder = "Try different dates or destinations...";
-    return;
-  }
-
-  if (parsed.status === "best_effort") {
-    if (parsed.packages && Array.isArray(parsed.packages) && parsed.packages.length > 0 && parsed.packages[0].destination) {
-      const warning = { issues: parsed.verifier_issues || [], question: parsed.question || "", category: parsed.repair_category || "", note: parsed.note };
-      renderPackages(parsed.packages, warning);
-    } else {
-      renderBestEffort(parsed);
-      promptEl.placeholder = "Try different dates, origin, or destination...";
-    }
-    return;
-  }
-
-  let packages = null;
-  let warning  = null;
-
-  if (Array.isArray(parsed)) {
-    packages = parsed;
-  } else if (parsed.packages && Array.isArray(parsed.packages)) {
-    packages = parsed.packages;
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
-    renderPackages(packages, warning);
-  } else {
-    // Never show raw JSON: if we parsed an object but didn't handle it, show a safe message
-    if (parsed && typeof parsed === "object") {
-      addAgentMessage("<p>We couldn't put together a complete trip this time. Try different dates or destinations.</p>");
-    } else {
-      addAgentMessage(`<p>${esc(responseStr)}</p>`);
-    }
+    renderPackages(packages, null, responseStr);
+    return;
+  }
+
+  addAgentMessage(`<p>${esc(responseStr).replace(/\n/g, "<br>")}</p>`);
+  if (!packages || packages.length === 0) {
+    promptEl.placeholder = "Try different dates, origin, or destination...";
   }
 }
 
@@ -465,10 +471,11 @@ function renderNoPricingData(data) {
 
 /* ── Packages ─────────────────────────────────────────────────────────── */
 
-function renderPackages(packages, warning) {
-  addAgentMessage(
-    `<p>I found <strong>${packages.length} trip package${packages.length > 1 ? "s" : ""}</strong> for you! Compare the options below.</p>`
-  );
+function renderPackages(packages, warning, summaryText) {
+  const intro = summaryText
+    ? `<p>${esc(summaryText).replace(/\n/g, "<br>")}</p>`
+    : `<p>I found <strong>${packages.length} trip package${packages.length > 1 ? "s" : ""}</strong> for you! Compare the options below.</p>`;
+  addAgentMessage(intro);
 
   const wrapper = document.createElement("div");
   wrapper.className = "packages-wrapper";
@@ -721,13 +728,11 @@ function formatDateWindow(dw) {
    EXECUTION TRACE (ReAct-style)
    ═══════════════════════════════════════════════════════════════════════ */
 
-function addStepsSection(steps, llmCalls, elapsedSec) {
+function addStepsSection(steps) {
   const infos = steps.map(classifyStep);
   const supervisorCount = infos.filter(s => s.role === "thought").length;
 
   const metaParts = [`${steps.length} steps`, `${supervisorCount} reasoning cycles`];
-  if (llmCalls != null) metaParts.push(`${llmCalls}/12 LLM calls`);
-  if (elapsedSec != null) metaParts.push(`${elapsedSec}s`);
 
   const wrapper = document.createElement("div");
   wrapper.className = "trace-wrapper";

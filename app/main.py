@@ -138,14 +138,11 @@ async def get_agent_info() -> AgentInfoResponse:
     example = AgentInfoPromptExample(
         prompt="Beach vacation in June from New York",
         full_response=(
-            '{"packages": [{"label": "Budget Pick", "destination": "San Juan", "date_window": "2026-06-15 to 2026-06-22", '
-            '"flights": {"outbound": {"origin": "JFK", "destination": "SJU", "airline": "JetBlue", "departure": "2026-06-15T07:00:00", "arrival": "2026-06-15T11:30:00", "stops": 0}, '
-            '"return": {"origin": "SJU", "destination": "JFK", "departure": "2026-06-22T14:00:00", "arrival": "2026-06-22T18:30:00"}, "total_flight_cost": 280}, '
-            '"hotel": {"name": "Hotel Caribe", "total_cost": 720, "per_night": 103, "check_in": "2026-06-15", "check_out": "2026-06-22", "booking_url": "https://www.booking.com/..."}, '
-            '"weather_summary": "Warm, 28-32°C. Chance of afternoon showers.", '
-            '"itinerary": [{"day": 1, "date": "2026-06-15", "activities": ["Arrive San Juan", "Check in", "Beach"]}, {"day": 2, "date": "2026-06-16", "activities": ["Old San Juan", "Fort"]}], '
-            '"cost_breakdown": {"flights": 280, "hotel": 720, "daily_expenses_estimate": 350, "total": 1350}, '
-            '"rationale": "Best value for a week in the Caribbean from NYC.", "assumptions": ["Prices per person for flights; 1 room."]}]}'
+            "I found 2 trip packages for you:\n\n"
+            "1. **Budget Pick** — San Juan ($1,350)\n"
+            "   Best value for a week in the Caribbean from NYC.\n\n"
+            "2. **Best Value** — Miami ($1,890)\n"
+            "   Great beaches and nightlife with more hotel options."
         ),
         steps=example_steps,
     )
@@ -379,13 +376,9 @@ async def _execute_agent_internal(request: ExecuteRequest) -> ExecuteResponse:
                 state.conversation_history.append(
                     {"role": "assistant", "content": question}
                 )
-                clarification_response = json.dumps({
-                    "type": "clarification",
-                    "message": question,
-                    "session_id": state.session_id,
-                }, default=str)
+                # response = human-readable string; session_id in last step (via _with_metadata)
                 return _with_metadata(ExecuteResponse(
-                    status="ok", error=None, response=clarification_response,
+                    status="ok", error=None, response=question,
                     steps=[Step(**s) for s in state.steps],
                 ), state, t_start)
 
@@ -664,10 +657,8 @@ def _wants_different_destinations(prompt: str) -> bool:
 
 
 def _with_metadata(resp: ExecuteResponse, state: SharedState, t_start: float) -> ExecuteResponse:
-    """Attach session_id, LLM call count and elapsed time to any response."""
-    resp.session_id = state.session_id
-    resp.llm_calls_used = state.llm_call_count
-    resp.elapsed_seconds = round(time.time() - t_start, 1)
+    """Attach session_id to last step (API returns only 4 keys; GUI/tests read session_id from steps)."""
+    _inject_session_id_into_last_step(state)
     return resp
 
 
@@ -772,31 +763,19 @@ def _find_exhausted_destination(state: SharedState, max_date_variants: int = 3) 
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _build_no_data_response(state: SharedState) -> ExecuteResponse:
-    """Return when pricing tools returned no results."""
+    """Return when pricing tools returned no results. response = human-readable string."""
     _save_session_memory(state)
     dests = state.constraints.get("destinations", []) if state.constraints else []
     dest_str = ", ".join(dests) if dests else "your destination"
 
     msg = (
         f"I wasn't able to find flight or hotel pricing data for {dest_str} "
-        f"with the given dates. This can happen if:\n"
-        f"  - The API is temporarily unavailable\n"
-        f"  - The dates are too far in the future\n\n"
-        f"Could you try:\n"
-        f"  - Slightly different dates\n"
-        f"  - Or let me know your preferences and I'll suggest alternatives!"
+        f"with the given dates. This can happen if the API is temporarily unavailable "
+        f"or the dates are too far in the future. Could you try slightly different dates, "
+        f"or let me know your preferences and I'll suggest alternatives!"
     )
-
-    result = {
-        "status": "no_pricing_data",
-        "message": msg,
-        "constraints_extracted": state.constraints,
-        "rag_knowledge_found": len(state.destination_chunks),
-        "llm_calls_used": state.llm_call_count,
-    }
     return ExecuteResponse(
-        status="ok", error=None,
-        response=json.dumps(result, indent=2, default=str),
+        status="ok", error=None, response=msg,
         steps=[Step(**s) for s in state.steps],
     )
 
@@ -947,17 +926,10 @@ def _pre_synthesis_consistency_check(state: SharedState) -> list[str]:
 
 
 def _build_gate_b_response(state: SharedState, feasibility: dict) -> ExecuteResponse:
-    """Build a grounded best-effort response when budget is provably infeasible."""
+    """Build a grounded best-effort response when budget is provably infeasible. response = human-readable."""
     _save_session_memory(state)
     dest = state.constraints.get("destinations", ["your destination"])[0] \
         if state.constraints.get("destinations") else "your destination"
-
-    cheapest_flights = sorted(
-        state.flight_options, key=lambda f: f.get("price", 9999)
-    )[:3]
-    cheapest_hotels = sorted(
-        state.hotel_options, key=lambda h: h.get("total_price", 9999)
-    )[:3]
 
     dominant = feasibility["dominant_cost"]
     suggestion = (
@@ -966,41 +938,15 @@ def _build_gate_b_response(state: SharedState, feasibility: dict) -> ExecuteResp
         else "consider a lower-tier hotel or shorter stay"
     )
 
-    result = {
-        "status": "budget_infeasible",
-        "message": (
-            f"Your budget of ${feasibility['budget']:.0f} is below the minimum "
-            f"cost of ~${feasibility['lower_bound']:.0f} for a trip to {dest}."
-        ),
-        "cost_breakdown": {
-            "cheapest_roundtrip_flights": feasibility["cheapest_roundtrip_flight"],
-            "cheapest_hotel_total": feasibility["hotel_total"],
-            "estimated_daily_expenses": feasibility["daily_expenses"],
-            "lower_bound_total": feasibility["lower_bound"],
-            "user_budget": feasibility["budget"],
-            "gap_percentage": feasibility["gap_pct"],
-            "dominant_cost_driver": dominant,
-        },
-        "cheapest_flights_found": cheapest_flights,
-        "cheapest_hotels_found": cheapest_hotels,
-        "question": (
-            f"The {dominant} are the main cost driver. "
-            f"Which would you like to adjust?\n"
-            f"  1. Dates (flexible dates can lower flight prices)\n"
-            f"  2. Destination (consider a cheaper alternative)\n"
-            f"  3. Budget (increase to ~${feasibility['lower_bound']:.0f})\n"
-            f"  4. Hotel tier ({suggestion})"
-        ),
-        "destination_knowledge": [
-            c.get("content", "")[:RAG_DISPLAY_CHARS_PLANNER]
-            for c in state.destination_chunks[:RAG_MAX_CHUNKS_GATE_B]
-        ],
-    }
-
+    msg = (
+        f"Your budget of ${feasibility['budget']:.0f} is below the minimum cost of "
+        f"~${feasibility['lower_bound']:.0f} for a trip to {dest}. The {dominant} are the main "
+        f"cost driver. Which would you like to adjust? 1) Dates (flexible dates can lower flight "
+        f"prices), 2) Destination (consider a cheaper alternative), 3) Budget (increase to "
+        f"~${feasibility['lower_bound']:.0f}), or 4) Hotel tier ({suggestion})."
+    )
     return ExecuteResponse(
-        status="ok",
-        error=None,
-        response=json.dumps(result, indent=2, default=str),
+        status="ok", error=None, response=msg,
         steps=[Step(**s) for s in state.steps],
     )
 
@@ -1032,22 +978,18 @@ def _classify_rejection(verdict: dict) -> str:
 
 
 def _build_rejection_response(state: SharedState, verdict: dict, repair: str) -> ExecuteResponse:
-    """Build a best-effort response when rejected and at cap."""
+    """Build a best-effort response when rejected and at cap. response = human-readable; packages in steps."""
     question_map = {
         "BUDGET": (
-            "The trip plan exceeds your budget. Which would you like to adjust?\n"
-            "  1. Dates (flexible dates can lower prices)\n"
-            "  2. Destination (consider a cheaper alternative)\n"
-            "  3. Budget (increase your budget)\n"
-            "  4. Hotel tier (lower-star hotel or shorter stay)"
+            "The trip plan exceeds your budget. Which would you like to adjust? "
+            "1) Dates, 2) Destination, 3) Budget, or 4) Hotel tier."
         ),
         "ALIGNMENT": (
             "There were date/timing inconsistencies in the plan. "
             "Could you confirm your exact travel dates (departure and return)?"
         ),
         "MISSING_INFO": (
-            "Some required information was missing. Could you provide:\n"
-            + "\n".join(f"  - {iss}" for iss in verdict.get("issues", []))
+            "Some required information was missing. Could you provide the missing details?"
         ),
         "GROUNDING": (
             "The plan had some unsupported claims. I'll work with verified data only. "
@@ -1057,45 +999,24 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
 
     _save_session_memory(state)
 
-    # Human-readable summary of why the Verifier rejected the plan.
     issues = verdict.get("issues", [])
     warnings = verdict.get("warnings", [])
     if issues:
         rejection_expl = (
-            "The quality Verifier rejected the draft packages because:\n- "
-            + "\n- ".join(str(iss) for iss in issues)
+            "The quality Verifier rejected the draft packages because: "
+            + "; ".join(str(iss) for iss in issues)
         )
     else:
         rejection_expl = (
-            "The quality Verifier rejected the draft packages, but did not provide "
-            "specific issue messages. This usually means something about the plan "
-            "looked unsafe or inconsistent."
+            "The quality Verifier rejected the draft packages. "
+            "Returning the last draft as best-effort."
         )
-
     if warnings:
-        rejection_expl += (
-            "\n\nThe Verifier also raised these warnings (the plan might still be usable, "
-            "but you should double-check these points):\n- "
-            + "\n- ".join(str(w) for w in warnings)
-        )
-
-    rejection_expl += (
-        "\n\nBecause the LLM call budget for this request was exhausted, the agent "
-        "could not run another full repair-and-verify cycle, so it is returning "
-        "the last draft packages as a **best-effort** result together with this explanation."
-    )
-    response_data = {
-        "status": "best_effort",
-        "packages": state.draft_plans if state.draft_plans else [],
-        "verifier_issues": issues,
-        "verifier_warnings": warnings,
-        "repair_category": repair,
-        "explanation": rejection_expl,
-        "question": question_map.get(repair, "Could you provide more details?"),
-        "llm_calls_used": state.llm_call_count,
-    }
+        rejection_expl += " Warnings: " + "; ".join(str(w) for w in warnings)
+    rejection_expl += " " + question_map.get(repair, "Could you provide more details?")
 
     if state.draft_plans:
+        _ensure_trip_synthesizer_step_has_packages(state)
         save_trip(
             prompt=state.raw_prompt,
             constraints=state.constraints,
@@ -1105,12 +1026,55 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
             session_id=state.session_id,
         )
 
+    summary = _build_human_readable_summary(state.draft_plans) if state.draft_plans else rejection_expl
+    response_text = f"{rejection_expl}\n\n{summary}" if state.draft_plans else rejection_expl
+
     return ExecuteResponse(
-        status="ok",
-        error=None,
-        response=json.dumps(response_data, indent=2, default=str),
+        status="ok", error=None, response=response_text,
         steps=[Step(**s) for s in state.steps],
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#   HUMAN-READABLE SUMMARY (project requirement: response = natural language)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _build_human_readable_summary(packages: list[dict]) -> str:
+    """Build a natural-language summary of trip packages for the response field."""
+    if not packages:
+        return "The agent could not produce a complete trip plan. Please try a more specific request."
+
+    lines = [f"I found {len(packages)} trip package{'s' if len(packages) > 1 else ''} for you:"]
+    for i, pkg in enumerate(packages, 1):
+        label = pkg.get("label", "Package")
+        dest = pkg.get("destination", "Unknown")
+        cost = pkg.get("cost_breakdown", {}).get("total", 0)
+        cost_str = f"${int(cost):,}" if cost else "price TBD"
+        rationale = pkg.get("rationale", "")
+        lines.append(f"\n{i}. **{label}** — {dest} ({cost_str})")
+        if rationale:
+            lines.append(f"   {rationale}")
+    return "\n".join(lines)
+
+
+def _ensure_trip_synthesizer_step_has_packages(state: SharedState) -> None:
+    """Update the Trip Synthesizer step's response to include final (post-processed) packages for GUI."""
+    for i in range(len(state.steps) - 1, -1, -1):
+        if state.steps[i].get("module") == "Trip Synthesizer":
+            state.steps[i]["response"] = {
+                "content": json.dumps({"packages": state.draft_plans}, default=str),
+            }
+            break
+
+
+def _inject_session_id_into_last_step(state: SharedState) -> None:
+    """Add session_id to last step's response for GUI multi-turn (clarification flow)."""
+    if not state.steps:
+        return
+    last = state.steps[-1]
+    if isinstance(last.get("response"), dict):
+        last["response"] = dict(last["response"])
+        last["response"]["session_id"] = state.session_id
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1118,10 +1082,11 @@ def _build_rejection_response(state: SharedState, verdict: dict, repair: str) ->
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _build_final_response(state: SharedState) -> ExecuteResponse:
-    """Format the final approved (or best-effort) trip plan."""
+    """Format the final approved trip plan. response = human-readable string; packages in Trip Synthesizer step."""
     _save_session_memory(state)
     if state.draft_plans:
-        formatted = json.dumps(state.draft_plans, indent=2, default=str)
+        response_text = _build_human_readable_summary(state.draft_plans)
+        _ensure_trip_synthesizer_step_has_packages(state)
         save_trip(
             prompt=state.raw_prompt,
             constraints=state.constraints,
@@ -1140,12 +1105,12 @@ def _build_final_response(state: SharedState) -> ExecuteResponse:
             },
         )
     elif state.final_response:
-        formatted = state.final_response
+        response_text = state.final_response
     else:
-        formatted = "The agent could not produce a complete trip plan. Please try a more specific request."
+        response_text = "The agent could not produce a complete trip plan. Please try a more specific request."
 
     return ExecuteResponse(
-        status="ok", error=None, response=formatted,
+        status="ok", error=None, response=response_text,
         steps=[Step(**s) for s in state.steps],
     )
 
@@ -1156,90 +1121,55 @@ def _planner_call_count(state: SharedState) -> int:
 
 
 def _build_best_effort_response(state: SharedState, reason: str) -> ExecuteResponse:
-    """Generic best-effort response when we can't complete the full loop."""
+    """Generic best-effort response when we can't complete the full loop. response = human-readable."""
     planning_attempts = _planner_call_count(state)
     last_verdict = state.verifier_verdicts[-1] if state.verifier_verdicts else {}
     verifier_issues = last_verdict.get("issues", [])
     verifier_warnings = last_verdict.get("warnings", [])
 
-    # Build a short natural-language reasoning summary so the user can see
-    # *why* this is best-effort and how many times planning was attempted.
     reasoning_lines: list[str] = []
     if planning_attempts <= 1:
         reasoning_lines.append(
-            "The agent ran one full planning cycle but could not complete the full "
-            "Supervisor → Plan → Execute → Synthesize → Verify loop."
+            "The agent ran one full planning cycle but could not complete the full loop."
         )
     else:
         reasoning_lines.append(
-            f"The agent ran the Planner {planning_attempts} times to try to repair or "
-            "improve the trip plan, but still could not complete a fully approved loop."
+            f"The agent ran the Planner {planning_attempts} times but could not complete a fully approved loop."
         )
 
     if state.destination_search_state:
-        # Summarise destinations where repeated date variants produced no hotels,
-        # so the user can understand why re-planning did not help.
         exhausted_summaries: list[str] = []
         for dest, entry in state.destination_search_state.items():
             empty_ranges = entry.get("hotel_empty_ranges", set())
-            tried = entry.get("date_ranges_tried", set())
             if empty_ranges:
                 exhausted_summaries.append(
                     f"{dest}: {len(empty_ranges)} date range(s) tried with no hotel availability"
-                    + (f" out of {len(tried)} total ranges tested" if tried else "")
                 )
         if exhausted_summaries:
             reasoning_lines.append(
-                "For some destinations, multiple date ranges were tried but hotels were "
-                "still unavailable within your budget:\n- "
-                + "\n- ".join(exhausted_summaries)
+                "For some destinations, hotels were unavailable: " + "; ".join(exhausted_summaries)
             )
 
     if verifier_issues:
-        reasoning_lines.append(
-            "The Verifier reviewed the last draft packages and flagged issues:\n- "
-            + "\n- ".join(str(iss) for iss in verifier_issues)
-        )
+        reasoning_lines.append("Verifier issues: " + "; ".join(str(iss) for iss in verifier_issues))
     elif state.verifier_verdicts:
-        reasoning_lines.append(
-            "The Verifier reviewed the last draft packages but rejected them without "
-            "specific issue text. This usually indicates the plan looked unsafe or inconsistent."
-        )
+        reasoning_lines.append("The Verifier rejected the last draft packages.")
 
     reasoning_summary = " ".join(reasoning_lines) if reasoning_lines else reason
 
     if state.draft_plans:
-        result = {
-            "status": "best_effort",
-            "packages": state.draft_plans,
-            "note": reason,
-            "reasoning_summary": reasoning_summary,
-            "verifier_issues": verifier_issues,
-            "verifier_warnings": verifier_warnings,
-            "planning_attempts": planning_attempts,
-            "destination_search_history": state.destination_search_state,
-            "llm_calls_used": state.llm_call_count,
-        }
-        formatted = json.dumps(result, indent=2, default=str)
+        _ensure_trip_synthesizer_step_has_packages(state)
+        summary = _build_human_readable_summary(state.draft_plans)
+        response_text = f"{reasoning_summary} Returning best-effort packages:\n\n{summary}"
     else:
-        data_summary = {
-            "flights_found": len(state.flight_options),
-            "hotels_found": len(state.hotel_options),
-            "pois_found": len(state.poi_list),
-        }
-        formatted = json.dumps({
-            "status": "best_effort",
-            "note": reason,
-            "verifier_issues": verifier_issues,
-            "verifier_warnings": verifier_warnings,
-            "planning_attempts": planning_attempts,
-            "destination_search_history": state.destination_search_state,
-            "data_collected": data_summary,
-            "llm_calls_used": state.llm_call_count,
-        }, indent=2, default=str)
+        flights = len(state.flight_options)
+        hotels = len(state.hotel_options)
+        pois = len(state.poi_list)
+        data_note = f"Data collected: {flights} flights, {hotels} hotels, {pois} POIs." if (flights or hotels or pois) else ""
+        response_text = f"{reasoning_summary} {data_note} {reason}"
 
     return ExecuteResponse(
-        status="ok", error=None, response=formatted,
+        status="ok", error=None, response=response_text,
         steps=[Step(**s) for s in state.steps],
     )
 

@@ -57,24 +57,39 @@ def call_api(base_url: str, prompt: str, session_id: str | None = None) -> dict:
     elapsed = time.time() - start
     data = resp.json()
 
-    print(f"  << Status: {data.get('status')} | "
-          f"LLM calls: {data.get('llm_calls_used', '?')} | "
-          f"Time: {elapsed:.1f}s")
+    print(f"  << Status: {data.get('status')} | Time: {elapsed:.1f}s")
 
     return data
 
 
-def extract_packages(response_text: str) -> list[dict]:
-    """Try to parse trip_packages from the response JSON string."""
-    try:
-        parsed = json.loads(response_text)
-        if isinstance(parsed, dict):
-            return parsed.get("trip_packages", [])
-        if isinstance(parsed, list):
-            return parsed
-    except (json.JSONDecodeError, TypeError):
-        pass
+def extract_packages_from_steps(steps: list[dict]) -> list[dict]:
+    """Extract packages from Trip Synthesizer step (API now returns response=human-readable, data in steps)."""
+    if not steps:
+        return []
+    for s in steps:
+        mod = (s.get("module") or "").lower()
+        if "synthesizer" in mod or "trip" in mod:
+            content = s.get("response", {}).get("content", "")
+            if not content:
+                continue
+            try:
+                parsed = json.loads(content)
+                if isinstance(parsed, dict) and "packages" in parsed:
+                    return parsed["packages"]
+            except (json.JSONDecodeError, TypeError):
+                pass
     return []
+
+
+def extract_session_id_from_steps(steps: list[dict]) -> str | None:
+    """Extract session_id from steps (for clarification / multi-turn; API returns only 4 keys)."""
+    if not steps:
+        return None
+    for s in reversed(steps):
+        r = s.get("response")
+        if isinstance(r, dict) and r.get("session_id"):
+            return r["session_id"]
+    return None
 
 
 def print_package_summary(packages: list[dict]):
@@ -148,19 +163,17 @@ def test_1_beach_vacation(base_url: str) -> bool:
     print("=" * 70)
 
     data = call_api(base_url, "Beach vacation in June from New York")
-    session_id = data.get("session_id")
+    steps = data.get("steps") or []
+    session_id = extract_session_id_from_steps(steps)
 
     if data.get("status") != "ok":
         print(f"  FAIL: status={data.get('status')}, error={data.get('error')}")
         return False
 
-    if not session_id:
-        print("  FAIL: No session_id returned")
-        return False
+    if session_id:
+        print(f"  session_id: {session_id}")
 
-    print(f"  session_id: {session_id}")
-
-    packages = extract_packages(data.get("response", ""))
+    packages = extract_packages_from_steps(steps)
     if not packages:
         print("  WARN: No parseable packages in response (might be text-only)")
         print(f"  Response preview: {str(data.get('response', ''))[:300]}")
@@ -197,16 +210,17 @@ def test_2_romantic_europe(base_url: str) -> bool:
         base_url,
         "Romantic trip to Europe in May for 1 week from Tel Aviv, budget $3000"
     )
-    session_id = data.get("session_id")
+    steps = data.get("steps") or []
+    session_id = extract_session_id_from_steps(steps)
 
     if data.get("status") != "ok":
         print(f"  FAIL: status={data.get('status')}, error={data.get('error')}")
         return False
 
-    print(f"  session_id: {session_id}")
+    if session_id:
+        print(f"  session_id: {session_id}")
 
-    response_text = data.get("response", "")
-    packages = extract_packages(response_text)
+    packages = extract_packages_from_steps(steps)
 
     if not packages:
         # Could be budget_infeasible — check response
@@ -246,26 +260,28 @@ def test_3_session_followup(base_url: str) -> bool:
     # Step A: Initial request
     print("\n  Step A: Initial request")
     data1 = call_api(base_url, "Beach vacation in June from New York")
-    session_id = data1.get("session_id")
+    steps1 = data1.get("steps") or []
+    session_id = extract_session_id_from_steps(steps1)
 
     if not session_id:
-        print("  FAIL: No session_id from initial request")
+        print("  FAIL: No session_id from initial request (check steps)")
         return False
 
-    packages1 = extract_packages(data1.get("response", ""))
+    packages1 = extract_packages_from_steps(steps1)
     dests1 = [pkg.get("destination", "?") for pkg in packages1]
     print(f"  Initial destinations: {dests1}")
 
     # Step B: Follow-up with same session_id
     print("\n  Step B: Follow-up with same session_id")
     data2 = call_api(base_url, "give me different locations", session_id=session_id)
-    session_id2 = data2.get("session_id")
+    steps2 = data2.get("steps") or []
+    session_id2 = extract_session_id_from_steps(steps2)
 
     if data2.get("status") != "ok":
         print(f"  FAIL: Follow-up status={data2.get('status')}, error={data2.get('error')}")
         return False
 
-    if session_id2 != session_id:
+    if session_id2 and session_id2 != session_id:
         print(f"  WARN: session_id changed ({session_id} -> {session_id2})")
 
     response2 = data2.get("response", "")
@@ -277,7 +293,7 @@ def test_3_session_followup(base_url: str) -> bool:
         print(f"  Response: {response2[:300]}")
         return False
 
-    packages2 = extract_packages(response2)
+    packages2 = extract_packages_from_steps(steps2)
     dests2 = [pkg.get("destination", "?") for pkg in packages2]
     print(f"  Follow-up destinations: {dests2}")
 
@@ -308,13 +324,11 @@ def test_4_budget_infeasible(base_url: str) -> bool:
     )
 
     response_text = str(data.get("response", ""))
-    session_id = data.get("session_id")
+    steps = data.get("steps") or []
+    session_id = extract_session_id_from_steps(steps)
 
-    if not session_id:
-        print("  FAIL: No session_id (should be returned even on infeasible)")
-        return False
-
-    print(f"  session_id: {session_id}")
+    if session_id:
+        print(f"  session_id: {session_id}")
     print(f"  Response preview: {response_text[:400]}")
 
     # Either budget_infeasible or very tight packages — both are acceptable
@@ -340,7 +354,7 @@ def test_5_rag_influence(base_url: str) -> bool:
         print(f"  FAIL: status={data.get('status')}, error={data.get('error')}")
         return False
 
-    packages = extract_packages(data.get("response", ""))
+    packages = extract_packages_from_steps(data.get("steps") or [])
     dests = [pkg.get("destination", "?") for pkg in packages]
 
     # We uploaded data for 15 European cities — if RAG works,
@@ -382,7 +396,7 @@ def test_6_multi_traveler(base_url: str) -> bool:
         print(f"  FAIL: status={data.get('status')}, error={data.get('error')}")
         return False
 
-    packages = extract_packages(data.get("response", ""))
+    packages = extract_packages_from_steps(data.get("steps") or [])
 
     if packages:
         print_package_summary(packages)

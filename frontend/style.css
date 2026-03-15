@@ -842,6 +842,26 @@ body {
   letter-spacing: 0.06em;
 }
 
+.step-body h4:first-of-type { margin-top: 0; }
+
+.planner-tasks {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.2rem;
+  list-style: disc;
+}
+.planner-tasks li { margin-bottom: 0.2rem; }
+.task-type { font-weight: 600; color: var(--text); }
+.task-params { font-weight: 400; color: var(--text-muted); font-size: 0.68rem; }
+
+.step-reasoning {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.reasoning-text { white-space: pre-wrap; margin: 0; font-size: 0.72rem; line-height: 1.4; }
+
 /* ── Utilities ───────────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 

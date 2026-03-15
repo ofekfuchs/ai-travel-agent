@@ -281,6 +281,17 @@ function renderResponse(responseStr) {
     return;
   }
 
+  if (parsed.status === "best_effort") {
+    if (parsed.packages && Array.isArray(parsed.packages) && parsed.packages.length > 0 && parsed.packages[0].destination) {
+      const warning = { issues: parsed.verifier_issues || [], question: parsed.question || "", category: parsed.repair_category || "", note: parsed.note };
+      renderPackages(parsed.packages, warning);
+    } else {
+      renderBestEffort(parsed);
+      promptEl.placeholder = "Try different dates, origin, or destination...";
+    }
+    return;
+  }
+
   let packages = null;
   let warning  = null;
 
@@ -288,19 +299,17 @@ function renderResponse(responseStr) {
     packages = parsed;
   } else if (parsed.packages && Array.isArray(parsed.packages)) {
     packages = parsed.packages;
-    if (parsed.status === "best_effort") {
-      warning = {
-        issues: parsed.verifier_issues || [],
-        question: parsed.question || "",
-        category: parsed.repair_category || "",
-      };
-    }
   }
 
   if (packages && packages.length > 0 && packages[0].destination) {
     renderPackages(packages, warning);
   } else {
-    addAgentMessage(`<p>${esc(responseStr)}</p>`);
+    // Never show raw JSON: if we parsed an object but didn't handle it, show a safe message
+    if (parsed && typeof parsed === "object") {
+      addAgentMessage("<p>We couldn't put together a complete trip this time. Try different dates or destinations.</p>");
+    } else {
+      addAgentMessage(`<p>${esc(responseStr)}</p>`);
+    }
   }
 }
 
@@ -401,6 +410,38 @@ function renderBudgetInfeasible(data) {
   addAgentMessage(html);
 }
 
+/* ── Best Effort (e.g. LLM budget exhausted) ───────────────────────────── */
+
+function renderBestEffort(data) {
+  const note = data.note || "The agent could not complete a full trip plan.";
+  const collected = data.data_collected || {};
+  const flights = collected.flights_found ?? 0;
+  const hotels = collected.hotels_found ?? 0;
+  const pois = collected.pois_found ?? 0;
+
+  const parts = [];
+  if (flights === 0) {
+    parts.push("No flights were found for your route or dates.");
+  } else {
+    parts.push(`${flights} flight option${flights !== 1 ? "s" : ""} found.`);
+  }
+  if (hotels > 0 || pois > 0) {
+    parts.push(` ${hotels} hotel${hotels !== 1 ? "s" : ""}, ${pois} POI${pois !== 1 ? "s" : ""}.`);
+  }
+
+  let html = `<div class="status-card nodata-card">
+    <div class="status-icon">⏱️</div>
+    <h3>Partial result</h3>
+    <p class="status-message">${esc(note)}</p>
+    <div class="status-details">
+      <p>${esc(parts.join(""))}</p>
+      <p>Try different dates, origin, or destination — or simplify your request.</p>
+    </div>
+  </div>`;
+
+  addAgentMessage(html);
+}
+
 /* ── No Pricing Data ──────────────────────────────────────────────────── */
 
 function renderNoPricingData(data) {
@@ -413,7 +454,7 @@ function renderNoPricingData(data) {
     <h3>No Pricing Data Found</h3>
     <p class="status-message">${esc(data.message || "Could not find flight or hotel pricing.")}</p>
     <div class="status-details">
-      <p>LLM calls used: ${llmCalls}/8</p>
+      <p>LLM calls used: ${llmCalls}/12</p>
       ${ragCount ? `<p>Destination knowledge found: ${ragCount} chunks</p>` : ""}
       ${constraints.destinations ? `<p>Searched destinations: ${esc(constraints.destinations.join(", "))}</p>` : ""}
     </div>
@@ -685,22 +726,32 @@ function addStepsSection(steps, llmCalls, elapsedSec) {
   const supervisorCount = infos.filter(s => s.role === "thought").length;
 
   const metaParts = [`${steps.length} steps`, `${supervisorCount} reasoning cycles`];
-  if (llmCalls != null) metaParts.push(`${llmCalls}/8 LLM calls`);
+  if (llmCalls != null) metaParts.push(`${llmCalls}/12 LLM calls`);
   if (elapsedSec != null) metaParts.push(`${elapsedSec}s`);
 
   const wrapper = document.createElement("div");
   wrapper.className = "trace-wrapper";
 
   let html = `<button class="trace-toggle">
-    <span class="trace-toggle-icon">&#9654;</span>
+    <span class="trace-toggle-icon">&#9660;</span>
     Execution Trace &mdash; ${metaParts.join(", ")}
   </button>`;
 
-  html += `<div class="trace-body hidden">`;
+  html += `<div class="trace-body">`;
   steps.forEach((step, i) => {
     const si = infos[i];
+    const rawContent = _getStepResponseContent(step);
+    const parsed = tryParseJSON(rawContent);
+    const mod = (step.module || "").toLowerCase();
+
     const obs = si.role === "thought" ? extractObservation(step) : null;
     const obsH = obs ? `<div class="step-observation">Observed: ${esc(obs)}</div>` : "";
+
+    const tasksHtml = mod === "planner" ? formatPlannerTasks(parsed) : "";
+    const reasoning = extractReasoning(step, parsed, mod);
+    const reasoningHtml = reasoning
+      ? `<div class="step-reasoning"><h4>Reasoning</h4><p class="reasoning-text">${reasoning.split("\n").map(esc).join("<br>")}</p></div>`
+      : "";
 
     html += `<div class="step-card step-role-${si.role}">`;
     html += `<div class="step-header">
@@ -713,6 +764,8 @@ function addStepsSection(steps, llmCalls, elapsedSec) {
     </div>`;
     html += `<div class="step-body">
       ${obsH}
+      ${tasksHtml}
+      ${reasoningHtml}
       <h4>Prompt</h4>
       <pre>${esc(typeof step.prompt === "object" ? JSON.stringify(step.prompt, null, 2) : String(step.prompt))}</pre>
       <h4>Response</h4>
@@ -742,9 +795,17 @@ function addStepsSection(steps, llmCalls, elapsedSec) {
   scrollToBottom();
 }
 
+/** Get raw response content from step (handles different shapes). */
+function _getStepResponseContent(step) {
+  if (!step || !step.response) return "";
+  const r = step.response;
+  if (typeof r === "string") return r;
+  return r.content ?? r.text ?? r.message ?? "";
+}
+
 function classifyStep(step) {
   const mod = (step.module || "").toLowerCase();
-  const parsed = tryParseJSON(step.response && step.response.content);
+  const parsed = tryParseJSON(_getStepResponseContent(step));
 
   if (mod === "supervisor") {
     const action = parsed ? parsed.next_action : "?";
@@ -756,13 +817,20 @@ function classifyStep(step) {
     const tc = parsed && parsed.tasks ? parsed.tasks.length : 0;
     const dests = parsed && parsed.constraints && parsed.constraints.destinations
       ? parsed.constraints.destinations.join(", ") : "";
-    return { role: "plan", roleLabel: "PLAN", module: "Planner",
-             summary: `${tc} tasks${dests ? " for " + dests : ""}` };
+    const taskNames = parsed && Array.isArray(parsed.tasks)
+      ? parsed.tasks.map(t => t.task || t.task_type || "?").filter(Boolean).join(", ")
+      : "";
+    let summary = `${tc} tasks${dests ? " for " + dests : ""}`;
+    if (taskNames) summary += `: ${taskNames}`;
+    return { role: "plan", roleLabel: "PLAN", module: "Planner", summary };
   }
   if (mod.includes("synthesizer") || mod.includes("trip")) {
     const pc = parsed && parsed.packages ? parsed.packages.length : (parsed ? 1 : 0);
-    return { role: "action", roleLabel: "SYNTHESIS", module: "Trip Synthesizer",
-             summary: `${pc} package(s) assembled` };
+    const rationale = parsed && Array.isArray(parsed.packages) && parsed.packages[0]?.rationale
+      ? parsed.packages[0].rationale : null;
+    let summary = `${pc} package(s) assembled`;
+    if (rationale) summary += ` — ${rationale.slice(0, 80)}${rationale.length > 80 ? "…" : ""}`;
+    return { role: "action", roleLabel: "SYNTHESIS", module: "Trip Synthesizer", summary };
   }
   if (mod === "verifier") {
     const dec = parsed ? parsed.decision : "?";
@@ -771,8 +839,13 @@ function classifyStep(step) {
     let detail = dec;
     if (ic) detail += `, ${ic} issue(s)`;
     if (wc) detail += `, ${wc} warning(s)`;
-    return { role: "reflection", roleLabel: "REFLECTION", module: "Verifier",
-             summary: detail };
+    const reason = parsed?.quality_notes
+      ? parsed.quality_notes
+      : (parsed?.issues?.length || parsed?.warnings?.length)
+        ? [].concat(parsed.issues || [], parsed.warnings || []).slice(0, 3).join("; ")
+        : null;
+    if (reason) detail += ` — ${reason.slice(0, 100)}${reason.length > 100 ? "…" : ""}`;
+    return { role: "reflection", roleLabel: "REFLECTION", module: "Verifier", summary: detail };
   }
   return { role: "action", roleLabel: "ACTION", module: step.module || "Agent", summary: "" };
 }
@@ -792,6 +865,42 @@ function extractObservation(step) {
     if (d.rag_chunks) parts.push(`${d.rag_chunks} RAG chunks`);
     return parts.length ? parts.join(", ") : null;
   } catch { return null; }
+}
+
+/** Format planner tasks for display. Returns HTML string or "". */
+function formatPlannerTasks(parsed) {
+  if (!parsed || !Array.isArray(parsed.tasks) || parsed.tasks.length === 0) return "";
+  const items = parsed.tasks.map((t, i) => {
+    const taskType = t.task || t.task_type || "?";
+    const dest = t.destination_group || t.destination || "";
+    const params = t.params || {};
+    const paramsStr = Object.keys(params).length
+      ? Object.entries(params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(", ")
+      : "";
+    const label = dest ? `${taskType} → ${dest}` : taskType;
+    return `<li><span class="task-type">${esc(label)}</span>${paramsStr ? ` <span class="task-params">(${esc(paramsStr)})</span>` : ""}</li>`;
+  });
+  return `<h4>Tasks (${parsed.tasks.length})</h4><ul class="planner-tasks">${items.join("")}</ul>`;
+}
+
+/** Extract reasoning text for display. Returns string or null. */
+function extractReasoning(step, parsed, mod) {
+  if (!parsed || typeof parsed !== "object") return null;
+  const m = (mod || "").toLowerCase();
+  if (m === "supervisor" && parsed.reason) return parsed.reason;
+  if (m === "verifier") {
+    if (parsed.quality_notes) return parsed.quality_notes;
+    const parts = [];
+    if (parsed.decision) parts.push(`Decision: ${parsed.decision}`);
+    if (parsed.issues?.length) parts.push(`Issues: ${parsed.issues.join("; ")}`);
+    if (parsed.warnings?.length) parts.push(`Warnings: ${parsed.warnings.join("; ")}`);
+    return parts.length ? parts.join("\n\n") : null;
+  }
+  if ((m.includes("synthesizer") || m.includes("trip")) && Array.isArray(parsed.packages) && parsed.packages.length > 0) {
+    const rationales = parsed.packages.map(p => p.rationale).filter(Boolean);
+    return rationales.length ? rationales.join("\n\n") : null;
+  }
+  return null;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

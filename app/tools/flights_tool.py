@@ -18,12 +18,19 @@ _MAX_NONSTOP_HOURS = 20
 
 from app.config import RAPIDAPI_KEY
 from app.models.shared_state import SharedState
+from app.rag.location_resolver import (
+    looks_like_airport_code,
+    resolve_location_name_from_rag,
+)
 from app.utils.cache import cache_get, cache_set, make_cache_key
 from app.utils.step_logger import log_tool_call
 
 _BASE_URL = "https://booking-com15.p.rapidapi.com/api/v1/flights"
 
 _location_cache: dict[str, str] = {}
+
+# Invalid IDs returned by Booking.com when given codes it cannot resolve (e.g. "TLV").
+_INVALID_IDS = ("undefined.undefined", "undefined")
 
 
 def _get_headers() -> dict[str, str]:
@@ -77,6 +84,14 @@ def search_flights(
 
     Accepts any city name ("Tbilisi", "New York") or IATA code ("JFK").
     The resolver handles conversion dynamically via the Booking.com API.
+
+    If results are empty, possible causes (for investigation):
+    - RAPIDAPI_KEY missing or invalid; Booking.com API error/rate limit.
+    - Location resolution: searchDestination may need a specific form (e.g. "Tel Aviv"
+      vs "TLV" for origin); empty or non-matching IDs yield no offers.
+    - searchFlights returned no flightOffers for the route/date (API limitation,
+      date in past or too far out, or route not served in the API's inventory).
+    - All offers filtered out by _is_valid_flight (missing times, bad duration, etc.).
     """
     params: dict[str, Any] = {
         "origin": origin,
@@ -99,9 +114,28 @@ def search_flights(
                       {"error": "RAPIDAPI_KEY not configured"})
         return []
 
+    def _query_for_api(label: str, raw: str) -> str:
+        """Use RAG to resolve airport codes to city names so the API gets a valid id."""
+        s = (raw or "").strip()
+        if not s:
+            return s
+        name = resolve_location_name_from_rag(s) if looks_like_airport_code(s) else None
+        return name if name else s
+
+    origin_query = _query_for_api("origin", origin)
+    destination_query = _query_for_api("destination", destination)
+
     try:
-        from_id = _resolve_flight_location(origin)
-        to_id = _resolve_flight_location(destination)
+        from_id = _resolve_flight_location(origin_query)
+        if from_id in _INVALID_IDS and origin_query == origin and looks_like_airport_code(origin):
+            fallback = resolve_location_name_from_rag(origin)
+            if fallback:
+                from_id = _resolve_flight_location(fallback)
+        to_id = _resolve_flight_location(destination_query)
+        if to_id in _INVALID_IDS and destination_query == destination and looks_like_airport_code(destination):
+            fallback = resolve_location_name_from_rag(destination)
+            if fallback:
+                to_id = _resolve_flight_location(fallback)
 
         query_params: dict[str, str] = {
             "fromId": from_id,
@@ -126,7 +160,8 @@ def search_flights(
 
         options = _parse_flight_results(raw, origin, destination, date, return_date)
         state.flight_options.extend(options)
-        cache_set(ck, {"options": options})
+        if options:
+            cache_set(ck, {"options": options})  # do not cache empty (allows retry after better resolution)
 
         log_tool_call(state, "Executor", "flights_search", params,
                       {"count": len(options), "from_id": from_id, "to_id": to_id})

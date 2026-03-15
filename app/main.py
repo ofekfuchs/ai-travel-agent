@@ -407,6 +407,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                         print(f"  EARLY GATE B: budget infeasible after Phase 1 "
                               f"(${early_feasibility['lower_bound']:.0f} > "
                               f"${early_feasibility['budget']:.0f})", flush=True)
+                        _save_session_memory(state)
                         return _with_metadata(
                             _build_gate_b_response(state, early_feasibility), state, t_start)
 
@@ -430,6 +431,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                         print(f"  EARLY GATE B: budget infeasible "
                               f"(${early_feasibility['lower_bound']:.0f} > "
                               f"${early_feasibility['budget']:.0f})", flush=True)
+                        _save_session_memory(state)
                         return _with_metadata(
                             _build_gate_b_response(state, early_feasibility), state, t_start)
 
@@ -459,6 +461,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                         print(f"  EARLY GATE B: budget infeasible after Phase N "
                               f"(${early_feasibility['lower_bound']:.0f} > "
                               f"${early_feasibility['budget']:.0f})", flush=True)
+                        _save_session_memory(state)
                         return _with_metadata(
                             _build_gate_b_response(state, early_feasibility), state, t_start)
 
@@ -475,6 +478,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
             if action == "synthesize":
                 if not state.flight_options and not state.hotel_options:
                     print(f"  NO PRICING DATA -- cannot synthesize", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_no_data_response(state), state, t_start)
 
@@ -482,6 +486,7 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
                 if feasibility:
                     print(f"  GATE B: budget infeasible (${feasibility['lower_bound']:.0f} "
                           f"> ${feasibility['budget']:.0f})", flush=True)
+                    _save_session_memory(state)
                     return _with_metadata(
                         _build_gate_b_response(state, feasibility), state, t_start)
 
@@ -542,12 +547,14 @@ async def execute_agent(request: ExecuteRequest) -> ExecuteResponse:
 
         # Exhausted all rounds
         print(f"  Max supervisor rounds reached -- returning best-effort", flush=True)
+        _save_session_memory(state)
         return _with_metadata(
             _build_best_effort_response(state, "Agent loop exhausted."),
             state, t_start)
 
     except LLMCapReached as exc:
         print(f"\n  LLM CAP REACHED (safety net): {exc}", flush=True)
+        _save_session_memory(state)  # so follow-ups keep origin/destinations/constraints
         return _with_metadata(
             _build_best_effort_response(state, str(exc)), state, t_start)
 

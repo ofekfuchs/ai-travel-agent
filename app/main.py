@@ -21,11 +21,13 @@ import time
 import traceback
 import uuid
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from typing import Dict
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import RAG_DISPLAY_CHARS_PLANNER, RAG_MAX_CHUNKS_GATE_B
 from app.models.schemas import (
@@ -64,6 +66,67 @@ MAX_PROMPT_LENGTH = 1000
 # In-memory session store for multi-turn conversation.
 # Keyed by session_id, stores constraints + prompt from previous turns.
 _session_memory: dict[str, dict] = {}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Return course-specified error schema for any body/validation problem."""
+    # Build a concise, human-readable description from the first validation error.
+    error_msg = "Invalid request body"
+    try:
+        errors = exc.errors()
+        if errors:
+            first = errors[0]
+            loc = " -> ".join(str(p) for p in first.get("loc", []))
+            msg = first.get("msg", "validation error")
+            if loc:
+                error_msg = f"Invalid request body at '{loc}': {msg}"
+            else:
+                error_msg = f"Invalid request body: {msg}"
+    except Exception:
+        # Fallback if error structure is unexpected.
+        error_msg = "Invalid request body"
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "error",
+            "error": error_msg,
+            "response": None,
+            "steps": [],
+        },
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
+    """Normalize HTTP 422 to course schema; pass through others."""
+    if exc.status_code == 422:
+        detail = exc.detail
+        if isinstance(detail, str):
+            error_msg = f"Invalid request: {detail}"
+        else:
+            error_msg = "Invalid request"
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "error",
+                "error": error_msg,
+                "response": None,
+                "steps": [],
+            },
+        )
+
+    # For non-422 HTTP errors, keep a simple default JSON response.
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
 
 # ── GET /api/team_info ─────────────────────────────────────────────────────

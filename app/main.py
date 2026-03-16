@@ -631,7 +631,7 @@ async def _execute_agent_internal(request: ExecuteRequest) -> ExecuteResponse:
 
 
 @app.post("/api/execute")
-async def execute_agent(request: ExecuteRequest) -> dict:
+async def execute_agent(request: ExecuteRequest | None = None) -> dict:
     """Public /api/execute endpoint returning exactly the required schema.
 
     Internally uses ExecuteResponse for full metadata, but only exposes:
@@ -640,6 +640,11 @@ async def execute_agent(request: ExecuteRequest) -> dict:
       - response
       - steps
     """
+    # Allow completely missing body: treat it as an empty request so that
+    # we still return the course-specified error shape instead of FastAPI's 422.
+    if request is None:
+        request = ExecuteRequest(prompt=None)
+
     internal = await _execute_agent_internal(request)
     return {
         "status": internal.status,

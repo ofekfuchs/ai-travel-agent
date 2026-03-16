@@ -50,7 +50,7 @@ class AgentInfoResponse(BaseModel):
 # ── POST /api/execute ──────────────────────────────────────────────────────
 
 class ExecuteRequest(BaseModel):
-    prompt: str
+    prompt: Optional[str] = None
     session_id: Optional[str] = None
 
 
